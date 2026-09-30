@@ -237,7 +237,67 @@ Database 문서를 별도로 분리할 수 있다.
 필요한 식별 정보만 기록하고 상세 분석하지 않는다.
 
 
-## 8. 기본 원칙
+## 8. 문서 저장 위치
+
+분석 결과는 화면 단위로 관리한다.
+
+프로젝트 Root의
+`docs/analysis/{화면명}/`
+아래에 해당 화면과 관련된 분석 문서를 저장한다.
+
+기본 구조:
+
+`docs/analysis/{화면명}/`
+
+- `SCREEN-{화면명}.md`
+- `frontend/`
+- `api/`
+- `backend/`
+
+단계별 저장 위치:
+
+### 화면 기능 분석
+
+`docs/analysis/{화면명}/SCREEN-{화면명}.md`
+
+### Frontend 기능 분석
+
+`docs/analysis/{화면명}/frontend/FE-{Action ID}-{기능명}.md`
+
+### API 규격 분석
+
+`docs/analysis/{화면명}/api/API-{API ID}-{기능명}.md`
+
+### Backend 기능 분석
+
+`docs/analysis/{화면명}/backend/BE-{API ID}-{기능명}.md`
+
+화면명은 가능한 경우
+Frontend URL 또는 Route를 기준으로
+일관된 이름을 사용한다.
+
+예:
+
+Frontend URL:
+
+`/equipment/search`
+
+화면명:
+
+`equipment-search`
+
+저장 위치:
+
+`docs/analysis/equipment-search/`
+
+필요한 디렉터리가 존재하지 않는 경우 생성한다.
+
+현재 분석 단계에 필요한 디렉터리와 문서만 생성한다.
+
+기존 분석 문서가 존재하는 경우
+임의로 덮어쓰지 않는다.
+
+## 9. 기본 원칙
 
 Frontend URL
 → 화면 기능 문서
@@ -256,7 +316,7 @@ Frontend URL
 → 종료
 
 
-## 9. 핵심 원칙
+## 10. 핵심 원칙
 
 대상 선택
 → 탐색
