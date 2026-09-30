@@ -12,6 +12,7 @@
 소스코드를 검색하지 마.
 MCP를 호출하지 마.
 
+*****
 
 Frontend URL을 입력받아 Screen Action Discovery를 수행한다고 가정해줘.
 
@@ -24,3 +25,26 @@ Frontend URL을 입력받아 Screen Action Discovery를 수행한다고 가정�
 실제 URL 분석은 하지 마.
 MCP를 호출하지 마.
 소스코드를 검색하지 마.
+
+
+*****
+
+
+현재 프로젝트의 Screen Action Discovery 규칙을 기준으로 답해줘.
+
+다음 항목들이 Action으로 등록될 수 있는지 판단하고
+각각 이유를 설명해줘.
+
+1. 검색 버튼의 onClick → handleSearch
+2. 화면에 표시된 단순 제목 Text
+3. 페이지 진입 시 useEffect → loadData
+4. Event가 없는 div Container
+5. Enter 입력 → handleSearch
+6. 상세보기 Modal을 여는 Button
+7. 단순 React Rendering Function
+
+실제 소스는 검색하지 마.
+MCP를 호출하지 마.
+API/Backend 분석은 하지 마.
+
+마지막에 적용된 Rule의 Verification 문구를 출력해줘.
