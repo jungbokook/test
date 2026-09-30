@@ -479,16 +479,37 @@ Trigger:
 
 ## 16. STEP 10 — SCREEN 문서 생성
 
-분석 결과를
+분석 결과를 화면별 디렉터리에
 SCREEN 문서로 생성한다.
 
-권장 파일명:
-
-`SCREEN-{화면명}.md`
+화면명은 가능한 경우
+Frontend URL 또는 Route를 기준으로 결정한다.
 
 예:
 
-`SCREEN-equipment-search.md`
+Frontend URL:
+
+`/equipment/search`
+
+화면명:
+
+`equipment-search`
+
+저장 위치:
+
+`docs/analysis/equipment-search/`
+
+SCREEN 문서:
+
+`docs/analysis/equipment-search/SCREEN-equipment-search.md`
+
+필요한 디렉터리가 존재하지 않는 경우 생성한다.
+
+현재 단계에서는
+`frontend`, `api`, `backend` 분석 문서를 생성하지 않는다.
+
+기존 동일 이름의 SCREEN 문서가 존재하는 경우
+임의로 덮어쓰지 않는다.
 
 
 ## 17. SCREEN 문서 기본 구조
