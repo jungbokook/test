@@ -17,3 +17,31 @@ MCP는 호출하지 마.
 
 
 ####
+
+
+현재 프로젝트의 화면 기능 분석 범위 규칙을 기준으로
+다음 상황을 판단해줘.
+
+1. 검색 버튼의 Click Event를 확인한다.
+2. 검색 버튼에 연결된 handleSearch를 확인한다.
+3. handleSearch가 위치한 Frontend Source Path를 확인한다.
+4. handleSearch 내부 Validation을 상세 분석한다.
+5. handleSearch 내부에서 POST /api/equipment/search를 발견했다.
+   해당 API의 Request DTO까지 분석한다.
+6. 검색 과정에서 Controller를 발견했다.
+   Service와 Mapper까지 계속 추적한다.
+7. 발견한 검색 기능에 ACT-001을 부여한다.
+8. 화면 기능 목록을 만든 뒤 ACT-001의 Frontend 분석을 자동으로 시작한다.
+
+각 항목을
+허용 / 금지
+중 하나로 판단하고 이유를 설명해줘.
+
+실제 Source Code는 분석하지 마.
+MCP는 호출하지 마.
+파일은 생성하거나 수정하지 마.
+
+마지막에 적용된 Rule의 검증 문구를 출력해줘.
+
+
+#####
