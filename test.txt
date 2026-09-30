@@ -70,3 +70,41 @@ API/Backend 분석은 하지 마.
 실제 분석도 시작하지 마.
 
 마지막에 적용된 MCP Rule의 Verification 문구를 출력해줘.
+
+
+*****
+
+
+현재 프로젝트의 Evidence 규칙을 기준으로
+다음 상황을 판단해줘.
+
+1. Chrome DevTools Network에서
+   POST /api/equipment/search 요청과
+   plant=1000을 확인했다.
+
+   이것만으로 plant는 항상 1000이라고 판단할 수 있는가?
+
+2. deleteEquipment()라는 Java Method를 발견했다.
+
+   Method 이름만으로 실제 DELETE SQL을 실행한다고
+   판단할 수 있는가?
+
+3. Code Index에서
+   EquipmentService → EquipmentMapper 호출 관계를 발견했다.
+
+   이것만으로 Business Logic을 확정할 수 있는가?
+
+4. Oracle MCP에서 EQUIPMENT 테이블과
+   EQUIP_ID 컬럼을 실제 확인했다.
+
+   이것은 어떤 종류의 Evidence인가?
+
+5. Runtime 결과와 Source 정의가 서로 다른 경우
+   어떻게 처리해야 하는가?
+
+실제 MCP는 호출하지 마.
+실제 Source도 검색하지 마.
+
+마지막에 적용된 Evidence Rule의
+Verification 문구를 출력해줘.
+
