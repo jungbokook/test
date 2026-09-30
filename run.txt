@@ -45,3 +45,30 @@ MCP는 호출하지 마.
 
 
 #####
+
+
+현재 프로젝트의 화면 Action 식별 규칙을 기준으로
+다음 항목이 Action인지 판단해줘.
+
+1. "설비 조회"라는 단순 화면 제목
+2. Click 시 handleSearch가 실행되는 검색 버튼
+3. Event가 없는 일반 div
+4. Enter 입력 시 handleSearch가 실행되는 검색조건
+5. 화면 진입 시 useEffect가 존재하지만 Rendering 관련 처리만 수행
+6. 화면 진입 시 useEffect에서 초기 데이터 조회를 실행
+7. 클릭하면 등록 Modal을 여는 등록 버튼
+8. 단순히 값을 입력만 하는 비고 Input
+9. 값을 변경하면 즉시 재검색되는 설비유형 Select
+10. 검색 버튼 Click과 Enter가 모두 동일한 handleSearch를 실행
+
+각 항목을
+Action / Action 아님
+으로 판단하고 이유를 설명해줘.
+
+10번은 동일 Action으로 처리할 수 있는지도 설명해줘.
+
+실제 Source Code는 분석하지 마.
+MCP는 호출하지 마.
+파일은 생성하거나 수정하지 마.
+
+마지막에 적용된 Rule의 검증 문구를 출력해줘.
