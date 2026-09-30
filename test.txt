@@ -108,3 +108,38 @@ API/Backend 분석은 하지 마.
 마지막에 적용된 Evidence Rule의
 Verification 문구를 출력해줘.
 
+
+*****
+
+
+현재 프로젝트의 Popup 분석 규칙을 기준으로 판단해줘.
+
+1. 상세 버튼을 누르면
+   window.open("/equipment/detail?id=100")이 실행된다.
+
+   현재 화면 분석에서 어디까지 확인해야 하는가?
+
+2. 등록 버튼을 누르면
+   현재 DOM 내부에 등록 Modal이 표시되고
+   Modal 내부에 저장 버튼이 존재한다.
+
+   저장 버튼은 Screen Action Discovery의
+   Action 후보가 될 수 있는가?
+
+3. Window Popup에서 새로운 화면이 열렸고
+   그 화면에서 API 호출이 발견되었다.
+
+   현재 분석에서 그 API와 Backend까지
+   자동으로 분석해야 하는가?
+
+4. Component 이름이 EquipmentPopup이다.
+
+   이름만 보고 Window Popup인지
+   Modal Popup인지 확정할 수 있는가?
+
+실제 MCP는 호출하지 마.
+실제 Source도 분석하지 마.
+
+마지막에 적용된 Popup Rule의
+Verification 문구를 출력해줘.
+
