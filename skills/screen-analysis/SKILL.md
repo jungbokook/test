@@ -187,24 +187,184 @@ Handler 이름을 확인하기 위해
 분석하지 않는다.
 
 
-## 11. STEP 6 — Source Path 확인
+## 11. STEP 6 — Runtime 화면과 Local Source 연결
 
-Handler 또는 Component의 Source Path가 필요한 경우
-Code Index MCP를 사용할 수 있다.
+Chrome DevTools MCP에서 확인한 Runtime 화면을
+현재 프로젝트의 Local Frontend Source와 연결한다.
 
-Code Index MCP의 목적은
-관련 Source 위치를 찾고 범위를 좁히는 것이다.
+개발 서버에서 전달되는 Build 결과물이나
+Minified JavaScript를 주 분석 대상으로 사용하지 않는다.
 
-확인 대상:
+Chrome DevTools MCP는 Runtime 확인에 사용하고,
+Code Index MCP는 Local Original Source 탐색에 사용한다.
 
-- Symbol
+
+### 11.1 Source 탐색 기준
+
+다음 정보를 단서로 Local Source를 탐색한다.
+
+우선순위:
+
+1. 현재 Frontend URL / Route
+2. 화면 또는 Page Component
+3. 화면에 표시되는 고유 Text
+4. Component 이름
+5. Event / Handler 이름
+6. 관련 Symbol / Reference
+
+가능하면 하나의 단서만으로 Source를 확정하지 않고
+둘 이상의 근거를 확인한다.
+
+
+### 11.2 URL / Route 기반 탐색
+
+현재 Runtime URL을 먼저 확인한다.
+
+예:
+
+`/equipment/search`
+
+Local Source에서 해당 URL과 연결된
+Route 또는 Page Component를 찾는다.
+
+예:
+
+`/equipment/search`
+→ Router 설정
+→ `EquipmentSearch`
+→ `src/views/equipment/EquipmentSearch.vue`
+
+Route를 확인할 수 있는 경우
+이를 화면 Source 탐색의 우선 근거로 사용한다.
+
+
+### 11.3 화면 Component 확인
+
+Route에서 Page Component를 찾은 경우
+해당 Component를 현재 화면 Source의 시작점으로 사용한다.
+
+필요한 경우 현재 화면과 직접 연결된
+하위 Component까지만 탐색할 수 있다.
+
+예:
+
+`EquipmentSearch.vue`
+
+→ `SearchCondition.vue`
+
+→ `EquipmentGrid.vue`
+
+현재 화면과 관련 없는 Component까지
+탐색 범위를 확장하지 않는다.
+
+
+### 11.4 Action과 Handler 연결
+
+Chrome DevTools MCP에서 발견한 Action을
+Local Source의 UI Element / Event / Handler와 연결한다.
+
+예:
+
+Runtime:
+
+검색 버튼
+
+Local Source:
+
+`<button @click="handleSearch">검색</button>`
+
+연결 결과:
+
+검색 버튼
+→ Click
+→ `handleSearch`
+→ `EquipmentSearch.vue`
+
+이 단계에서는 `handleSearch` 내부 로직을
+상세 분석하지 않는다.
+
+
+### 11.5 Code Index MCP 사용
+
+Code Index MCP는 다음 목적으로 사용한다.
+
+- Route 관련 Source 탐색
+- Page Component 탐색
+- Handler Symbol 탐색
+- Component Reference 확인
+- Source Path 확인
+
+Code Index 결과는 Source 후보를 찾기 위한 근거이다.
+
+검색 결과에 동일하거나 유사한 Handler가 여러 개 존재하면
+이름만 보고 현재 화면의 Handler라고 확정하지 않는다.
+
+
+### 11.6 Source 일치 검증
+
+Source 후보를 발견하면
+현재 Runtime 화면과 실제 Local Source가
+일치하는지 확인한다.
+
+가능한 검증 정보:
+
+- URL / Route
+- 화면명
+- 화면 Text
+- Component 구조
+- UI Element
+- Event
 - Handler
-- Component
-- Source Path
-- Reference
+- Import / Component 관계
 
-Code Index 결과만으로
-Business Logic을 해석하지 않는다.
+근거가 충분한 경우에만
+Handler와 Source Path를 확정한다.
+
+
+### 11.7 Runtime과 Local Source 불일치
+
+개발 서버와 Local Source의 버전 또는 Branch가
+다를 가능성을 고려한다.
+
+Runtime 화면에는 존재하지만
+Local Source에서 대응되는 코드를 확인할 수 없는 경우
+억지로 연결하지 않는다.
+
+다음과 같이 기록한다.
+
+- Handler: `확인되지 않음`
+- Source Path: `확인되지 않음`
+
+필요한 경우 미확인 사유에 다음과 같이 기록한다.
+
+`Runtime 화면과 Local Source의 일치 여부 확인 필요`
+
+
+### 11.8 분석 경계
+
+Source Path를 확인한 뒤
+현재 SCREEN 분석에서는 더 깊게 추적하지 않는다.
+
+허용:
+
+Runtime Action
+→ Route
+→ Component
+→ Event
+→ Handler
+→ Source Path
+
+금지:
+
+Handler
+→ Validation
+→ Parameter 생성
+→ State 처리
+→ API 호출
+→ Frontend Business Logic
+
+위 상세 분석은
+Frontend 기능 분석 단계에서 수행한다.
 
 
 ## 12. Code Index 사용 제한
