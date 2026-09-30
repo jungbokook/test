@@ -1,0 +1,7 @@
+현재 프로젝트의 분석 단계와
+각 단계에서 생성하는 문서를 설명해줘.
+
+그리고 SCREEN 분석에서
+Chrome DevTools MCP와 Code Index MCP의 역할 차이를 설명해줘.
+
+실제 분석이나 MCP 호출은 하지 마.
