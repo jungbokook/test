@@ -1,21 +1,19 @@
-현재 프로젝트의 CLAUDE.md 규칙만 기준으로 답변해줘.
+현재 프로젝트의 CLAUDE.md만 기준으로 답변해줘.
 
-다음 항목을 설명해줘.
-
-1. 이 프로젝트의 분석 단계는 몇 단계인가?
+1. 전체 분석 단계는 몇 단계인가?
 2. 각 단계의 입력과 출력은 무엇인가?
-3. Frontend URL을 입력했을 때 처음 수행해야 하는 분석은 무엇인가?
-4. 화면 기능 분석에서 어디까지 분석하고 종료해야 하는가?
-5. ACT-001을 Frontend 기능 분석할 때 어디까지 분석해야 하는가?
-6. Frontend 분석 중 Backend API를 발견하면 Backend 내부까지 계속 분석해야 하는가?
-7. Backend 기능 분석에서 MyBatis와 Oracle은 어떤 범위에서 사용하는가?
-8. Chrome DevTools MCP, Code Index MCP, Oracle MCP의 역할을 각각 설명해줘.
-9. 확인되지 않은 비즈니스 로직은 어떻게 처리해야 하는가?
-10. 현재 단계가 끝난 후 다음 단계로 자동 진행해도 되는가?
+3. 화면 기능 분석은 어디까지 수행하는가?
+4. Frontend 기능 분석은 Backend의 어디까지 확인하는가?
+5. API 규격 분석에서는 어떤 정보를 확인하는가?
+6. API 규격 분석에서 Controller 이후 Service까지 분석하는가?
+7. Backend 기능 분석에서는 어디까지 분석하는가?
+8. Database 분석은 기본적으로 별도 문서인가?
+9. 각 단계가 끝나면 다음 단계로 자동 진행하는가?
+10. Chrome DevTools MCP, Code Index MCP, Oracle MCP는 각각 어디에 사용하는가?
 
 실제 Source Code는 분석하지 마.
 MCP는 호출하지 마.
 파일은 생성하거나 수정하지 마.
 
 
-#####
+####
