@@ -48,3 +48,25 @@ MCP를 호출하지 마.
 API/Backend 분석은 하지 마.
 
 마지막에 적용된 Rule의 Verification 문구를 출력해줘.
+
+
+*****
+
+
+
+현재 프로젝트의 MCP 사용 규칙을 기준으로 판단해줘.
+
+다음 상황에서 어떤 MCP를 사용해야 하는지,
+또는 사용하지 않아야 하는지 설명해줘.
+
+1. 실제 화면에서 검색 버튼이 존재하는지 확인
+2. handleSearch 함수의 Source Path와 Reference 확인
+3. Oracle 테이블의 Column과 PK 확인
+4. Screen Action Discovery 중 Network에서 API가 발견됨
+5. Frontend 분석 중 Code Index에서 Backend Service Symbol이 발견됨
+6. Action Inventory 작성 중 Oracle MCP 사용
+
+실제 MCP는 호출하지 마.
+실제 분석도 시작하지 마.
+
+마지막에 적용된 MCP Rule의 Verification 문구를 출력해줘.
