@@ -143,3 +143,22 @@ Verification 문구를 출력해줘.
 마지막에 적용된 Popup Rule의
 Verification 문구를 출력해줘.
 
+*****
+
+screen-action-discovery Skill을 사용해서
+다음 Frontend URL의 Screen Action을 분석해줘.
+
+URL:
+<여기에 테스트할 Frontend URL>
+
+반드시 실제 Runtime 화면을 Chrome DevTools MCP로 확인해.
+
+필요한 경우에만 Code Index MCP를 사용해서
+Handler와 Source Path를 확인해.
+
+저장, 삭제, 승인, 등록 등
+데이터 변경 가능성이 있는 Action은 실행하지 마.
+
+Action Inventory를 생성하면 STOP 해.
+API 상세 분석이나 Backend 분석으로 진행하지 마.
+
