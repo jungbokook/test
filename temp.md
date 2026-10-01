@@ -1,14 +1,61 @@
-Code Index MCP를 사용해서 현재 Claude Code 작업 디렉터리를
-인덱싱할 프로젝트로 설정해줘.
+claude mcp remove code-index
 
-Frontend와 Backend가 같은 프로젝트 아래에 있으므로
-현재 프로젝트 루트 전체를 대상으로 설정해.
 
-설정 후 다음만 확인해줘.
+claude mcp add --scope project code-index -- uvx --native-tls code-index-mcp --project-path "C:\work\GIPMS"
 
-1. 설정된 Project Root
-2. 인덱싱 상태
-3. Frontend 소스 검색 가능 여부
-4. Backend 소스 검색 가능 여부
 
-소스 파일은 수정하지 마.
+
+## 8. 문서 저장 위치
+
+기존 내용...
+
+
+## 9. Source Root 구분
+
+현재 분석 Root 아래에 여러 Frontend / Backend 프로젝트가 존재한다.
+
+### Backend
+
+Backend 프로젝트 패턴:
+
+`gipms-api-*`
+
+- `gipms-api-*`에 해당하는 디렉터리는 Backend로 취급한다.
+- Backend 프로젝트가 여러 개 존재할 수 있다.
+
+### Frontend
+
+Frontend 프로젝트 패턴:
+
+`gipms-*`
+
+단, `gipms-api-*`는 Frontend에서 제외한다.
+
+따라서 프로젝트 구분 우선순위는 다음과 같다.
+
+1. `gipms-api-*` → Backend
+2. `gipms-*` 중 `gipms-api-*`가 아닌 디렉터리 → Frontend
+
+### 분석 시 탐색 범위
+
+- SCREEN 분석 → Frontend 프로젝트 우선
+- FE 분석 → Frontend 프로젝트 우선
+- API 분석
+  - FE 호출 Source → Frontend
+  - Controller / Request DTO / Response DTO → Backend
+- BE 분석 → Backend 프로젝트 우선
+
+여러 Backend 프로젝트가 존재하는 경우
+모든 프로젝트를 깊게 분석하지 않는다.
+
+먼저 `gipms-api-*` 범위에서 대상 API의
+Controller Mapping 또는 관련 Source를 탐색하고,
+실제 관련성이 확인된 Backend 프로젝트만 추적한다.
+
+프로젝트 이름만으로 실제 호출 대상을 확정하지 않는다.
+실제 Source와 호출 관계를 Evidence로 사용한다.
+
+
+## 10. 기존 다음 항목
+
+...
