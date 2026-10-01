@@ -485,3 +485,16 @@ FE 문서를 생성한 뒤 STOP 해줘.
 
 
 #####
+
+
+FE 분석에서 확인된 Backend API 하나를 대상으로
+API 규격 분석 범위를 확인해줘.
+
+Controller / Request DTO / Response DTO / Validation까지만 확인하고,
+Service / Mapper / MyBatis / SQL / Oracle은 분석하지 마.
+
+06-api-analysis-scope.md 규칙을 적용해서
+어디까지 분석해야 하는지만 보여줘.
+
+
+#####
