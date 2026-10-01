@@ -1,7 +1,7 @@
 ---
 name: api-analysis
 description: FE 분석에서 선택한 Backend API 하나를 기준으로 실제 Source를 추적하여 API Contract 문서를 생성한다.
-argument-hint: "<화면명> <HTTP Method> <Backend URL>"
+argument-hint: "<화면명> <HTTP Method|UNKNOWN> <Backend URL>"
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -48,25 +48,74 @@ Service 이하의 Backend 내부 구현은 분석하지 않는다.
 사용자는 다음 형식으로 Skill을 실행한다.
 
 ```text
-/api-analysis <화면명> <HTTP Method> <Backend URL>
+/api-analysis <화면명> <HTTP Method|UNKNOWN> <Backend URL>
 ```
 
-예:
+HTTP Method를 알고 있는 경우:
 
 ```text
 /api-analysis equipment-search POST /api/equipment/search
+```
+
+HTTP Method를 모르는 경우:
+
+```text
+/api-analysis equipment-search UNKNOWN /api/equipment/search
 ```
 
 입력값:
 
 ```text
 화면명
-HTTP Method
+HTTP Method 또는 UNKNOWN
 Backend URL
 ```
 
 화면명은 해당 화면의 기존 분석 문서를 찾고
 API 문서 저장 위치를 결정하는 기준으로 사용한다.
+
+### HTTP Method UNKNOWN 처리
+
+HTTP Method를 모르는 경우 `UNKNOWN`을 입력할 수 있다.
+
+Method가 `UNKNOWN`인 경우
+사용자에게 Method를 다시 요청하지 않는다.
+
+Frontend API 호출 Source와
+Backend Controller Mapping을 탐색하여
+실제 HTTP Method를 확인한다.
+
+실제 Source에서 Method가 확인되면
+확인된 Method를 API Contract에 기록한다.
+
+예:
+
+```text
+@GetMapping     → GET
+@PostMapping    → POST
+@PutMapping     → PUT
+@PatchMapping   → PATCH
+@DeleteMapping  → DELETE
+```
+
+`@RequestMapping`을 사용하는 경우
+실제 `method` 속성을 확인한다.
+
+URL만으로 HTTP Method를 추측하지 않는다.
+
+동일 URL에 여러 HTTP Method가 존재하여
+대상 API를 하나로 확정할 수 없는 경우
+임의로 하나를 선택하지 않는다.
+
+이 경우 확인된 후보를 출력하고 분석을 STOP 한다.
+
+실제 Source에서도 Method를 확인할 수 없는 경우:
+
+```text
+HTTP Method: 확인되지 않음
+```
+
+으로 기록한다.
 
 
 ## 3. 적용 규칙
@@ -78,7 +127,11 @@ API 문서 저장 위치를 결정하는 기준으로 사용한다.
 .claude/rules/07-api-contract-tracing.md
 ```
 
-두 Rule의 분석 범위, Evidence, 탐색 제한 및 STOP 조건을 준수한다.
+두 Rule의 분석 범위,
+Evidence,
+Source 탐색 기준,
+외부 Dependency 제한,
+STOP 조건을 준수한다.
 
 Rule과 이 Skill의 내용이 중복되는 경우
 Rule의 세부 분석 기준을 우선 적용한다.
@@ -94,8 +147,25 @@ docs/analysis/{화면명}/frontend/
 
 전체 프로젝트를 다시 분석하지 않는다.
 
-입력받은 HTTP Method + Backend URL과 일치하는
+입력받은 Backend URL과 일치하는
 Backend API 후보를 FE 분석 문서에서 찾는다.
+
+HTTP Method가 입력된 경우:
+
+```text
+HTTP Method + Backend URL
+```
+
+을 함께 비교한다.
+
+HTTP Method가 `UNKNOWN`인 경우:
+
+```text
+Backend URL
+```
+
+을 우선 기준으로 후보를 찾고
+실제 Source에서 Method를 확인한다.
 
 확인해야 할 정보:
 
@@ -114,7 +184,8 @@ Response 처리 위치
 
 FE 분석 문서는 탐색 시작점으로 사용한다.
 
-FE 분석 문서의 내용만으로 API Contract를 확정하지 않는다.
+FE 분석 문서의 내용만으로
+API Contract를 확정하지 않는다.
 
 최종 API Contract는 실제 Source를 확인하여 결정한다.
 
@@ -129,16 +200,18 @@ Code Index는 Source 탐색 및 범위 축소를 위한 도구이다.
 
 Source 탐색은 현재 Code Index Project Root를 기준으로 수행한다.
 
-절대경로를 사용자에게 요청하지 않는다.
+사용자에게 절대경로를 요청하지 않는다.
 
 절대경로를 추측하거나 생성하지 않는다.
 
-Source Evidence에는 Project Root 기준 상대경로를 사용한다.
+Source Evidence에는
+Project Root 기준 상대경로를 사용한다.
 
 
 ## 6. Frontend / Backend 프로젝트 구분
 
-현재 Project Root 아래에는 여러 Frontend / Backend 프로젝트가 존재할 수 있다.
+현재 Project Root 아래에는
+여러 Frontend / Backend 프로젝트가 존재할 수 있다.
 
 프로젝트 구분 기준:
 
@@ -150,15 +223,28 @@ Frontend
 gipms-* 중 gipms-api-* 제외
 ```
 
+판정 우선순위:
+
+```text
+1. gipms-api-* → Backend
+2. 나머지 gipms-* → Frontend
+```
+
+`gipms-api-*`는 `gipms-*` 패턴에도 포함되므로
+반드시 Backend 여부를 먼저 판정한다.
+
 프로젝트 이름만으로 실제 호출 대상을 확정하지 않는다.
 
-HTTP Method + Backend URL 및 실제 Source Evidence를 기준으로
-관련 프로젝트를 찾는다.
+Backend URL,
+HTTP Method,
+실제 Source Evidence를 기준으로
+관련 프로젝트를 식별한다.
 
 
 ## 7. Frontend Source 탐색
 
-Frontend에서는 입력받은 API를 실제 호출하는 Source를 찾는다.
+Frontend에서는 입력받은 API를
+실제로 호출하는 Source를 찾는다.
 
 탐색 대상:
 
@@ -174,6 +260,24 @@ gipms-api-*
 
 는 Frontend 탐색 대상에서 제외한다.
 
+HTTP Method를 알고 있는 경우:
+
+```text
+HTTP Method
++
+Backend URL
+```
+
+을 기준으로 관련 호출 Source를 탐색한다.
+
+HTTP Method가 `UNKNOWN`인 경우:
+
+```text
+Backend URL
+```
+
+을 기준으로 관련 호출 Source를 먼저 찾는다.
+
 확인 항목:
 
 ```text
@@ -188,20 +292,27 @@ Request Body
 Request 생성 위치
 ```
 
+Frontend Source에서 HTTP Method가 확인되면
+그 값을 Method 후보로 기록한다.
+
 FE Business Logic 전체를 다시 분석하지 않는다.
 
-API Contract 확인에 필요한 호출 Source만 확인한다.
+API Contract 확인에 필요한
+호출 Source만 확인한다.
 
 
 ## 8. Backend Controller 탐색
 
-Backend에서는 다음 범위에서 대상 API의 Controller Mapping을 찾는다.
+Backend에서는 다음 범위에서
+대상 API의 Controller Mapping을 찾는다.
 
 ```text
 gipms-api-*
 ```
 
-우선 다음 조합을 기준으로 검색한다.
+### HTTP Method가 확인된 경우
+
+다음 조합을 기준으로 검색한다.
 
 ```text
 HTTP Method + Backend URL
@@ -213,7 +324,36 @@ HTTP Method + Backend URL
 POST + /api/equipment/search
 ```
 
-Class-level Mapping과 Method-level Mapping이 분리되어 있다면
+### HTTP Method가 UNKNOWN인 경우
+
+먼저 다음을 기준으로 Controller Mapping 후보를 찾는다.
+
+```text
+Backend URL
+```
+
+후보 Controller의 실제 Mapping Annotation을 확인하여
+HTTP Method를 식별한다.
+
+예:
+
+```text
+@GetMapping     → GET
+@PostMapping    → POST
+@PutMapping     → PUT
+@PatchMapping   → PATCH
+@DeleteMapping  → DELETE
+```
+
+`@RequestMapping`인 경우
+`method` 속성을 실제 Source에서 확인한다.
+
+URL만으로 HTTP Method를 추측하지 않는다.
+
+### Class / Method Mapping 조합
+
+Class-level Mapping과
+Method-level Mapping이 분리되어 있다면
 실제 최종 URL을 조합하여 확인한다.
 
 예:
@@ -230,14 +370,67 @@ Class-level Mapping과 Method-level Mapping이 분리되어 있다면
 POST /api/equipment/search
 ```
 
-실제 Mapping이 확인된 Backend 프로젝트만 이후 분석한다.
+실제 Mapping이 확인된 Backend 프로젝트만
+이후 분석한다.
 
-관련 없는 `gipms-api-*` 프로젝트를 깊게 분석하지 않는다.
+관련 없는 `gipms-api-*` 프로젝트를
+깊게 분석하지 않는다.
 
 
-## 9. Request 전달 방식 분석
+## 9. HTTP Method 교차 확인
 
-Controller Source를 기준으로 Request 전달 방식을 구분한다.
+HTTP Method가 `UNKNOWN`으로 입력된 경우
+가능하면 다음 Evidence를 교차 확인한다.
+
+```text
+Frontend API 호출 Source
+        ↕
+Backend Controller Mapping
+```
+
+두 Source에서 동일한 Method가 확인되면
+해당 Method를 실제 API Method로 기록한다.
+
+예:
+
+```text
+Frontend
+axios.post(...)
+
+Backend
+@PostMapping(...)
+
+결과
+HTTP Method: POST
+```
+
+Frontend와 Backend에서 확인된 Method가 다르면
+임의로 하나를 선택하지 않는다.
+
+다음과 같이 기록한다.
+
+```text
+HTTP Method 불일치
+
+Frontend:
+...
+
+Backend:
+...
+```
+
+그리고 해당 불일치를
+확인 필요 항목으로 기록한다.
+
+동일 URL에 여러 Controller Mapping이 존재하고
+Method까지 하나로 특정할 수 없는 경우
+후보를 출력한 후 STOP 한다.
+
+
+## 10. Request 전달 방식 분석
+
+Controller Source를 기준으로
+Request 전달 방식을 구분한다.
 
 구분:
 
@@ -248,7 +441,8 @@ Query Parameter
 Request Body
 ```
 
-각 항목에 대해 실제 Source에서 확인 가능한 경우 다음을 분석한다.
+각 항목에 대해 실제 Source에서 확인 가능한 경우
+다음을 분석한다.
 
 ```text
 Name
@@ -269,7 +463,7 @@ Backend Required라고 판단하지 않는다.
 Required 여부는 실제 Backend Source Evidence를 기준으로 판단한다.
 
 
-## 10. Request DTO 분석
+## 11. Request DTO 분석
 
 Controller에서 Request DTO가 확인되면
 해당 DTO Source까지 추적한다.
@@ -293,14 +487,17 @@ Enum
 Nested DTO가 API Contract의 일부라면
 필요한 범위까지 구조를 확장한다.
 
+Collection 내부 DTO도
+실제 Client Contract에 포함되는 경우 구조를 확인한다.
+
 DTO Class 이름만 출력하고 종료하지 않는다.
 
 실제 Field 구조를 확인한다.
 
 
-## 11. Validation 분석
+## 12. Validation 분석
 
-다음과 같은 실제 Validation Evidence를 확인한다.
+실제 Validation Evidence를 확인한다.
 
 예:
 
@@ -320,13 +517,21 @@ Custom Validator
 Custom Validator가 존재하는 경우
 API 입력 검증 규칙을 확인하기 위한 범위까지만 추적한다.
 
-Custom Validator가 Service / DB / Business Logic으로 연결되면
-그 경계에서 STOP 한다.
+Custom Validator가:
 
-Validation을 이름만 보고 추측하지 않는다.
+```text
+Service
+DB
+Business Logic
+```
+
+으로 연결되면 그 경계에서 STOP 한다.
+
+Validation을 Annotation 이름이나
+Method 이름만 보고 추측하지 않는다.
 
 
-## 12. Response Contract 분석
+## 13. Response Contract 분석
 
 Controller의 실제 반환 선언을 확인한다.
 
@@ -356,14 +561,17 @@ Collection
 Generic Type
 ```
 
+Nested Response DTO가
+실제 Client Contract의 일부라면 구조를 확장한다.
+
 Response DTO Class 이름만 확인하고 종료하지 않는다.
 
 실제 Client Contract를 구성하는 Field까지 확인한다.
 
 
-## 13. Response 확인 불가 처리
+## 14. Response 확인 불가 처리
 
-다음과 같이 Controller Source만으로
+Controller Source만으로
 실제 Response DTO를 확인할 수 없는 경우가 있을 수 있다.
 
 예:
@@ -372,27 +580,32 @@ Response DTO Class 이름만 확인하고 종료하지 않는다.
 ResponseEntity<?>
 Object
 Map
-service.method() 결과 직접 반환
+Service 결과 직접 반환
 ```
 
 구체적인 Response 구조를 확인하기 위해
-Service 내부 분석이 필요한 경우 Service로 진입하지 않는다.
+Service 내부 분석이 필요한 경우
+Service로 진입하지 않는다.
 
 이 경우:
 
 ```text
 Response DTO: 확인되지 않음
-사유: Controller/DTO Source 범위에서 구체적인 Response 구조 확인 불가
+
+사유:
+Controller / DTO Source 범위에서
+구체적인 Response 구조 확인 불가
 ```
 
 로 기록한다.
 
-Response를 추측하여 생성하지 않는다.
+Response 구조를 추측하여 생성하지 않는다.
 
 
-## 14. HTTP Status 분석
+## 15. HTTP Status 분석
 
-HTTP Status는 실제 Source Evidence가 있는 경우에만 확정한다.
+HTTP Status는
+실제 Source Evidence가 있는 경우에만 확정한다.
 
 예:
 
@@ -412,12 +625,14 @@ ControllerAdvice
 
 으로 기록한다.
 
-Framework 기본 동작을 실제 Source-defined Contract처럼 표현하지 않는다.
+Framework 기본 동작을
+실제 Source-defined Contract처럼 표현하지 않는다.
 
 
-## 15. Error Response 분석
+## 16. Error Response 분석
 
-현재 API와 직접 관련된 Error Response를 확인한다.
+현재 API와 직접 관련된
+Error Response를 확인한다.
 
 필요한 경우 다음 범위까지 추적할 수 있다.
 
@@ -433,13 +648,16 @@ Error Response DTO
 
 현재 API Contract 확인에 필요한 범위만 추적한다.
 
+Error Response 확인을 위해
+Service 내부로 진입하지 않는다.
 
-## 16. Frontend / Backend Mapping
+
+## 17. Frontend / Backend Mapping
 
 Frontend에서 전송하는 Request와
 Backend에서 수신하는 Request를 비교한다.
 
-확인 항목:
+기본 흐름:
 
 ```text
 Frontend Field
@@ -466,12 +684,13 @@ Runtime 관찰값과 Source Contract 차이
 ```
 
 
-## 17. Runtime Evidence
+## 18. Runtime Evidence
 
 필요한 경우 Chrome DevTools MCP를 사용하여
 실제 Runtime Request / Response를 교차 확인할 수 있다.
 
-Chrome DevTools는 API Contract의 유일한 근거가 아니다.
+Chrome DevTools는
+API Contract의 유일한 근거가 아니다.
 
 Runtime에서 확인된 값은
 해당 실행 시점에서 관찰된 사례로 취급한다.
@@ -482,7 +701,7 @@ Runtime에서 확인된 값은
 plantCode = "1000"
 ```
 
-가 Runtime에서 확인되었다고 해서
+가 Runtime에서 확인되었다고 해서:
 
 ```text
 plantCode의 허용값은 "1000"뿐이다
@@ -490,12 +709,14 @@ plantCode의 허용값은 "1000"뿐이다
 
 라고 판단하지 않는다.
 
-Contract는 실제 Source와 함께 판단한다.
+Runtime Evidence와 Source Contract가 다르면
+둘을 구분하여 기록한다.
 
 
-## 18. Source Evidence
+## 19. Source Evidence
 
-주요 분석 결과에는 가능한 경우 다음 Evidence를 기록한다.
+주요 분석 결과에는 가능한 경우
+다음 Evidence를 기록한다.
 
 ```text
 Source Path
@@ -503,7 +724,8 @@ Class / Function / Field
 Line Range
 ```
 
-Source Path는 Project Root 기준 상대경로를 사용한다.
+Source Path는
+Project Root 기준 상대경로를 사용한다.
 
 예:
 
@@ -511,6 +733,9 @@ Source Path는 Project Root 기준 상대경로를 사용한다.
 gipms-xxx/src/...
 gipms-api-xxx/src/...
 ```
+
+Windows 절대경로를
+Source Evidence로 사용하지 않는다.
 
 Line Range를 실제로 확인할 수 없는 경우
 임의로 생성하지 않는다.
@@ -523,13 +748,18 @@ Line Range: 확인되지 않음
 
 으로 기록한다.
 
-파일명, Class명, Method명 또는 Code Index 검색 결과만으로
+파일명,
+Class명,
+Method명,
+Code Index 검색 결과만으로
 API Contract를 확정하지 않는다.
 
 
-## 19. JAR / 외부 Dependency 탐색 금지
+## 20. JAR / 외부 Dependency 탐색 금지
 
-현재 Project Root 아래의 실제 Source를 우선한다.
+API Contract 분석은
+현재 Code Index Project Root 아래의
+실제 Frontend / Backend Source를 기준으로 수행한다.
 
 다음 영역을 자동으로 탐색하지 않는다.
 
@@ -542,28 +772,38 @@ Maven Repository
 Gradle Cache
 .gradle/
 외부 Dependency Source
+설치된 Library Source
 Project Root 외부 Source
 ```
 
 다음 행위를 수행하지 않는다.
 
 ```text
-JAR 검색
+JAR 파일 검색
 JAR 압축 해제
+JAR 내부 Class 탐색
 Class Decompile
 Maven Dependency Cache 탐색
 Gradle Dependency Cache 탐색
 외부 Library 구현체 자동 추적
+Project Root 밖으로 이동하여 Source 탐색
 ```
 
-현재 Project Source에서 Contract를 확인할 수 없다면
-외부 Dependency로 탐색 범위를 확장하지 않는다.
+Controller,
+Request DTO,
+Response DTO,
+Validation,
+Error Response가
+현재 Project Source에서 확인되지 않더라도
+JAR 또는 외부 Dependency로 탐색 범위를 확장하지 않는다.
 
-다음과 같이 기록한다.
+확인할 수 없는 경우:
 
 ```text
 현재 Project Source에서 확인되지 않음
 ```
+
+으로 기록한다.
 
 단:
 
@@ -571,16 +811,21 @@ Gradle Dependency Cache 탐색
 gipms-api-common
 ```
 
-등 현재 Project Root 아래에 실제 Source 형태로 존재하는 공통 프로젝트는
+등 현재 Project Root 아래에
+실제 Source 형태로 존재하는 공통 프로젝트는
 외부 Dependency로 취급하지 않는다.
 
 실제 Source Evidence가 확인되는 경우
 API Contract에 필요한 범위까지 추적할 수 있다.
 
+외부 Dependency 분석은
+사용자가 명시적으로 요청한 경우에만 수행한다.
 
-## 20. 분석 금지 영역
 
-API 분석 단계에서는 다음 영역을 분석하지 않는다.
+## 21. 분석 금지 영역
+
+API 분석 단계에서는
+다음 영역을 분석하지 않는다.
 
 ```text
 Service 내부
@@ -601,9 +846,10 @@ Controller에서 Service 호출이 발견되어도
 Service Method 내부로 진입하지 않는다.
 
 
-## 21. API ID 생성
+## 22. API ID 생성
 
-API 분석 문서를 생성할 때 API ID를 부여한다.
+API 분석 문서를 생성할 때
+API ID를 부여한다.
 
 형식:
 
@@ -635,10 +881,17 @@ docs/analysis/equipment-search/api/
 동일한 Method + URL의 API 문서가 이미 존재하는 경우
 새 API ID를 임의로 생성하지 않는다.
 
-기존 문서 존재 여부를 먼저 확인한다.
+HTTP Method가 `UNKNOWN`으로 입력되었지만
+분석 과정에서 Method가 확인된 경우:
+
+```text
+확인된 Method + URL
+```
+
+을 기준으로 기존 문서 중복 여부를 다시 확인한다.
 
 
-## 22. 출력 파일명
+## 23. 출력 파일명
 
 파일명 형식:
 
@@ -662,9 +915,10 @@ API ID 자체에 이미 `API-` Prefix가 포함되어 있으므로
 Prefix를 중복하지 않는다.
 
 
-## 23. 출력 문서 필수 내용
+## 24. 출력 문서 필수 내용
 
-API Contract 문서에는 최소한 다음 내용이 포함되어야 한다.
+API Contract 문서에는
+최소한 다음 내용이 포함되어야 한다.
 
 ```text
 API ID
@@ -708,8 +962,20 @@ Source Evidence
 분석 경계
 ```
 
+HTTP Method가 처음에 `UNKNOWN`이었더라도
+Source에서 확인된 경우
+최종 문서에는 실제 Method를 기록한다.
 
-## 24. Reference 적용
+끝까지 확인할 수 없는 경우:
+
+```text
+HTTP Method: 확인되지 않음
+```
+
+으로 기록한다.
+
+
+## 25. Reference 적용
 
 API Reference가 존재하는 경우:
 
@@ -717,11 +983,13 @@ API Reference가 존재하는 경우:
 .claude/references/API-REFERENCE.md
 ```
 
-를 최종 문서의 표현 형식과 상세 수준을 위한 Template으로 사용한다.
+를 최종 문서의
+표현 형식과 상세 수준을 위한 Template으로 사용한다.
 
 Reference는 Evidence가 아니다.
 
-Reference의 다음 내용을 현재 분석 결과로 복사하지 않는다.
+Reference의 다음 내용을
+현재 분석 결과로 복사하지 않는다.
 
 ```text
 API URL
@@ -738,13 +1006,14 @@ Line Range
 Runtime Value
 ```
 
-현재 Source에서 확인된 내용만 실제 문서에 기록한다.
+현재 Source에서 확인된 내용만
+실제 문서에 기록한다.
 
 API Reference가 아직 존재하지 않는 경우
 이 Skill의 필수 출력 구조를 기준으로 문서를 생성한다.
 
 
-## 25. 미확인 항목 처리
+## 26. 미확인 항목 처리
 
 Source에서 확인되지 않는 내용을 추측하지 않는다.
 
@@ -753,57 +1022,111 @@ Source에서 확인되지 않는 내용을 추측하지 않는다.
 ```text
 확인되지 않음
 현재 Project Source에서 확인되지 않음
-명시적 HTTP Status 확인되지 않음
+명시적 HTTP Status: 확인되지 않음
 ```
 
 확인되지 않은 내용을
 일반적인 Spring 동작이나 경험을 근거로 채우지 않는다.
 
 
-## 26. 문서 생성
+## 27. 문서 생성
 
-분석이 완료되면 다음 위치에 API 문서를 생성한다.
+분석이 완료되면 다음 위치에
+API 문서를 생성한다.
 
 ```text
 docs/analysis/{화면명}/api/{API ID}-{기능명}.md
 ```
 
-필요한 경우 `api/` 디렉터리를 생성한다.
+필요한 경우:
+
+```text
+docs/analysis/{화면명}/api/
+```
+
+디렉터리를 생성한다.
 
 분석 중간 결과를 별도 문서로 생성하지 않는다.
 
 최종 API Contract 문서 하나만 생성한다.
 
 
-## 27. 최종 검증
+## 28. 최종 검증
 
 문서를 저장하기 전에 다음을 확인한다.
 
 ```text
-[ ] 입력한 Method + URL과 Controller Mapping이 일치하는가
+[ ] 입력한 Backend URL과 Controller Mapping이 일치하는가
+
+[ ] Method가 입력된 경우 실제 Source와 일치하는가
+
+[ ] Method가 UNKNOWN인 경우 실제 Source에서 Method 확인을 시도했는가
+
+[ ] Method를 URL이나 이름만으로 추측하지 않았는가
+
 [ ] 실제 Frontend API 호출 Source를 확인했는가
-[ ] Request 전달 방식을 구분했는가
+
+[ ] Request 전달 방식을
+    Header / Path / Query / Body로 구분했는가
+
 [ ] Request DTO의 실제 Field까지 확인했는가
+
 [ ] Validation Evidence를 확인했는가
+
 [ ] 확인 가능한 Response DTO의 실제 Field까지 확인했는가
+
+[ ] Response 확인을 위해 Service 내부로 진입하지 않았는가
+
 [ ] HTTP Status를 추측하지 않았는가
+
 [ ] Error Response를 현재 API 범위에서만 확인했는가
+
 [ ] Frontend ↔ Backend Mapping을 확인했는가
+
 [ ] Source Evidence가 실제 Source에 근거하는가
+
 [ ] Source Path가 Project Root 기준 상대경로인가
+
 [ ] Line Range를 임의로 생성하지 않았는가
-[ ] JAR / Maven / Gradle Cache를 탐색하지 않았는가
-[ ] Service 내부로 진입하지 않았는가
-[ ] Mapper / MyBatis / SQL / Oracle을 분석하지 않았는가
+
+[ ] JAR을 검색하지 않았는가
+
+[ ] JAR 내부 Class를 탐색하지 않았는가
+
+[ ] Decompiled Class를 사용하지 않았는가
+
+[ ] Maven Repository / .m2를 탐색하지 않았는가
+
+[ ] Gradle Cache / .gradle을 탐색하지 않았는가
+
+[ ] Project Root 외부 Source를 탐색하지 않았는가
+
+[ ] Service / ServiceImpl 내부로 진입하지 않았는가
+
+[ ] Mapper / MyBatis XML / SQL / Oracle을 분석하지 않았는가
+
 [ ] API ID가 기존 문서와 중복되지 않는가
 ```
 
 
-## 28. STOP
+## 29. STOP
 
-API Contract 문서 생성이 완료되면 반드시 STOP 한다.
+API Contract 문서 생성이 완료되면
+반드시 STOP 한다.
 
 ```text
+Frontend API Call
+        ↓
+Controller Mapping
+        ↓
+Request DTO
+        ↓
+Request Validation
+        ↓
+Response DTO
+        ↓
+Error Response
+        ↓
 API Contract Document 생성
         ↓
 저장
@@ -811,13 +1134,16 @@ API Contract Document 생성
 
 ══════════════ STOP ══════════════
 
-Backend Business Logic
-Service / ServiceImpl
+Service
+ServiceImpl
+Business Logic
 Mapper
 MyBatis XML
 SQL
 Oracle
 SAP
+JAR
+외부 Dependency
 ```
 
 API 분석 완료 후
