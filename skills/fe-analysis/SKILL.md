@@ -924,7 +924,83 @@ Tree 형태를 완성하기 위해
 임의로 추가하지 않는다.
 
 
-## 28. 결과 문서 구조
+## 28. FE 문서 작성 Reference
+
+Frontend 분석 결과 문서를 작성하기 전에
+다음 Reference 문서를 확인한다.
+
+`.claude/references/FE-REFERENCE.md`
+
+Reference 문서는 Frontend 분석 결과 문서의
+표현 형식과 상세 수준을 맞추기 위한 기준으로 사용한다.
+
+참고 대상:
+
+- 문서 전체 구조
+- Section 구성
+- 기능 요약 표현 방식
+- 전체 실행 Tree 표현 방식
+- Validation 표현 방식
+- 조건 / 분기 표현 방식
+- Parameter / 데이터 변환 표현 방식
+- State 처리 표현 방식
+- Backend API 호출 표현 방식
+- Response / 예외 처리 표현 방식
+- Source Evidence 표현 방식
+- Source Path / Function / Line Range 표현 방식
+- Backend API 후보 표현 방식
+- 미확인 항목 표현 방식
+- 분석 경계 표현 방식
+- 설명 상세 수준
+
+Reference 문서는 분석 Evidence가 아니다.
+
+Reference에 존재하는 실제:
+
+- 화면명
+- Action ID
+- 기능명
+- Handler
+- Function / Method
+- Source Path
+- Line Number / Line Range
+- State
+- Parameter
+- HTTP Method
+- API URL
+- Request / Response 값
+- 조건 / 분기
+- Backend API 후보
+
+등을 현재 분석 결과에 복사하지 않는다.
+
+현재 분석 결과는 반드시
+현재 SCREEN 문서,
+현재 Frontend Source,
+Code Index MCP 탐색 결과,
+필요한 경우 Runtime에서 확인한
+Evidence를 기준으로 작성한다.
+
+Reference와 현재 Source가 서로 다른 경우
+Reference 내용을 따르지 않는다.
+
+Reference는 내용이 아니라
+문서의 형식,
+표현 방식,
+상세 수준만 참고한다.
+
+Reference에서 사용한 항목이라도
+현재 분석에서 확인되지 않았다면
+임의로 생성하지 않는다.
+
+확인되지 않은 내용은:
+
+`확인되지 않음`
+
+으로 기록한다.
+
+
+## 29. 결과 문서 구조
 
 Frontend 분석 문서는
 기본적으로 다음 구조를 사용한다.
@@ -1048,7 +1124,7 @@ Source 또는 Runtime에서
 분석하지 않은 Backend 영역을 기록한다.
 
 
-## 29. 문서 저장
+## 30. 문서 저장
 
 Frontend 분석 결과는
 다음 위치에 저장한다.
@@ -1073,7 +1149,7 @@ Frontend 분석 결과는
 임의로 덮어쓰지 않는다.
 
 
-## 30. 기존 문서 처리
+## 31. 기존 문서 처리
 
 동일 Action의 기존 FE 문서가 존재하면
 자동으로 덮어쓰지 않는다.
@@ -1086,7 +1162,7 @@ Frontend 분석 결과는
 기존 문서를 변경한다.
 
 
-## 31. 미확인 정보 처리
+## 32. 미확인 정보 처리
 
 확인되지 않은 정보를
 추측하여 채우지 않는다.
@@ -1112,7 +1188,7 @@ Frontend 분석 결과는
 - 조건 / 분기
 
 
-## 32. 분석 완료 조건
+## 33. 분석 완료 조건
 
 다음 항목을 확인한 후
 Frontend 분석을 완료한다.
@@ -1136,7 +1212,7 @@ Frontend 분석을 완료한다.
 - Backend 내부로 분석 범위를 넘지 않았는가
 
 
-## 33. STOP 규칙
+## 34. STOP 규칙
 
 Frontend 분석 문서를 생성한 후
 반드시 종료한다.
@@ -1160,7 +1236,7 @@ Backend API가 발견되더라도
 사용자가 직접 선택한다.
 
 
-## 34. 완료 보고
+## 35. 완료 보고
 
 분석 완료 후 사용자에게
 간단하게 다음 내용을 알려준다.
@@ -1178,7 +1254,7 @@ Backend API가 발견되더라도
 상세 내용은 생성된 FE 문서를 기준으로 한다.
 
 
-## 35. 핵심 실행 원칙
+## 36. 핵심 실행 원칙
 
 ```text
 화면명 + Action ID
