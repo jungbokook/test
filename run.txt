@@ -233,3 +233,229 @@ Response 수신 후:
 
 
 #####
+
+fe-analysis Skill을 테스트한다.
+
+실제 MCP는 호출하지 마.
+실제 Source Code는 탐색하지 마.
+파일은 생성하거나 수정하지 마.
+
+다음 가상 정보를 실제로 확인된 정보라고 가정하고,
+fe-analysis Skill의 실행 절차와 결과 문서 구조가 어떻게 되는지 보여줘.
+
+[입력]
+
+화면명:
+equipment-search
+
+Action ID:
+ACT-002
+
+
+[SCREEN 문서 정보]
+
+SCREEN 문서:
+docs/analysis/equipment-search/SCREEN-equipment-search.md
+
+Action:
+ACT-002
+
+기능명:
+검색
+
+UI 유형:
+Button
+
+Event:
+Click
+
+Handler:
+handleSearch
+
+Source Path:
+src/views/equipment/EquipmentSearch.vue
+
+
+[가상 Frontend Source]
+
+1. handleSearch()
+
+Source:
+src/views/equipment/EquipmentSearch.vue
+Line:
+120-158
+
+처리:
+
+- searchKeyword State를 읽는다.
+- validateSearchCondition(searchKeyword)를 호출한다.
+- Validation 실패 시 return 한다.
+- Validation 성공 시 createSearchParameter()를 호출한다.
+- 생성된 params를 searchEquipment(params)에 전달한다.
+
+
+2. validateSearchCondition()
+
+Source:
+src/views/equipment/EquipmentSearch.vue
+Line:
+205-228
+
+처리:
+
+- searchKeyword가 빈 문자열이면
+  "검색어를 입력하세요." Message를 표시한다.
+- false를 반환한다.
+- 값이 존재하면 true를 반환한다.
+
+
+3. createSearchParameter()
+
+Source:
+src/views/equipment/searchParameter.ts
+Line:
+45-72
+
+입력:
+
+searchKeyword = "ABC"
+
+처리:
+
+- 앞뒤 공백을 제거한다.
+- searchType State가 "ALL"이면
+  request의 searchType을 null로 변환한다.
+
+결과:
+
+{
+  keyword: "ABC",
+  searchType: null
+}
+
+
+4. searchEquipment(params)
+
+Source:
+src/views/equipment/EquipmentSearch.vue
+Line:
+160-183
+
+처리:
+
+equipmentStore.search(params)를 호출한다.
+
+
+5. equipmentStore.search(params)
+
+Source:
+src/stores/equipmentStore.ts
+Line:
+80-115
+
+처리:
+
+equipmentService.getList(params)를 호출한다.
+
+
+6. equipmentService.getList(params)
+
+Source:
+src/api/equipmentService.ts
+Line:
+31-44
+
+처리:
+
+GET /api/equipment 를 호출한다.
+
+Query Parameter:
+
+keyword=ABC
+
+searchType은 null이므로 전송하지 않는다.
+
+
+7. Response 처리
+
+Response:
+
+{
+  items: [
+    {
+      equipmentId: "EQ-001",
+      equipmentName: "Pump A"
+    }
+  ]
+}
+
+처리:
+
+- Response의 items를 equipmentList State에 저장한다.
+- equipmentList를 Grid Data로 사용한다.
+
+
+8. Error 처리
+
+API 호출 실패 시:
+
+- catch에서 오류를 처리한다.
+- "조회 중 오류가 발생했습니다." Message를 표시한다.
+- equipmentList를 빈 배열로 초기화한다.
+
+
+[테스트 질문]
+
+1. 어떤 SCREEN 문서를 먼저 확인하는가?
+
+2. ACT-002에서 어떤 정보를 분석 시작점으로 사용하는가?
+
+3. Handler부터 Backend API까지의 전체 호출 관계를
+   중간 Function을 생략하지 않고 보여줘.
+
+4. Validation의 성공 / 실패 분기를 보여줘.
+
+5. 화면 State에서 최종 Request Parameter까지
+   값이 어떻게 변환되는지 보여줘.
+
+6. Backend API의 Method / URL / Parameter를 보여줘.
+
+7. Response가 어떤 State에 저장되고
+   화면에 어떻게 반영되는지 보여줘.
+
+8. Error 처리 흐름을 보여줘.
+
+9. 각 주요 단계에
+   Source Path + Function + Line Range를 표시해줘.
+
+10. 최종 실행 흐름을 Tree 구조로 보여줘.
+
+11. Backend API 후보를 어떻게 기록하는지 보여줘.
+
+12. 이 단계에서 API-001을 부여하는지 알려줘.
+
+13. Backend Controller / Service / Mapper /
+    MyBatis XML / SQL / Oracle까지 분석하는지 알려줘.
+
+14. 최종 FE 문서가 저장될 경로를 알려줘.
+
+15. FE 문서 생성 후 다음 단계로 자동 진행하는지 알려줘.
+
+
+[중요 검증 조건]
+
+주어진 가상 정보에 없는 내용을
+추측해서 추가하지 마.
+
+Line Number를 임의로 만들지 마.
+
+Backend 내부 구현을 분석하지 마.
+
+API 규격 분석을 시작하지 마.
+
+실제 파일을 생성하지 마.
+
+실제 MCP를 호출하지 마.
+
+
+#####
