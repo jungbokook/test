@@ -999,6 +999,26 @@ Reference에서 사용한 항목이라도
 
 으로 기록한다.
 
+### Reference 확인
+
+FE 문서 생성을 시작하기 전에
+`.claude/references/FE-REFERENCE.md`를 반드시 실제로 읽는다.
+
+Reference를 정상적으로 확인한 경우
+분석 완료 보고에 다음 항목을 포함한다.
+
+`Reference: FE-REFERENCE.md 확인 완료`
+
+Reference 파일이 존재하지 않거나
+읽을 수 없는 경우:
+
+`Reference: FE-REFERENCE.md 확인 실패`
+
+로 기록한다.
+
+Reference를 실제로 읽지 않은 상태에서는
+`확인 완료`라고 기록하지 않는다.
+
 
 ## 29. 결과 문서 구조
 
