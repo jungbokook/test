@@ -704,3 +704,499 @@ Source Path는 Project Root 기준 상대경로만 사용하고
 
 
 #####
+
+
+08-be-analysis-scope.md와
+09-be-call-tracing.md 규칙을 함께 적용해서
+아래 API의 Backend Business Logic을 테스트 분석해줘.
+
+대상:
+화면명: [실제 화면명]
+API ID: [실제 API ID]
+
+기존 API 분석 문서를 시작점으로 사용해.
+
+Code Index MCP와 실제 Backend Source를 기준으로
+Controller부터 최종 Response 생성까지 실제 Call Path를 추적해줘.
+
+이번 테스트에서는 문서를 생성하거나 수정하지 말고
+분석 결과만 출력해줘.
+
+
+[1. 전체 실행 흐름]
+
+가장 먼저 실제 실행 순서 기준의
+ASCII Execution Tree를 출력해줘.
+
+Layer별로 재정렬하지 말고
+실제 Source 실행 순서를 유지해.
+
+예:
+
+Controller
+ ↓
+Service A
+ ↓
+Validation
+ ↓
+DB #1
+ │
+ ├─ Mapper
+ ├─ MyBatis XML
+ └─ SQL
+ ↓
+Service A 복귀
+ ↓
+조건
+ ├─ YES
+ │    ↓
+ │   Common Service
+ │    ↓
+ │   Adapter
+ │    ↓
+ │   RFC #1
+ │    ↓
+ │   Response Mapping
+ │    ↓
+ │   원래 Business Logic 복귀
+ │
+ └─ NO
+      ↓
+     다른 처리
+ ↓
+DB #2
+ ↓
+REST #1
+ ↓
+원래 Business Logic 복귀
+ ↓
+Response 생성
+
+
+[2. Controller → Service 추적]
+
+다음을 실제 Source에서 확인해줘.
+
+- Controller Class
+- Controller Method
+- 호출 Service
+- 호출 Method
+- Source Path
+- Line Range
+
+Interface가 있다면 실제 구현체까지 확인해.
+
+구현체가 여러 개이고 실제 구현체를 확정할 수 없다면
+임의로 선택하지 말고 `확인되지 않음`으로 표시해.
+
+
+[3. 내부 Method / Service 추적]
+
+Business Logic 중 호출되는:
+
+- 같은 Class 내부 Method
+- 다른 Service
+- 공통 Service
+- Utility가 아닌 실제 업무 Method
+- Adapter
+- Interface Service
+
+를 실제 호출 순서대로 추적해.
+
+호출된 Method 분석이 끝나면
+반드시 Caller의 다음 실행 위치로 돌아와서
+계속 분석해.
+
+
+[4. DB Call 추적]
+
+Mapper 호출이 발견되면 다음까지 연결해줘.
+
+Service
+ ↓
+Mapper Interface
+ ↓
+Mapper Method
+ ↓
+MyBatis namespace
+ ↓
+Statement ID
+ ↓
+MyBatis XML 또는 Annotation SQL
+ ↓
+Dynamic SQL
+ ↓
+실제 SQL
+ ↓
+Oracle Table / View / Column
+ ↓
+Result Mapping
+ ↓
+호출한 Business Logic으로 복귀
+
+Mapper XML 연결은 반드시:
+
+namespace + Statement ID
+
+기준으로 확인해.
+
+Statement ID 이름만으로 XML을 선택하지 마.
+
+
+[5. Dynamic SQL]
+
+다음이 실제 Source에 존재하면
+조건 구조를 보존해서 분석해.
+
+- if
+- choose
+- when
+- otherwise
+- foreach
+- where
+- set
+- trim
+- include
+- bind
+
+Dynamic SQL을 하나의 고정 SQL로 바꾸지 마.
+
+include가 있으면 현재 SQL 이해에 필요한
+실제 SQL Fragment까지 확인해.
+
+
+[6. Parameter Mapping]
+
+가능하면 다음 흐름을 연결해줘.
+
+Frontend/API Request
+ ↓
+Controller Parameter / DTO
+ ↓
+Service Parameter
+ ↓
+Mapper Parameter
+ ↓
+MyBatis Parameter
+ ↓
+SQL Column
+
+예:
+
+request.plantCode
+ ↓
+Service plantCode
+ ↓
+Mapper plantCode
+ ↓
+#{plantCode}
+ ↓
+PLANT_CODE
+
+
+[7. Oracle 확인]
+
+Oracle MCP는 Metadata 확인 목적으로만 사용해.
+
+필요한 경우 다음을 확인해.
+
+- Table
+- View
+- Column
+- Data Type
+- Nullable
+- Primary Key
+- Object 존재 여부
+
+DML / DDL은 절대 실행하지 마.
+
+
+[8. RFC / 외부 연동]
+
+Business Logic 중간 어디에서든 다음 연동이 발견되면
+실제 호출 위치에서 분석해.
+
+- SAP RFC
+- RFC
+- REST API
+- HTTP / HTTPS
+- SOAP / WebService
+- 다른 Backend API
+- Gateway
+- Interface Server
+- Message / Queue
+- File
+- 기타 외부 시스템
+
+외부 연동을 Business Logic 마지막 단계로
+따로 모으지 마.
+
+
+[9. 외부 연동 다중 호출]
+
+외부 연동이 여러 번 존재하면
+하나로 합치지 마.
+
+예:
+
+DB #1
+ ↓
+RFC #1
+ ↓
+DB #2
+ ↓
+REST #1
+ ↓
+RFC #2
+ ↓
+DB #3
+
+실제 실행 위치와 순서를 그대로 유지해.
+
+
+[10. RFC 상세 추적]
+
+RFC가 발견되면 현재 Project Source에서
+확인 가능한 범위까지 다음을 확인해.
+
+- RFC 호출 위치
+- RFC Function
+- 호출 조건
+- Request 생성
+- Parameter Mapping
+- Import Parameter
+- Table Parameter
+- Response
+- Export Parameter
+- Response Mapping
+- Error 처리
+- 후속 Business Logic
+
+RFC 호출이 공통 Service 안에 있다면:
+
+Service
+ ↓
+Common Service
+ ↓
+Adapter
+ ↓
+RFC Client
+ ↓
+RFC
+
+처럼 중간 호출 관계를 생략하지 마.
+
+
+[11. REST / HTTP 상세 추적]
+
+외부 REST / HTTP 호출이 발견되면
+현재 Project Source에서 확인 가능한 범위에서:
+
+- 대상 시스템
+- Client
+- HTTP Method
+- URL
+- Header
+- Path Parameter
+- Query Parameter
+- Request Body
+- Request Mapping
+- Response
+- Response Mapping
+- Status 처리
+- Error 처리
+- Timeout
+- 후속 Business Logic
+
+을 확인해.
+
+
+[12. 호출 후 복귀]
+
+DB / RFC / REST / 내부 Service 분석이 끝나면
+전체 분석을 종료하지 마.
+
+반드시 Caller로 돌아가서
+다음 Business Logic을 계속 추적해.
+
+예:
+
+Service A
+ ↓
+RFC #1
+ ↓
+RFC Response
+ ↓
+Service A 복귀
+ ↓
+조건 판단
+ ↓
+DB #2
+ ↓
+REST #1
+ ↓
+Service A 복귀
+ ↓
+Response
+
+
+[13. 반복 처리]
+
+반복문 안에서 DB 또는 외부 연동이 발생하면
+반복 구조를 유지해.
+
+예:
+
+for each item
+ │
+ ├─ DB SELECT
+ ├─ 조건
+ ├─ RFC 호출
+ └─ DB UPDATE
+
+단순히 `RFC 여러 번 호출`로 축약하지 마.
+
+
+[14. Exception]
+
+실제 Source에서 확인되는 Exception 흐름도
+실행 Tree에 포함해.
+
+예:
+
+RFC 호출
+ ↓
+Error
+ ↓
+catch
+ ↓
+BusinessException
+ ↓
+처리 중단
+
+Source에 없는 Error 흐름은 추측하지 마.
+
+
+[15. Transaction]
+
+@Transactional 또는 기타 명시적인
+Transaction 설정이 확인되면 표시해.
+
+DB 변경과 외부 연동이 섞여 있다면
+실제 실행 순서를 그대로 보여줘.
+
+Rollback 여부는 Source Evidence 없이 추측하지 마.
+
+
+[16. Source Evidence]
+
+주요 단계마다 가능한 경우:
+
+- Source Path
+- Class
+- Method
+- Line Range
+
+를 기록해.
+
+Mapper는:
+
+- Mapper Interface
+- Mapper Method
+- Mapper XML
+- Namespace
+- Statement ID
+- Line Range
+
+를 기록해.
+
+외부 연동은:
+
+- Source Path
+- Class
+- Method
+- Adapter / Client
+- RFC Function 또는 Endpoint
+- Line Range
+
+를 기록해.
+
+Line Range를 확인할 수 없다면
+`확인되지 않음`으로 표시하고 임의로 만들지 마.
+
+
+[17. Source Path]
+
+모든 Source Path는
+Code Index Project Root 기준 상대경로만 사용해.
+
+절대경로를 사용자에게 요청하지 마.
+절대경로를 추측하거나 생성하지 마.
+
+
+[18. 외부 Dependency 제한]
+
+다음은 탐색하지 마.
+
+- JAR
+- JAR 내부 Class
+- Decompiled Class
+- .m2
+- .gradle
+- Maven Repository
+- Gradle Cache
+- Project Root 외부 Source
+
+단,
+gipms-api-common 등 Project Root 아래
+실제 Source로 존재하는 내부 공통 프로젝트는 추적해.
+
+
+[19. 안전]
+
+분석 과정에서 실제 업무 처리를 실행하지 마.
+
+특히:
+
+- Oracle INSERT / UPDATE / DELETE / MERGE 실행 금지
+- DDL 실행 금지
+- 실제 RFC 업무 Function 실행 금지
+- 외부 REST 변경 요청 실행 금지
+- SOAP 업무 요청 실행 금지
+- Message 발행 금지
+- 업무 File 전송 금지
+
+Source 및 Metadata만 Read-Only로 분석해.
+
+
+[20. 최종 확인]
+
+분석 마지막에 아래 항목을 PASS / FAIL로 표시해줘.
+
+Controller → Service 연결
+Interface → 실제 구현체 연결
+내부 Method 호출 추적
+다른 Service 호출 후 Caller 복귀
+Mapper → XML 연결
+namespace + Statement ID 확인
+Dynamic SQL 분석
+Parameter → SQL Mapping
+SQL → Oracle Metadata 연결
+DB 호출 후 Caller 복귀
+RFC 호출 추적
+RFC 후 Caller 복귀
+REST/기타 외부 연동 추적
+외부 연동 다중 호출 보존
+조건/분기 보존
+반복 구조 보존
+Exception 흐름
+Response 생성까지 추적
+Project Root 상대경로 사용
+JAR/외부 Dependency 미탐색
+Read-Only 준수
+
+문서는 생성하지 말고
+테스트 결과 출력 후 STOP 해줘.
+
+
+#####
