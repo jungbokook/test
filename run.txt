@@ -498,3 +498,51 @@ Service / Mapper / MyBatis / SQL / Oracle은 분석하지 마.
 
 
 #####
+
+
+06-api-analysis-scope.md와 07-api-contract-tracing.md 규칙을 적용해서
+아래 API의 Contract를 테스트 분석해줘.
+
+대상 API:
+[여기에 FE 분석에서 나온 실제 Method + URL 입력]
+
+다음을 실제 Source 기준으로 추적해줘.
+
+1. Frontend API 호출 위치
+2. Controller Mapping
+3. Request 전달 방식
+   - Header
+   - Path Parameter
+   - Query Parameter
+   - Request Body
+4. Request DTO 전체 구조
+   - Field
+   - Type
+   - Required
+   - Validation
+5. Response DTO 전체 구조
+   - Field
+   - Type
+   - Nested 구조
+6. HTTP Status
+7. Error Response
+8. Frontend Request와 Backend Request Mapping
+9. Source Evidence
+   - Source Path
+   - Class / Function / Field
+   - Line Range
+
+Code Index MCP를 사용해서 관련 Source를 탐색하고,
+최종 판단은 실제 Source를 확인해서 해줘.
+
+Service / ServiceImpl 내부,
+Mapper,
+MyBatis XML,
+SQL,
+Oracle은 절대 분석하지 말고
+Controller / DTO / Validation / Response Contract까지만 확인한 후 STOP 해줘.
+
+문서는 생성하지 말고 테스트 결과만 출력해줘.
+
+
+#####
