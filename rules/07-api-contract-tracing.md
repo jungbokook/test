@@ -917,3 +917,40 @@ SAP
 
 API Contract 분석을 완료한 후
 Backend 내부 분석으로 자동 진행하지 않는다.
+
+Source 탐색 제한
+
+API Contract 분석은 Code Index MCP에 설정된
+현재 Project Root 아래의 실제 Source만 대상으로 한다.
+
+* 사용자에게 절대경로를 요청하지 않는다.
+* 절대경로를 추측하거나 생성하지 않는다.
+* Source Path는 Project Root 기준 상대경로로 기록한다.
+* Backend는 gipms-api-*에서 탐색한다.
+* Frontend는 gipms-* 중 gipms-api-*를 제외하고 탐색한다.
+* API Method + URL과 실제 Source Evidence를 기준으로 관련 프로젝트를 식별한다.
+
+다음 영역은 자동으로 탐색하지 않는다.
+
+* *.jar
+* JAR 내부 Class
+* Decompiled Class
+* Maven Repository
+* .m2/
+* Gradle Cache
+* .gradle/
+* 외부 Dependency Source
+* Project Root 외부 Source
+
+Controller / Request DTO / Response DTO /
+Validation / Error Response가 현재 Project Source에서
+확인되지 않더라도 JAR 또는 외부 Dependency로 탐색 범위를 확장하지 않는다.
+
+확인할 수 없는 경우 추측하지 않고
+현재 Project Source에서 확인되지 않음으로 기록한다.
+
+단, gipms-api-common 등 현재 Project Root 아래에
+실제 Source 형태로 존재하는 공통 프로젝트는
+외부 Dependency로 취급하지 않는다.
+
+외부 Dependency 분석은 사용자가 명시적으로 요청한 경우에만 수행한다.
