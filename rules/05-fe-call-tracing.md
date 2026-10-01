@@ -818,22 +818,100 @@ Tree 형태로 표현한다.
 Tree를 완성하기 위해 임의로 추가하지 않는다.
 
 
-## 27. 근거 기록
+## 27. Source 근거 기록
 
 호출 흐름의 주요 단계는
-가능한 경우 Source 근거를 기록한다.
+가능한 경우 실제 Source 위치를 근거로 기록한다.
 
-예:
+Source 근거에는 가능한 경우
+다음 정보를 포함한다.
 
 - Source Path
 - Component / Module
 - Function / Method
-- 관련 코드 위치
+- Line 또는 Line Range
 
-Code Index 결과는
-Source를 찾는 보조 수단으로 사용한다.
+예:
 
-최종 판단은
+`handleSearch()`
+
+- Source Path: `src/views/equipment/EquipmentSearch.vue`
+- Function: `handleSearch`
+- Line: `120-158`
+
+또는 실행 Tree에서 간결하게 표현할 수 있다.
+
+`handleSearch()`
+→ `src/views/equipment/EquipmentSearch.vue:120-158`
+
+
+### Line 기록 기준
+
+가능한 경우 단일 Line보다
+해당 로직을 확인할 수 있는 Line Range를 사용한다.
+
+예:
+
+`EquipmentSearch.vue:120-158`
+
+Validation이나 조건 분기처럼
+특정 코드 영역이 근거인 경우에는
+해당 영역의 Line Range를 기록한다.
+
+예:
+
+`validateSearchCondition()`
+→ `EquipmentSearch.vue:205-228`
+
+Line Number만으로 Source를 식별하지 않는다.
+
+다음 정보를 함께 사용한다.
+
+Source Path
++ Function / Method
++ Line Range
+
+
+### Line을 확인할 수 없는 경우
+
+사용 중인 MCP 또는 Source 탐색 결과에서
+정확한 Line을 확인할 수 없는 경우
+Line Number를 추측하여 작성하지 않는다.
+
+이 경우:
+
+- Source Path는 확인된 값 기록
+- Function / Method는 확인된 값 기록
+- Line: `확인되지 않음`
+
+으로 기록한다.
+
+
+### Source 변경 고려
+
+Line Number는 Source 변경에 따라
+변경될 수 있다.
+
+따라서 Line Number는
+Source 위치를 빠르게 찾기 위한 보조 정보로 사용한다.
+
+Source의 기본 식별 기준은:
+
+`Source Path + Function / Method`
+
+로 한다.
+
+
+### Code Index MCP
+
+Code Index MCP 결과는
+관련 Source와 호출 위치를 찾기 위한
+보조 수단으로 사용한다.
+
+Code Index에서 Source 위치를 찾았더라도
+가능한 경우 실제 Source Code를 확인한다.
+
+최종 Business Logic 판단은
 실제 Source Code를 기준으로 한다.
 
 
