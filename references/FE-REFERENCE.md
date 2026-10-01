@@ -1,956 +1,740 @@
 # Frontend 기능 분석 Reference
 
-## 1. 목적
-
-이 문서는 Frontend 기능 분석 결과 문서의
-표현 형식과 상세 수준을 정의하기 위한 Reference이다.
-
-이 문서는 분석 Evidence가 아니다.
-
-실제 분석 결과는 반드시 다음 정보를 기준으로 작성한다.
-
-- SCREEN 분석 문서
-- 실제 Frontend Source Code
-- Code Index MCP 탐색 결과
-- 필요한 경우 Chrome DevTools MCP Runtime 정보
-
-Reference에 포함된 예시의
-화면명, Action ID, Handler, Source Path,
-Line Number, Parameter, API URL, Request / Response 값 등을
-실제 분석 결과로 사용하지 않는다.
-
+> 이 문서는 Frontend 분석 결과의 **출력 형식 Template**이다.
+>
+> 최종 FE 분석 문서는 이 문서의
+> Section 순서, Tree 표현 방식, 표 배치 방식,
+> 정보의 상세 수준을 가능한 한 동일하게 유지한다.
+>
+> 이 문서에 포함된 값은 SAMPLE이며 Evidence가 아니다.
+> 실제 결과 작성 시 반드시 현재 분석 대상의
+> SCREEN 문서와 실제 Frontend Source를 기준으로 교체한다.
 
 ---
 
-# 2. 작성 기본 원칙
-
-Frontend 분석 문서는 다음 두 가지 목적을 동시에 만족해야 한다.
-
-1. 개발자가 기능 전체 흐름을 빠르게 파악할 수 있어야 한다.
-2. 필요한 경우 실제 Source까지 상세하게 추적할 수 있어야 한다.
-
-따라서 문서는 다음 구조를 사용한다.
-
-```text
-요약 영역
-↓
-한눈에 보는 기능 흐름
-↓
-전체 실행 Tree
-↓
-상세 분석
-↓
-Source Evidence
-```
-
-상단에서는 전체 흐름을 빠르게 이해할 수 있도록 표현하고,
-하단에서는 실제 Source 기반 상세 정보를 제공한다.
-
-상세 분석을 줄여서
-가독성을 확보하지 않는다.
-
-분석은 상세하게 수행하되
-표현을 계층화하여 가독성을 확보한다.
-
-
----
-
-# 3. 권장 문서 구조
-
-Frontend 분석 결과 문서는
-다음 구조를 기본으로 한다.
-
-```text
-1. 기능 정보
-2. 기능 요약
-3. 한눈에 보는 기능 흐름
-4. 전체 실행 Tree
-5. 입력 / 출력 요약
-6. 상세 분석
-7. Source Evidence
-8. Backend API 후보
-9. 미확인 항목
-10. 분석 경계
-```
-
-
----
-
-# 4. 기능 정보
-
-현재 분석 대상의 기본 정보를
-간단한 표로 표현한다.
-
-예:
+# 1. 기능 정보
 
 | 항목 | 내용 |
 |---|---|
-| 화면명 | equipment-search |
-| Action ID | ACT-002 |
-| 기능명 | 검색 |
+| 화면명 | SAMPLE |
+| Action ID | `ACT-XXX` |
+| 기능명 | SAMPLE 기능 |
 | UI 유형 | Button |
 | Event | Click |
-| Handler | `handleSearch()` |
-| 최초 Source | `src/views/equipment/EquipmentSearch.vue` |
-
-확인되지 않은 항목은
-임의로 채우지 않는다.
-
-`확인되지 않음`
-
-으로 표시한다.
-
+| Handler | `sampleHandler()` |
+| 최초 Source | `SamplePage.vue:100-150` |
 
 ---
 
-# 5. 기능 요약
+# 2. 기능 요약
 
-현재 Action이 수행하는 기능을
-짧게 설명한다.
+사용자가 실행한 Action을 기준으로
+입력값을 검증하고 필요한 조건을 판단한 후
+Backend Request Parameter를 생성한다.
 
-세부 Source 구현을 모두 나열하지 않는다.
+이후 Backend API를 호출하고,
+Response를 Frontend State에 반영하여
+최종적으로 화면을 갱신한다.
 
-예:
-
-> 사용자가 입력한 검색 조건을 검증한 후 검색 Parameter를 생성하고,
-> 설비 조회 API를 호출한다.
-> 조회 결과는 목록 State에 저장되어 Grid에 반영된다.
-
-기능 요약만 읽어도
-현재 Action의 목적을 이해할 수 있어야 한다.
-
+> 실제 문서에서는 현재 Action의 전체 기능을
+> 2~4문장 정도로 요약한다.
 
 ---
 
-# 6. 한눈에 보는 기능 흐름
-
-이 Section은 Frontend 분석 문서에서
-가장 빠르게 전체 기능을 파악하기 위한 영역이다.
-
-상세 Source 내용을 모두 펼치지 않는다.
-
-기본적으로 다음 흐름을 표현한다.
+# 3. 한눈에 보는 기능 흐름
 
 ```text
-Action
-↓
-Handler
-↓
-Validation
-↓
-조건 / 분기
-↓
-Parameter 생성
-↓
-Backend API
-↓
-Response
-↓
-State
-↓
-화면 반영
+┌──────────────────────────────────────┐
+│ ACT-XXX SAMPLE 기능                  │
+│ sampleHandler()                      │
+└───────────────────┬──────────────────┘
+                    ↓
+          ┌──────────────────┐
+          │ Validation 12개  │
+          ├──────────────────┤
+          │ 기본조건     4개 │
+          │ 기간조건     3개 │
+          │ 업무조건     3개 │
+          │ 기타         2개 │
+          └─────────┬────────┘
+                    │
+           ┌────────┴────────┐
+           │                 │
+         실패               성공
+           │                 │
+           ▼                 ▼
+    Message + STOP   ┌──────────────────┐
+                     │ Parameter 24개   │
+                     ├──────────────────┤
+                     │ 화면입력    11개 │
+                     │ State        5개 │
+                     │ 자동생성     3개 │
+                     │ 변환/가공    5개 │
+                     └─────────┬────────┘
+                               ↓
+                     ┌──────────────────┐
+                     │ Backend API 1    │
+                     │ POST /api/sample │
+                     └─────────┬────────┘
+                               ↓
+                           Response
+                               ↓
+                             State
+                               ↓
+                           화면 갱신
+                               │
+                               │ 조건부
+                               ▼
+                     ┌──────────────────┐
+                     │ Backend API 2    │
+                     │ GET /api/status  │
+                     └─────────┬────────┘
+                               ↓
+                           데이터 병합
+                               ↓
+                           화면 갱신
+
+
+ERROR
+  │
+  └──→ Message
+       ├─ State 초기화
+       └─ 처리 종료
 ```
 
-예:
+## 핵심 정보
 
-```text
-[ACT-002 검색]
-       │
-       ▼
-[handleSearch()]
-       │
-       ▼
-[Validation]
- 검색조건 검증
-       │
-       ├─ 실패 → Message → STOP
-       │
-       └─ 통과
-              │
-              ▼
-[Parameter 생성]
- 검색조건 → Request Parameter
-              │
-              ▼
-[Backend API]
- GET /api/equipment
-              │
-              ▼
-[Response]
- items / totalCount
-              │
-              ▼
-[State]
- equipmentList
-              │
-              ▼
-[화면]
- Grid 갱신
-
-[ERROR]
- API 오류
-   └─ Message → State 초기화 → 종료
-```
-
-
----
-
-# 7. 한눈에 보기 — 대량 항목 표현 규칙
-
-Validation, Parameter, 조건 / 분기가 많은 경우
-상단 Flow에 모든 항목을 펼치지 않는다.
-
-다음 형식을 사용한다.
-
-```text
-총 개수
-+
-업무 기준 그룹
-+
-그룹별 개수
-```
-
-
-## Validation 예
-
-Validation이 12개라면:
-
-```text
-[Validation: 총 12개]
-
-├─ 기본조건      4개
-├─ 기간조건      3개
-├─ 설비조건      3개
-└─ 기타          2개
-
-실패
-→ Message
-→ STOP
-
-전체 통과
-→ 다음 단계
-```
-
-12개의 Validation 내용을
-상단 Flow에 전부 표시하지 않는다.
-
-전체 Validation 상세 내용은
-상세 분석 Section에서 제공한다.
-
-
-## Parameter 예
-
-Parameter가 24개라면:
-
-```text
-[Parameter: 총 24개]
-
-├─ 화면 입력      11개
-├─ State            5개
-├─ 자동 생성        3개
-└─ 변환 / 가공      5개
-```
-
-상단에서는 전체 구조만 보여준다.
-
-24개의 실제 Parameter는
-상세 Parameter 표에서 모두 제공한다.
-
-
-## 조건 / 분기 예
-
-조건이 많은 경우
-업무적으로 중요한 상위 분기만 표시한다.
-
-```text
-[Business 조건: 총 18개]
-
-├─ 검색 유형
-│  ├─ 일반
-│  └─ 상세
-│
-├─ 사용자 권한
-│  ├─ 관리자
-│  └─ 일반 사용자
-│
-└─ 기타 조건 14개
-   └─ 상세 분석 참조
-```
-
-실행 결과를 크게 변경하는
-핵심 조건은 상단에서도 표시한다.
-
-
----
-
-# 8. 한눈에 보기 깊이 제한
-
-한눈에 보는 기능 흐름은
-가능한 경우 최대 2~3단계 깊이로 표현한다.
-
-예:
-
-```text
-Validation
-├─ 실패 → STOP
-└─ 성공 → 계속
-```
-
-상단 Flow에서 다음과 같이
-지나치게 깊게 확장하지 않는다.
-
-```text
-Validation
-└─ 조건 A
-   └─ 조건 B
-      └─ 조건 C
-         └─ 조건 D
-            └─ ...
-```
-
-복잡한 중첩 조건은
-상세 실행 Tree에서 표현한다.
-
-
----
-
-# 9. 핵심 정보 요약
-
-한눈에 보는 기능 흐름 아래에는
-현재 Action의 핵심 정보를 표로 정리할 수 있다.
-
-예:
-
-| 구분 | 핵심 내용 | Source |
+| 구분 | 내용 | Source |
 |---|---|---|
-| Handler | `handleSearch()` | `EquipmentSearch.vue:120-158` |
-| Validation | 총 12개 | `EquipmentSearch.vue:205-260` |
-| Parameter | 총 24개 | `searchParameter.ts:45-110` |
-| API | `GET /api/equipment` | `equipmentService.ts:31-44` |
-| Response | `items → equipmentList` | 관련 Source |
-| 화면 반영 | `equipmentList → Grid` | 관련 Component |
-| Error | Message + State 초기화 | 관련 `catch` |
+| Handler | `sampleHandler()` | `SamplePage.vue:100-150` |
+| Validation | 총 12개 | `SamplePage.vue:160-220` |
+| Parameter | 총 24개 | `sampleParameter.ts:30-100` |
+| Backend API | 총 2개 | `sampleService.ts` |
+| 주요 Response | `items`, `totalCount` | API Response |
+| 주요 State | `sampleList` | Store / Component |
+| 화면 반영 | Grid 갱신 | Component |
+| Error | Message + State 초기화 | `catch` |
 
-확인되지 않은 Source 또는 Line은
-추측하지 않는다.
-
+> 한눈에 보는 기능 흐름에서는
+> 모든 Validation / Parameter / 조건을 펼치지 않는다.
+>
+> 항목이 많은 경우 반드시
+> **총 개수 + 업무 기준 그룹 + 그룹별 개수**
+> 형태로 표현한다.
+>
+> 상세 항목은 아래 상세 분석에서 모두 제공한다.
 
 ---
 
-# 10. 전체 실행 Tree
-
-한눈에 보는 기능 흐름과 달리
-전체 실행 Tree는 실제 Frontend 실행 구조를 상세하게 표현한다.
-
-중간 Function을 임의로 생략하지 않는다.
-
-예:
+# 4. 전체 실행 Tree
 
 ```text
-ACT-002 검색
+ACT-XXX SAMPLE 기능
+│
 └─ Click
-   └─ handleSearch()
-      [EquipmentSearch.vue:120-158]
+   │
+   └─ sampleHandler()
+      [SamplePage.vue:100-150]
       │
-      ├─ searchKeyword State 조회
+      ├─ 화면 / State 값 조회
       │
-      ├─ validateSearchCondition()
-      │  [EquipmentSearch.vue:205-228]
+      ├─ validateSample()
+      │  [SamplePage.vue:160-220]
       │  │
-      │  ├─ 실패
+      │  ├─ 기본조건 검증
+      │  ├─ 기간조건 검증
+      │  ├─ 업무조건 검증
+      │  │
+      │  ├─ FAIL
       │  │  ├─ Message 표시
-      │  │  ├─ false 반환
       │  │  ├─ return
       │  │  └─ STOP
       │  │
-      │  └─ 성공
-      │     └─ true 반환
+      │  └─ PASS
       │
-      ├─ createSearchParameter()
-      │  [searchParameter.ts:45-72]
+      ├─ createSampleParameter()
+      │  [sampleParameter.ts:30-100]
       │  │
-      │  ├─ 화면 / State 값 조회
-      │  ├─ 값 변환
+      │  ├─ 화면 입력값 조회
+      │  ├─ State 값 조회
+      │  ├─ 자동 생성값 설정
+      │  ├─ 값 변환 / 가공
       │  └─ Request Parameter 생성
       │
-      └─ searchEquipment()
-         [EquipmentSearch.vue:160-183]
-         │
-         └─ equipmentStore.search()
-            [equipmentStore.ts:80-115]
-            │
-            └─ equipmentService.getList()
-               [equipmentService.ts:31-44]
-               │
-               ├─ GET
-               ├─ /api/equipment
-               │
-               ├─ Response
-               │  └─ equipmentList State
-               │     └─ Grid 갱신
-               │
-               └─ ERROR
-                  ├─ Message
-                  └─ State 초기화
+      ├─ sampleStore.search(params)
+      │  [sampleStore.ts:80-115]
+      │  │
+      │  └─ sampleService.search(params)
+      │     [sampleService.ts:30-55]
+      │     │
+      │     └─ POST /api/sample
+      │        │
+      │        ├─ SUCCESS
+      │        │  └─ Response
+      │        │     ├─ items
+      │        │     │  └─ sampleList
+      │        │     └─ totalCount
+      │        │
+      │        └─ ERROR
+      │           └─ Exception 처리
+      │
+      ├─ 추가 API 호출 조건
+      │  │
+      │  ├─ false
+      │  │  └─ 추가 호출 없음
+      │  │
+      │  └─ true
+      │     └─ sampleService.getStatus()
+      │        [sampleService.ts:60-75]
+      │        │
+      │        └─ GET /api/status
+      │           └─ Response
+      │              └─ 기존 데이터와 병합
+      │
+      └─ State 변경
+         └─ 화면 갱신
 ```
 
-실제 Source에서 확인되지 않은 단계를
-Tree를 완성하기 위해 임의로 추가하지 않는다.
-
+> 전체 실행 Tree는 한눈에 보는 기능 흐름과 다르게
+> 실제 호출 관계와 중요한 중간 Function을 생략하지 않는다.
 
 ---
 
-# 11. 입력 / 출력 요약
-
-현재 Action의 시작 입력과
-최종 결과를 간단하게 정리한다.
-
-예:
+# 5. 입력 / 출력 요약
 
 | 구분 | 내용 |
 |---|---|
-| 화면 입력 | 검색어, 사업장, 설비유형 |
-| Source State | `searchKeyword`, `plantCode`, `equipmentType` |
-| Backend Request | 검색조건 Parameter |
-| Backend Response | 설비 목록 |
-| Frontend State | `equipmentList` |
-| 화면 결과 | Grid 갱신 |
+| 화면 입력 | 검색조건, 기간, 유형 등 |
+| Source State | 검색조건 관련 State |
+| Validation | 총 12개 |
+| Request Parameter | 총 24개 |
+| Backend API | 총 2개 |
+| 주요 Response | `items`, `totalCount` |
+| Frontend State | `sampleList` |
+| 최종 화면 결과 | Grid 갱신 |
 
-항목이 많다면
-전체 내용을 이 표에 넣지 않는다.
-
-상세 내용은 아래 상세 분석에서 제공한다.
-
+> 실제 항목이 많은 경우 이 Section에서는
+> 핵심 입력 / 출력만 요약한다.
+>
+> 전체 항목은 상세 분석에서 제공한다.
 
 ---
 
-# 12. 상세 분석
+# 6. 상세 분석
 
-상세 분석은 데이터 종류만 기준으로
-기계적으로 분리하지 않는다.
+## 6.1 Validation
 
-가능한 경우
-실제 실행 순서 또는 업무 처리 단위로 구성한다.
+**총 12개**
 
-예:
+### Validation 그룹
+
+| 그룹 | 개수 | 설명 |
+|---|---:|---|
+| 기본조건 | 4 | 기본 입력 및 상태 확인 |
+| 기간조건 | 3 | 시작일 / 종료일 / 기간 관계 |
+| 업무조건 | 3 | 기능 수행을 위한 업무 조건 |
+| 기타 | 2 | 추가 조건 |
+| **합계** | **12** | |
+
+### Validation 상세
+
+| ID | 그룹 | 검증 대상 | 조건 | 실패 처리 | Source |
+|---|---|---|---|---|---|
+| V-01 | 기본 | 필수값 A | 값 없음 | Message + STOP | `SamplePage.vue:160-165` |
+| V-02 | 기본 | 필수값 B | 값 없음 | Message + STOP | `SamplePage.vue:167-172` |
+| V-03 | 기본 | 상태값 | 사용 불가 | Message + STOP | `SamplePage.vue:174-180` |
+| V-04 | 기본 | 권한 | 조건 불충족 | Message + STOP | `SamplePage.vue:182-188` |
+| V-05 | 기간 | 시작일 | 값 없음 | Message + STOP | `SamplePage.vue:190-194` |
+| V-06 | 기간 | 종료일 | 값 없음 | Message + STOP | `SamplePage.vue:196-200` |
+| V-07 | 기간 | 시작/종료일 | 시작일 > 종료일 | Message + STOP | `SamplePage.vue:202-208` |
+| V-08 | 업무 | 업무조건 A | 조건 불충족 | Message + STOP | `SamplePage.vue:210-212` |
+| V-09 | 업무 | 업무조건 B | 조건 불충족 | Message + STOP | `SamplePage.vue:213-215` |
+| V-10 | 업무 | 업무조건 C | 조건 불충족 | Message + STOP | `SamplePage.vue:216-218` |
+| V-11 | 기타 | 기타조건 A | 조건 불충족 | Message + STOP | `SamplePage.vue:219` |
+| V-12 | 기타 | 기타조건 B | 조건 불충족 | Message + STOP | `SamplePage.vue:220` |
+
+### Validation 실행 흐름
 
 ```text
-6.1 검색 조건 검증
-6.2 검색 Parameter 생성
-6.3 검색 API 호출
-6.4 Response 처리
-6.5 화면 갱신
-6.6 예외 처리
+V-01
+ ↓ PASS
+V-02
+ ↓ PASS
+V-03
+ ↓
+...
+ ↓
+V-12
+ ↓ PASS
+Parameter 생성
 ```
 
-현재 기능에 존재하지 않는 Section은
-억지로 생성하지 않는다.
-
-동일한 내용을 여러 Section에서
-반복하여 설명하지 않는다.
-
-
----
-
-# 13. Validation 상세
-
-Validation이 존재하면
-전체 Validation을 누락 없이 기록한다.
-
-Validation이 많은 경우
-표를 우선 사용한다.
-
-예:
-
-| ID | 검증 대상 | 조건 | 실패 처리 | Source |
-|---|---|---|---|---|
-| V-01 | 사업장 | 미선택 | Message + STOP | `File.vue:120-125` |
-| V-02 | 시작일 | 값 없음 | Message + STOP | `File.vue:127-132` |
-| V-03 | 종료일 | 값 없음 | Message + STOP | `File.vue:134-139` |
-| V-04 | 조회기간 | 시작일 > 종료일 | Message + STOP | `File.vue:141-148` |
-
-Validation ID는
-문서 내 가독성을 위한 식별자이며
-실제 Source에 존재하는 ID처럼 표현하지 않는다.
-
-Validation의 실행 순서가 중요한 경우
-실제 순서를 유지한다.
-
-
----
-
-# 14. 조건 / 분기 상세
-
-Business Logic에 영향을 주는
-조건 / 분기를 기록한다.
-
-예:
+하나라도 실패:
 
 ```text
-검색유형 확인
+Validation FAIL
+        ↓
+Message
+        ↓
+return
+        ↓
+API 호출 안 함
+```
+
+---
+
+## 6.2 조건 / 분기
+
+현재 기능의 실행 결과에 영향을 주는
+주요 조건 / 분기를 표현한다.
+
+```text
+검색 유형
 │
 ├─ NORMAL
-│  └─ 일반 검색 Parameter 생성
+│  └─ 기본 검색조건 사용
 │
 └─ DETAIL
-   ├─ 상세조건 확인
-   └─ 상세 검색 Parameter 생성
+   └─ 상세 검색조건 추가
 ```
 
-가능한 경우 다음을 함께 기록한다.
-
-- 조건식
-- Source 값
-- TRUE 처리
-- FALSE 처리
-- 다음 Function
-- API 호출 변화
-- State 변화
-- Early Return
-
-조건을 단순히
-`조건 처리`
-
-라고 표현하지 않는다.
-
-
----
-
-# 15. Parameter 상세
-
-Parameter가 적은 경우에는
-값 흐름을 직접 표현할 수 있다.
-
-예:
+조건이 많은 경우:
 
 ```text
-화면 값
-" ABC "
+Business 조건: 총 18개
 
-↓ trim()
-
-Source 값
-"ABC"
-
-↓ Request 생성
-
-keyword = "ABC"
+├─ 검색유형 관련     2개
+├─ 권한 관련         2개
+├─ Parameter 관련    5개
+├─ API 호출 관련     3개
+└─ 기타              6개
 ```
 
+상세 조건은 표로 작성한다.
 
-Parameter가 많은 경우에는
-표를 사용한다.
+| 조건 | TRUE | FALSE | 영향 |
+|---|---|---|---|
+| `searchType === "DETAIL"` | 상세조건 추가 | 기본조건 사용 | Parameter |
+| `includeStatus === true` | 상태 API 호출 | 호출 안 함 | API |
 
-예:
+---
 
-| Parameter | Source | 원본 값 | 변환 | 최종 전달 | 비고 |
+## 6.3 Parameter / 데이터 처리
+
+**총 24개**
+
+### Parameter 구성
+
+```text
+Parameter 24개
+├─ 화면 입력      11개
+├─ State           5개
+├─ 자동 생성       3개
+└─ 변환 / 가공     5개
+```
+
+### Parameter 상세
+
+| Parameter | Source | 원본 값 | 변환 / 가공 | 최종 전달 | 전송 조건 |
 |---|---|---|---|---|---|
-| `keyword` | 화면 입력 | `" ABC "` | `trim()` | `"ABC"` | 전송 |
-| `searchType` | State | `"ALL"` | `ALL → null` | 미전송 | 조건부 |
-| `plantCode` | State | `"1000"` | 없음 | `"1000"` | 전송 |
-| `startDate` | 화면 입력 | 날짜 값 | Request 형식 변환 | 변환값 | 전송 |
+| `keyword` | 화면 입력 | `" ABC "` | `trim()` | `"ABC"` | 값 존재 |
+| `searchType` | State | `"ALL"` | `ALL → null` | 미전송 | 값 존재 시 |
+| `plantCode` | State | `"1000"` | 없음 | `"1000"` | 항상 |
+| `startDate` | 화면 | Date | 날짜 형식 변환 | `yyyyMMdd` | 값 존재 |
+| `endDate` | 화면 | Date | 날짜 형식 변환 | `yyyyMMdd` | 값 존재 |
+| ... | ... | ... | ... | ... | ... |
 
-가능한 경우 다음을 구분한다.
+> 실제 분석에서는 확인된 Parameter를 모두 기록한다.
+> Parameter가 많다는 이유로 상세 목록을 생략하지 않는다.
 
-- 화면 표시 값
-- Source State
-- Function 입력
-- 중간 변환
-- 최종 Request 값
+### 주요 값 변환
 
-Runtime에서 관찰한 실제 값과
-Source에 정의된 일반 규칙을 구분한다.
-
+```text
+화면
+" ABC "
+   ↓
+trim()
+   ↓
+"ABC"
+   ↓
+request.keyword
+```
 
 ---
 
-# 16. State 상세
+## 6.4 State 처리
 
-현재 Action과 직접 관련된
-State만 기록한다.
-
-예:
-
-| State | Source | 변경 조건 | 변경 결과 | 사용 위치 |
+| State | 변경 전 | 변경 조건 | 변경 후 | 사용 위치 |
 |---|---|---|---|---|
-| `equipmentList` | API Response | 조회 성공 | `response.items` | Grid |
-| `loading` | 검색 실행 | API 시작/종료 | `true/false` | Loading UI |
+| `loading` | `false` | API 호출 시작 | `true` | Loading |
+| `sampleList` | 기존값 | API 성공 | `response.items` | Grid |
+| `loading` | `true` | API 완료 | `false` | Loading |
 
-현재 Action과 관계없는
-Component 전체 State를 나열하지 않는다.
-
+현재 Action과 관계없는 State는
+나열하지 않는다.
 
 ---
 
-# 17. Backend API 호출 상세
+## 6.5 Backend API 호출
 
-Backend API 호출은
-호출 단위로 구분한다.
-
-예:
-
-### API 호출 1 — 설비 목록 조회
+### API 호출 1 — SAMPLE 조회
 
 | 항목 | 내용 |
 |---|---|
-| 호출 Function | `equipmentService.getList()` |
-| Method | `GET` |
-| URL | `/api/equipment` |
+| 호출 Function | `sampleService.search()` |
+| HTTP Method | `POST` |
+| URL | `/api/sample` |
 | 호출 조건 | Validation 전체 통과 |
-| 호출 방식 | 단일 호출 |
-| Source | `equipmentService.ts:31-44` |
-
-Request Parameter:
-
-| Parameter | 값 / Source | 전송 여부 |
-|---|---|---|
-| `keyword` | `"ABC"` | 전송 |
-| `searchType` | `null` | 미전송 |
-| `plantCode` | `"1000"` | 전송 |
-
-API 내부 Backend 구현은
-이 문서에서 분석하지 않는다.
-
-
----
-
-# 18. 여러 Backend API
-
-하나의 Action에서
-여러 API가 호출되는 경우
-관계를 명확하게 표현한다.
-
-
-## 순차 호출
+| Request | Parameter 24개 |
+| Source | `sampleService.ts:30-55` |
 
 ```text
-API A
-↓
-Response A
-↓
-equipmentId 획득
-↓
-API B
+Validation PASS
+       ↓
+Parameter 생성
+       ↓
+sampleStore.search()
+       ↓
+sampleService.search()
+       ↓
+POST /api/sample
 ```
 
+### API 호출 2 — 상태 조회
 
-## 병렬 호출
-
-```text
-Promise.all()
-├─ API A
-└─ API B
-    ↓
-전체 Response 완료
-```
-
-
-## 조건부 호출
+| 항목 | 내용 |
+|---|---|
+| 호출 Function | `sampleService.getStatus()` |
+| HTTP Method | `GET` |
+| URL | `/api/status` |
+| 호출 조건 | `includeStatus === true` |
+| Source | `sampleService.ts:60-75` |
 
 ```text
 includeStatus
-├─ true
-│  └─ Status API 호출
 │
-└─ false
-   └─ Status API 호출 안 함
+├─ false
+│  └─ 호출 안 함
+│
+└─ true
+   └─ GET /api/status
 ```
 
-실제 Source에서 확인되지 않은
-호출 관계를 추측하지 않는다.
-
+> 하나의 Action에서 API가 여러 개 발견되면
+> 모두 기록한다.
 
 ---
 
-# 19. Response 및 화면 반영
+## 6.6 Response 처리 / 화면 반영
 
-Response가 화면까지 전달되는 흐름을
-가능한 경우 하나의 흐름으로 표현한다.
-
-예:
+### 조회 API
 
 ```text
-GET /api/equipment
-↓
+POST /api/sample
+        ↓
 Response
-↓
+        ↓
 response.items
-↓
-equipmentList State
-↓
+        ↓
+sampleList
+        ↓
 Grid Data
-↓
+        ↓
 화면 갱신
 ```
 
-중간 데이터 변환이 존재하면
-생략하지 않는다.
+### 추가 API가 존재하는 경우
 
+```text
+기본 Response
+      +
+상태 Response
+      ↓
+데이터 병합
+      ↓
+sampleList
+      ↓
+Grid 갱신
+```
 
 ---
 
-# 20. 예외 처리
-
-현재 Action과 직접 관련된
-예외 처리만 기록한다.
-
-예:
+## 6.7 예외 처리
 
 ```text
-API 호출
+Backend API
 │
 ├─ SUCCESS
 │  └─ Response 처리
+│     └─ State 변경
+│        └─ 화면 갱신
 │
 └─ ERROR
    └─ catch
       ├─ 오류 Message
-      ├─ equipmentList = []
+      ├─ State 초기화
       └─ 처리 종료
 ```
 
-공통 Error Handler가 존재하는 경우
-현재 Action과 관련된 호출 범위까지만 기록한다.
-
+공통 Error Handler가 존재하면
+현재 Action에서 실제로 연결되는 범위까지만 분석한다.
 
 ---
 
-# 21. Source Evidence
+# 7. Source Evidence
 
-주요 처리 단계의 Source를
-한 번에 찾을 수 있도록 표로 정리한다.
-
-예:
-
-| 처리 단계 | Function / Method | Source Path | Line |
+| 처리 단계 | Function / Method | Source Path | Line Range |
 |---|---|---|---|
-| 검색 시작 | `handleSearch()` | `src/views/equipment/EquipmentSearch.vue` | 120-158 |
-| Validation | `validateSearchCondition()` | `src/views/equipment/EquipmentSearch.vue` | 205-228 |
-| Parameter 생성 | `createSearchParameter()` | `src/views/equipment/searchParameter.ts` | 45-72 |
-| Store | `search()` | `src/stores/equipmentStore.ts` | 80-115 |
-| API 호출 | `getList()` | `src/api/equipmentService.ts` | 31-44 |
+| Action 시작 | `sampleHandler()` | `src/views/sample/SamplePage.vue` | 100-150 |
+| Validation | `validateSample()` | `src/views/sample/SamplePage.vue` | 160-220 |
+| Parameter 생성 | `createSampleParameter()` | `src/utils/sampleParameter.ts` | 30-100 |
+| Store 처리 | `search()` | `src/stores/sampleStore.ts` | 80-115 |
+| 조회 API | `search()` | `src/api/sampleService.ts` | 30-55 |
+| 상태 API | `getStatus()` | `src/api/sampleService.ts` | 60-75 |
 
-가능한 경우:
+Source Evidence는 가능한 경우:
 
-`Source Path + Function / Method + Line Range`
+```text
+Source Path
++
+Function / Method
++
+Line Range
+```
 
 를 함께 제공한다.
 
-Line Number를 확인할 수 없다면
-추측하지 않는다.
+Line Range를 확인할 수 없으면:
 
 `확인되지 않음`
 
 으로 기록한다.
 
+Line Number를 추측하지 않는다.
 
 ---
 
-# 22. Backend API 후보
+# 8. Backend API 후보
 
-Frontend 분석에서 발견한 API를
-다음 분석 단계의 후보로 정리한다.
+다음 API 규격 분석 단계에서
+사용자가 선택할 수 있도록 발견된 API를 정리한다.
 
-예:
-
-| 후보 | 목적 | Method | URL | 호출 조건 |
+| 후보 | 기능 | Method | URL | 호출 조건 |
 |---|---|---|---|---|
-| 1 | 설비 목록 조회 | GET | `/api/equipment` | Validation 성공 |
-| 2 | 설비 상태 조회 | GET | `/api/equipment/status` | `includeStatus=true` |
+| 1 | SAMPLE 조회 | `POST` | `/api/sample` | Validation 성공 |
+| 2 | 상태 조회 | `GET` | `/api/status` | `includeStatus=true` |
 
 Frontend 분석 단계에서는
-`API-001`, `API-002` 등의 최종 API ID를
-임의로 부여하지 않는다.
+최종 `API-001`, `API-002` ID를 부여하지 않는다.
 
-API ID는
-API 규격 분석 단계에서 부여한다.
-
+API ID는 API 규격 분석 단계에서 부여한다.
 
 ---
 
-# 23. 미확인 항목
-
-현재 분석에서 확인하지 못한 내용을
-명확하게 분리한다.
-
-예:
+# 9. 미확인 항목
 
 | 항목 | 상태 | 사유 |
 |---|---|---|
-| 특정 Parameter Source | 확인되지 않음 | 관련 Source 확인 불가 |
-| 특정 Line Range | 확인되지 않음 | 위치 확인 불가 |
+| SAMPLE 항목 | 확인되지 않음 | Source에서 확인할 수 없음 |
 
-미확인 정보를
-추측하여 문서를 완성하지 않는다.
+미확인 정보가 없다면:
 
+`미확인 항목 없음`
+
+으로 기록한다.
+
+확인되지 않은 내용을
+추측하여 채우지 않는다.
 
 ---
 
-# 24. 분석 경계
-
-Frontend 분석에서 확인한 범위를 기록한다.
-
-예:
+# 10. 분석 경계
 
 ```text
-분석 범위
+이번 Frontend 분석 범위
 
-ACT-002
-↓
+Action
+  ↓
 Handler
-↓
+  ↓
 Validation
-↓
+  ↓
+조건 / 분기
+  ↓
+Parameter / 데이터 처리
+  ↓
 Frontend Business Logic
-↓
-Parameter
-↓
-Store / Service
-↓
+  ↓
 Backend API 호출
-↓
-Frontend Response 처리
-↓
-State / 화면 반영
+  ↓
+Response
+  ↓
+State
+  ↓
+화면 반영
+
+══════════════ STOP ══════════════
+
+Backend Controller 내부
+Service / ServiceImpl
+Mapper
+MyBatis Mapper XML
+SQL
+Oracle
+SAP 내부 처리
+
+→ Backend 영역은 현재 FE 분석에서 분석하지 않음
 ```
-
-다음 영역은 분석하지 않는다.
-
-- Backend Controller 내부 구현
-- Backend Service
-- ServiceImpl
-- Mapper
-- MyBatis Mapper XML
-- SQL
-- Oracle
-- SAP 내부 처리
-
 
 ---
 
-# 25. Source와 Runtime 구분
+# Reference 적용 규칙
 
-Source에서 확인한 규칙과
-Runtime에서 관찰한 실제 값을 구분한다.
+이 문서는 단순한 설명 문서가 아니라
+**Frontend 분석 결과의 출력 형식 Template**이다.
 
-예:
+최종 FE 문서는 가능한 한 이 Reference와
+동일한 형태로 작성한다.
 
-Source 확인:
+반드시 유지할 항목:
 
-```text
-searchType === "ALL"
-→ request.searchType = null
-```
+1. Section 순서
+2. Section 제목
+3. `한눈에 보는 기능 흐름` 위치
+4. ASCII Flow 표현 방식
+5. `핵심 정보` 표
+6. `전체 실행 Tree`
+7. Validation 그룹 요약 + 상세 표
+8. 조건 / 분기 표현
+9. Parameter 그룹 요약 + 상세 표
+10. State 표
+11. API별 상세 표현
+12. Response → State → 화면 흐름
+13. 예외 처리 Tree
+14. Source Evidence 표
+15. Backend API 후보 표
+16. 미확인 항목
+17. 분석 경계
 
-Runtime 관찰:
+현재 기능에 특정 항목이 존재하지 않는 경우에는
+없는 내용을 임의로 생성하지 않는다.
 
-```text
-현재 실행:
-searchType = "ALL"
+그 경우 해당 Section에:
 
-실제 Request:
-searchType 미전송
-```
+`해당 처리 없음`
 
-Runtime에서 한 번 관찰한 값을
-전체 Business Rule로 일반화하지 않는다.
-
-
----
-
-# 26. Reference 사용 규칙
-
-이 Reference는
-문서 표현 방식과 상세 수준을 위한 기준이다.
-
-Reference는 Evidence가 아니다.
-
-Reference에서 참고할 수 있는 것:
-
-- 문서 구조
-- Section 순서
-- 표 표현 방식
-- Tree 표현 방식
-- 한눈에 보는 기능 흐름
-- 상세 분석 수준
-- Source Evidence 표현 방식
-- 대량 Validation 표현 방식
-- 대량 Parameter 표현 방식
-- 다중 API 표현 방식
-- 미확인 항목 표현 방식
-
-
-Reference에서 복사하면 안 되는 것:
-
-- 실제 화면명
-- Action ID
-- 기능명
-- Handler
-- Function / Method
-- Source Path
-- Line Number
-- Parameter
-- State
-- 조건
-- API URL
-- HTTP Method
-- Request
-- Response
-- 실제 값
-
-
-현재 분석 결과는 반드시
-현재 분석 대상의 Evidence를 기준으로 작성한다.
-
+으로 표시할 수 있다.
 
 ---
 
-# 27. 핵심 표현 원칙
+# 대량 항목 표시 규칙
 
-Frontend 문서는 다음 원칙을 따른다.
-
-```text
-첫 번째 목표:
-한눈에 기능 전체를 이해
-
-두 번째 목표:
-필요하면 상세 Business Logic 확인
-
-세 번째 목표:
-필요하면 실제 Source 위치 확인
-```
-
-따라서:
-
-```text
-한눈에 보는 기능 흐름
-        ↓
-전체 실행 Tree
-        ↓
-상세 분석
-        ↓
-Source Evidence
-```
-
-순서로 정보를 단계적으로 확장한다.
-
-Validation이나 Parameter가 많더라도
-상단 요약 영역을 지나치게 크게 만들지 않는다.
+Validation, Parameter, 조건 / 분기가 많아도
+`3. 한눈에 보는 기능 흐름`을 과도하게 확장하지 않는다.
 
 상단에서는:
 
-`총 개수 + 그룹`
+```text
+Validation 총 N개
+├─ 그룹 A N개
+├─ 그룹 B N개
+└─ 그룹 C N개
+```
 
-으로 표현한다.
+형태로 표현한다.
 
-하단 상세 영역에서는:
+Parameter도 동일하다.
 
-`전체 항목`
+```text
+Parameter 총 N개
+├─ 화면 입력 N개
+├─ State N개
+├─ 자동 생성 N개
+└─ 변환 / 가공 N개
+```
 
-을 누락 없이 제공한다.
+상단 Flow는 가능한 경우
+2~3단계 깊이를 유지한다.
 
-가독성을 위해
-분석 내용을 삭제하거나 축약하지 않는다.
+그러나 아래 `6. 상세 분석`에서는
+확인된 전체 항목을 누락하지 않는다.
 
-상세 분석은 유지하고
-표현 구조만 계층화한다.
+즉:
+
+```text
+상단 = 한눈에 보기
+하단 = 전체 상세
+```
+
+원칙을 유지한다.
+
+---
+
+# SAMPLE 데이터 사용 금지
+
+이 Reference에 사용된 다음 값은
+오직 출력 형식을 보여주기 위한 SAMPLE이다.
+
+- `ACT-XXX`
+- `sampleHandler()`
+- `SamplePage.vue`
+- `validateSample()`
+- `sampleService`
+- `/api/sample`
+- `/api/status`
+- Validation 12개
+- Parameter 24개
+- 기타 모든 SAMPLE 값
+
+실제 분석 결과에 위 값을 복사하지 않는다.
+
+실제 문서에서는 반드시
+현재 SCREEN 문서와
+현재 Frontend Source에서 확인된 값으로 교체한다.
+
+Code Index MCP는 Source 탐색 및 호출 관계 확인에 사용한다.
+
+필요한 경우 Chrome DevTools MCP를
+Runtime Request / Response 확인에 사용한다.
+
+Reference 자체는 Evidence로 사용하지 않는다.
+
+---
+
+# 최종 출력 원칙
+
+최종 FE 분석 결과는 다음 순서로 읽을 수 있어야 한다.
+
+```text
+1~2
+기능이 무엇인지 확인
+        ↓
+3
+한눈에 전체 흐름 확인
+        ↓
+4
+실제 실행 순서 확인
+        ↓
+5~6
+입력 / Validation / Parameter /
+State / API / Response 상세 확인
+        ↓
+7
+실제 Source 위치 확인
+        ↓
+8
+다음 API 분석 대상 선택
+```
+
+개발자가 빠르게 확인하려는 경우에는
+`1 → 2 → 3`만 읽어도
+기능의 전체 흐름을 이해할 수 있어야 한다.
+
+개발자가 수정 또는 장애 분석을 해야 하는 경우에는
+`4 → 6 → 7`을 통해
+실제 Source까지 추적할 수 있어야 한다.
+
+분석 상세도를 낮추지 않는다.
+
+**상단은 단순하게,
+하단은 상세하게 작성한다.**
