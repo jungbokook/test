@@ -131,3 +131,42 @@ screen-analysis Skill의 실행 절차를 설명해줘.
 실제 URL에 접근하지 마.
 MCP는 호출하지 마.
 파일은 생성하거나 수정하지 마.
+
+
+#####
+
+
+04-fe-analysis-scope Rule 기준으로 답변해줘.
+
+다음 상황을 가정한다.
+
+화면명:
+equipment-search
+
+Action ID:
+ACT-002
+
+SCREEN 문서에는 다음 정보가 있다고 가정한다.
+
+- Action ID: ACT-002
+- 기능명: 검색
+- Event: Click
+- Handler: handleSearch
+- Source Path: src/views/equipment/EquipmentSearch.vue
+
+handleSearch의 실제 Frontend Source를 분석했다고 가정했을 때
+다음 질문에 답변해줘.
+
+1. Frontend 분석을 시작할 때 SCREEN 문서에서 어떤 정보를 가져오는가?
+2. handleSearch 내부에서 Validation → Parameter 생성 → API 호출이 이어지면 어디까지 분석하는가?
+3. 하나의 Action에서 Backend API가 2개 발견되면 어떻게 처리하는가?
+4. Backend Controller Source를 발견하면 Controller 내부까지 분석하는가?
+5. Mapper / MyBatis XML / SQL / Oracle까지 분석하는가?
+6. FE 분석이 끝난 뒤 API 규격 분석을 자동으로 시작하는가?
+7. 결과 문서는 어느 경로에 저장하는가?
+8. 다른 화면에도 ACT-002가 존재하면 어떤 기준으로 현재 Action을 구분하는가?
+
+실제 MCP는 호출하지 마.
+실제 Source Code는 분석하지 마.
+파일은 생성하거나 수정하지 마.
+규칙 설명만 해줘.
