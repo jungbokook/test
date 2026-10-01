@@ -170,3 +170,66 @@ handleSearch의 실제 Frontend Source를 분석했다고 가정했을 때
 실제 Source Code는 분석하지 마.
 파일은 생성하거나 수정하지 마.
 규칙 설명만 해줘.
+
+
+#####
+
+
+05-fe-call-tracing Rule 기준으로 답변해줘.
+
+다음 Frontend 호출 구조가 있다고 가정한다.
+
+ACT-002 검색
+→ handleSearch()
+
+handleSearch()
+→ validateSearchCondition()
+
+validateSearchCondition()
+→ 검색어가 없으면 Message 표시 후 return
+→ 검색어가 있으면 계속 진행
+
+Validation 성공 후:
+→ createSearchParameter()
+→ searchEquipment()
+
+searchEquipment()
+→ equipmentStore.search()
+
+equipmentStore.search()
+→ equipmentService.getList()
+
+equipmentService.getList()
+→ apiClient.get("/api/equipment", params)
+
+추가로 검색 조건에 includeStatus=true인 경우:
+
+→ equipmentService.getStatus()
+→ apiClient.get("/api/equipment/status")
+
+두 API는 Promise.all()을 사용하여 호출된다고 가정한다.
+
+Response 수신 후:
+→ equipmentList State 변경
+→ Grid 갱신
+
+다음 질문에 답변해줘.
+
+1. handleSearch부터 어떤 순서로 호출 관계를 추적하는가?
+2. Validation 실패/성공 분기를 어떻게 표현하는가?
+3. createSearchParameter 내부에서 값이 변환되면 어떻게 기록하는가?
+4. Component → Store → Service → API Client 구조를 어디까지 추적하는가?
+5. Promise.all()의 두 API를 순차 호출로 표현하는가, 병렬 호출로 표현하는가?
+6. includeStatus=false이면 두 번째 API가 호출되지 않는다는 조건을 어떻게 표현하는가?
+7. apiClient.get 이후 Axios 내부 구현까지 추적하는가?
+8. Backend Controller / Service / Mapper까지 추적하는가?
+9. 호출 관계가 A → B → A처럼 순환하면 어떻게 처리하는가?
+10. 최종 Frontend 실행 트리를 예제로 보여줘.
+
+실제 MCP는 호출하지 마.
+실제 Source Code는 분석하지 마.
+파일은 생성하거나 수정하지 마.
+주어진 가정과 Rule만 기준으로 답변해줘.
+
+
+#####
