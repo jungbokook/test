@@ -626,3 +626,81 @@ Response DTO / Error Response Contract까지 확인한 후 STOP.
 
 
 #####
+
+
+08-be-analysis-scope.md 규칙을 적용해서
+아래 API의 Backend Business Logic을 테스트 분석해줘.
+
+대상:
+화면명: [실제 화면명]
+API ID: [실제 API ID]
+
+기존 API 분석 문서를 시작점으로 사용하고,
+Code Index MCP와 실제 Backend Source를 기준으로 추적해줘.
+
+이번 테스트에서는 문서를 생성하거나 수정하지 말고
+분석 결과만 출력해줘.
+
+반드시 확인할 것:
+
+1. Controller
+2. Service / ServiceImpl
+3. 실제 Business Logic 실행 순서
+4. Validation
+5. 조건 / 분기
+6. 내부 Method 호출
+7. 내부 Service / 공통 Service 호출
+8. Mapper 호출
+9. MyBatis Mapper XML
+10. Dynamic SQL
+11. 실제 SQL
+12. Oracle Table / View / Column
+13. RFC 호출
+14. REST / HTTP / SOAP / 다른 Backend API 등 외부 연동
+15. Exception 처리
+16. Response 생성
+
+중요:
+
+DB / RFC / REST / 기타 외부 연동을
+별도의 고정 단계로 분리하지 말고
+실제 Business Logic에서 호출되는 위치에 배치해줘.
+
+동일 유형의 호출이 여러 번 존재하면 합치지 말고
+실제 실행 순서대로 각각 표시해줘.
+
+예:
+DB #1
+→ 조건
+→ RFC #1
+→ DB #2
+→ REST #1
+→ RFC #2
+→ DB #3
+
+내부 Service 또는 공통 Service 안에서
+DB / RFC / 외부 연동이 발생하면
+현재 Project Root 아래 실제 Source를 따라 계속 추적해줘.
+
+외부 연동이 끝난 후에도
+현재 API의 Business Logic이 계속되면
+Response 생성까지 계속 추적해줘.
+
+Oracle MCP는 Metadata 확인에만 사용하고
+DML / DDL은 절대 실행하지 마.
+
+JAR,
+JAR 내부 Class,
+Decompiled Class,
+.m2,
+.gradle,
+Project Root 외부 Source는 탐색하지 마.
+
+Source Path는 Project Root 기준 상대경로만 사용하고
+절대경로를 요청하거나 추측하지 마.
+
+최종 결과에서 가장 먼저
+전체 실행 흐름을 ASCII Execution Tree로 보여줘.
+
+
+#####
