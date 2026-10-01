@@ -459,3 +459,29 @@ API 규격 분석을 시작하지 마.
 
 
 #####
+
+
+/fe-analysis {화면명} {Action ID}
+
+이번 분석은 실제 Frontend Source를 기준으로 수행해줘.
+
+Code Index MCP를 사용해서
+Handler부터 Backend API 호출까지 관련 Source와 호출 관계를 추적해줘.
+
+그리고 안전하게 실행 가능한 조회 기능이라면
+Chrome DevTools MCP를 사용해서 실제 Runtime Network도 확인해줘.
+
+Source와 Runtime을 교차 확인하고,
+주요 처리 단계에는
+Source Path + Function/Method + Line Range를 표시해줘.
+
+Runtime에서 확인한 값과
+Source에서 확인한 규칙은 구분해서 작성해줘.
+
+현재 Action과 직접 관련된 범위만 분석하고,
+Backend 내부 구현은 분석하지 마.
+
+FE 문서를 생성한 뒤 STOP 해줘.
+
+
+#####
