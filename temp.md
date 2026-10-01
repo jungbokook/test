@@ -1,11 +1,14 @@
-Code Index MCP를 사용해서
-현재 인덱싱되어 있는 프로젝트의 root 경로를 확인해줘.
+Code Index MCP를 사용해서 현재 Claude Code 작업 디렉터리를
+인덱싱할 프로젝트로 설정해줘.
 
-그리고 다음도 확인해줘.
+Frontend와 Backend가 같은 프로젝트 아래에 있으므로
+현재 프로젝트 루트 전체를 대상으로 설정해.
 
-1. 현재 Index Root 경로
-2. Frontend 소스가 검색 범위에 포함되는지
-3. Backend 소스가 검색 범위에 포함되는지
-4. Frontend와 Backend를 모두 검색할 수 있는 상태인지
+설정 후 다음만 확인해줘.
 
-설정 변경은 하지 말고 현재 상태만 확인해줘.
+1. 설정된 Project Root
+2. 인덱싱 상태
+3. Frontend 소스 검색 가능 여부
+4. Backend 소스 검색 가능 여부
+
+소스 파일은 수정하지 마.
