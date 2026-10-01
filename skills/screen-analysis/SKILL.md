@@ -477,7 +477,49 @@ Trigger:
 으로 기록한다.
 
 
-## 16. STEP 10 — SCREEN 문서 생성
+## 16. SCREEN 문서 작성 Reference
+
+SCREEN 문서를 작성하기 전에
+다음 Reference 문서를 확인한다.
+
+`.claude/references/SCREEN-REFERENCE.md`
+
+Reference 문서는 SCREEN 결과 문서의
+표현 형식과 상세 수준을 맞추기 위한 기준으로 사용한다.
+
+참고 대상:
+
+- 문서 전체 구조
+- Section 구성
+- Action 목록 표현 방식
+- Action 상세 표현 방식
+- 표 구성
+- 설명 상세 수준
+- Runtime / Source 근거 표현 방식
+- Popup / Navigation 표현 방식
+- 미확인 항목 표현 방식
+- 분석 경계 표현 방식
+
+Reference 문서는 분석 Evidence가 아니다.
+
+Reference에 존재하는 실제 화면명,
+Action ID,
+Handler,
+Source Path,
+URL,
+Parameter,
+값 등을
+현재 분석 결과에 복사하지 않는다.
+
+현재 분석 결과는 반드시
+현재 Runtime과 현재 Source에서 확인한
+Evidence를 기준으로 작성한다.
+
+Reference는 내용이 아니라
+문서의 형식과 표현 수준만 참고한다.
+
+
+## 17. STEP 10 — SCREEN 문서 생성
 
 분석 결과를 화면별 디렉터리에
 SCREEN 문서로 생성한다.
@@ -512,7 +554,7 @@ SCREEN 문서:
 임의로 덮어쓰지 않는다.
 
 
-## 17. SCREEN 문서 기본 구조
+## 18. SCREEN 문서 기본 구조
 
 문서는 다음 구조를 사용한다.
 
@@ -589,7 +631,7 @@ Action ID 목록을 표시한다.
 단, 다음 분석을 자동으로 시작하지 않는다.
 
 
-## 18. 금지 사항
+## 19. 금지 사항
 
 SCREEN 분석에서는 다음을 수행하지 않는다.
 
@@ -605,7 +647,7 @@ SCREEN 분석에서는 다음을 수행하지 않는다.
 - 다음 분석 단계 자동 실행
 
 
-## 19. 종료 조건
+## 20. 종료 조건
 
 SCREEN 문서가 생성되면
 즉시 화면 기능 분석을 종료한다.
@@ -614,7 +656,7 @@ SCREEN 문서가 생성되면
 Frontend 기능 분석을 시작하지 않는다.
 
 
-## 20. 완료 보고
+## 21. 완료 보고
 
 SCREEN 분석 완료 후 다음 정보만 간단히 보고한다.
 
