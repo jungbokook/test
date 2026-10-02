@@ -49,3 +49,34 @@ POST /api/equipment/history
 
 
 #####
+
+
+api-be-parallel-orchestrator agent를 사용해서
+WORKER-001 하나만 실제 실행해줘.
+
+FE Document:
+FE-ACT-010-create.md
+
+API:
+POST /api/equipment/create
+
+실행 순서:
+1. WORKER-001에 API-001을 할당
+2. API Analysis 실행
+3. API 문서를 다음 이름으로 생성
+   FE-ACT-010-create-API-001.md
+4. API Analysis가 PASS한 경우에만 BE Analysis 실행
+5. BE-001을 할당
+6. API Document는
+   FE-ACT-010-create-API-001.md
+   를 정확히 사용
+7. BE 문서를 다음 이름으로 생성
+   FE-ACT-010-create-BE-001.md
+8. 완료 후 STOP
+
+다른 Worker는 실행하지 마.
+병렬 실행하지 마.
+API/BE 문서 전체 내용을 최종 응답에 다시 출력하지 마.
+
+
+#####
