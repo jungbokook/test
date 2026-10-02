@@ -1,5 +1,15 @@
-action-analysis-orchestrator agent를 사용해서
-equipment-search ACT-002 를 분석 대상으로 확정해줘.
+api-be-parallel-orchestrator agent를 사용해서
+다음 API를 Worker별로 분리하고 병렬 실행 계획만 만들어줘.
+
+화면명:
+equipment-search
+
+API:
+POST /api/equipment/search
+GET /api/equipment/code
+UNKNOWN /api/equipment/history
+
+실제 API/BE 분석은 실행하지 마.
 
 
 #####
