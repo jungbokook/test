@@ -295,6 +295,7 @@ EquipmentService.save()
         └─ 반환값으로 다음 처리
 ```
 
+
 ## 9. 호출 후 원래 흐름으로 복귀
 
 하위 Method / Service / DB / 외부 연동을 분석한 뒤에는
@@ -1417,3 +1418,59 @@ Backend Business Logic 추적이 완료되면 STOP 한다.
 ```
 
 현재 API Call Path에 실제로 연결되는 Source만 분석한다.
+
+
+## 47. Shell 기반 재귀 탐색 제한
+
+Backend Source 추적에서 `xargs`를 사용하지 않는다.
+
+다음과 같은 Project Root 전체 대상 Shell 기반 재귀 검색도 사용하지 않는다.
+
+```text
+find ... | xargs ...
+grep ... | xargs ...
+grep -r ...
+grep -R ...
+grep -rn ...
+```
+
+Source 탐색은 다음 순서를 우선한다.
+
+```text
+Code Index
+ ↓
+관련 Project / Symbol / Reference 확인
+ ↓
+관련 Source 범위 축소
+ ↓
+필요한 Source File Read
+ ↓
+실제 Source 확인
+```
+
+Mapper Method, MyBatis Statement ID, Class Name,
+Method Name 등 정확한 식별자가 이미 확인된 경우에도
+Project Root 전체를 대상으로 재귀 검색하지 않는다.
+
+예:
+
+```text
+insertApprovemap
+```
+
+확인을 위해 다음과 같이 Project Root 전체를 검색하지 않는다.
+
+```text
+grep -rn "insertApprovemap" <Project Root>
+```
+
+먼저 Code Index와 현재까지 확인된 Source Evidence를 사용하여
+관련 Project / Package / Directory 범위를 축소한다.
+
+정확한 문자열 검색이 추가로 필요한 경우에는
+이미 확인된 관련 Source 범위 안에서만 보조적으로 수행한다.
+
+검색 결과 자체만으로 Business Logic을 확정하지 않는다.
+
+최종 호출 관계와 Business Logic은
+반드시 실제 Source File을 확인하여 확정한다.
