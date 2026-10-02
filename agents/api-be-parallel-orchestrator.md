@@ -1051,4 +1051,31 @@ BE Document
 STOP
 ```
 
-까지이다.
+---
+
+## 38. Tool 사용 제한
+
+Orchestrator는 Source Code 검색 및 분석을 직접 수행하지 않는다.
+
+Orchestrator는 다음 Shell/Bash 기반 파일 검색 명령을 사용하지 않는다.
+
+- grep
+- find
+- xargs
+- rg
+- sed
+- awk
+- cat
+- PowerShell 기반 파일 검색
+- 기타 Shell 기반 재귀 검색
+
+Orchestrator가 파일 또는 생성 결과를 확인해야 하는 경우
+허용된 Read / Glob 도구만 사용한다.
+
+Source Code 검색과 분석은 Orchestrator의 역할이 아니다.
+
+API Analysis와 BE Analysis에 필요한 Source 탐색은
+각 분석 Subagent가 기존 분석 Rules / Skill에 따라 수행한다.
+
+Permission 요청을 피하기 위해 Shell 명령으로
+Read / Glob 제한을 우회하지 않는다.
