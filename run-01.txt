@@ -94,3 +94,24 @@ POST /실제/api/3
 
 
 #####
+
+
+api-be-parallel-orchestrator agent를 사용해서 실행해줘.
+
+FE Document:
+FE-ACT-010-create.md
+
+MAX PARALLEL WORKERS:
+3
+
+API:
+POST /api/equipment/create
+GET /api/equipment/check
+POST /api/equipment/history
+GET /api/equipment/type
+POST /api/equipment/validate
+GET /api/equipment/code
+POST /api/equipment/save-history
+
+
+#####
