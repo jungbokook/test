@@ -32,3 +32,20 @@ WORKER-002 이후는 실행하지 마.
 
 
 #####
+
+
+api-be-parallel-orchestrator agent를 사용해서
+Worker와 출력 파일명만 구성해줘.
+
+FE Document:
+FE-ACT-010-create.md
+
+API:
+POST /api/equipment/create
+GET /api/equipment/check
+POST /api/equipment/history
+
+실제 API/BE 분석은 실행하지 마.
+
+
+#####
