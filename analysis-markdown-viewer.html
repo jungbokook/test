@@ -1,0 +1,926 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Analysis Markdown Viewer</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #f5f7fa;
+    font-family: Arial, "Noto Sans KR", sans-serif;
+    color: #1f2937;
+}
+
+header {
+    position: sticky;
+    top: 0;
+    background: white;
+    border-bottom: 1px solid #ddd;
+    z-index: 10;
+}
+
+.controls,
+.viewer,
+.status {
+    width: 90%;
+    max-width: 90%;
+    margin: auto;
+}
+
+.controls {
+    padding: 18px 0;
+}
+
+.row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 8px 0;
+}
+
+label {
+    font-weight: bold;
+    min-width: 55px;
+}
+
+select,
+button {
+    padding: 9px 13px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: white;
+    font: inherit;
+}
+
+select {
+    min-width: 260px;
+}
+
+button {
+    cursor: pointer;
+}
+
+button.active {
+    background: #1f2937;
+    color: white;
+}
+
+.sub {
+    display: none;
+    border-top: 1px solid #eee;
+    margin-top: 12px;
+    padding-top: 8px;
+}
+
+.sub.show {
+    display: block;
+}
+
+.status {
+    margin-top: 18px;
+    color: #64748b;
+}
+
+.viewer {
+    margin-top: 18px;
+    margin-bottom: 50px;
+    min-height: 500px;
+    padding: 30px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    overflow-x: auto;
+}
+
+pre {
+    background: #f6f8fa;
+    padding: 14px;
+    overflow: auto;
+    border-radius: 8px;
+}
+
+table {
+    border-collapse: collapse;
+    display: block;
+    overflow-x: auto;
+}
+
+th,
+td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+@media(max-width:700px) {
+    .controls,
+    .viewer,
+    .status {
+        width: 96%;
+        max-width: 96%;
+    }
+
+    .viewer {
+        padding: 18px;
+    }
+
+    select {
+        width: 100%;
+        min-width: 0;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="controls">
+
+    <div class="row">
+        <label>화면명</label>
+
+        <select id="screen">
+            <option value="">화면 선택</option>
+        </select>
+
+        <button id="pick">
+            docs/analysis 선택
+        </button>
+    </div>
+
+    <div class="row">
+        <button id="screenTab" disabled>
+            SCREEN
+        </button>
+
+        <button id="feTab" disabled>
+            FE
+        </button>
+    </div>
+
+    <div id="sub" class="sub">
+
+        <div class="row">
+            <label>FE</label>
+            <div id="fes"></div>
+        </div>
+
+        <div
+            id="apiRow"
+            class="row"
+            style="display:none"
+        >
+            <label>API</label>
+            <div id="apis"></div>
+        </div>
+
+        <div
+            id="beRow"
+            class="row"
+            style="display:none"
+        >
+            <label>BE</label>
+            <div id="bes"></div>
+        </div>
+
+    </div>
+
+</div>
+</header>
+
+<div id="status" class="status">
+    Chrome/Edge에서
+    <b>docs/analysis 선택</b>
+    버튼으로 분석 폴더를 선택하세요.
+</div>
+
+<main id="viewer" class="viewer">
+    문서를 선택하면 여기에 표시됩니다.
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<script>
+
+const q = s => document.querySelector(s);
+
+let root = null;
+let data = new Map();
+
+let screenName = "";
+let action = "";
+
+
+/* =========================================================
+   공통
+========================================================= */
+
+const esc = s =>
+    String(s).replace(
+        /[&<>"']/g,
+        c => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        }[c])
+    );
+
+
+async function dir(handle, name) {
+
+    try {
+        return await handle.getDirectoryHandle(name);
+    }
+    catch {
+        return null;
+    }
+}
+
+
+async function file(handle, name) {
+
+    try {
+        return await handle.getFileHandle(name);
+    }
+    catch {
+        return null;
+    }
+}
+
+
+async function mds(handle) {
+
+    let result = [];
+
+    if (!handle)
+        return result;
+
+    for await (const [name, item] of handle.entries()) {
+
+        if (
+            item.kind === "file" &&
+            name.toLowerCase().endsWith(".md")
+        ) {
+            result.push(item);
+        }
+    }
+
+    return result.sort(
+        (a, b) =>
+            a.name.localeCompare(
+                b.name,
+                undefined,
+                { numeric: true }
+            )
+    );
+}
+
+
+/* =========================================================
+   파일명 분석
+========================================================= */
+
+function act(name) {
+
+    const match =
+        name.match(/^FE-(ACT-\d+)/i);
+
+    return match
+        ? match[1].toUpperCase()
+        : "";
+}
+
+
+function feLabel(name) {
+
+    const match =
+        name.match(
+            /^FE-(ACT-\d+)-(.+)\.md$/i
+        );
+
+    if (!match)
+        return name.replace(/\.md$/i, "");
+
+    return (
+        match[1] +
+        " " +
+        match[2].replaceAll("-", " ")
+    );
+}
+
+
+function child(name, actionId, type) {
+
+    const upper =
+        name.toUpperCase();
+
+    return (
+        upper.startsWith(
+            "FE-" + actionId + "-"
+        ) &&
+        upper.includes(
+            "-" + type + "-"
+        )
+    );
+}
+
+
+function childLabel(name, type) {
+
+    const regex =
+        new RegExp(
+            "-(" + type + "-\\d+)\\.md$",
+            "i"
+        );
+
+    const match =
+        name.match(regex);
+
+    return match
+        ? match[1].toUpperCase()
+        : name.replace(/\.md$/i, "");
+}
+
+
+/* =========================================================
+   버튼 상태
+========================================================= */
+
+function active(button) {
+
+    document
+        .querySelectorAll(
+            "button.active"
+        )
+        .forEach(
+            item =>
+                item.classList.remove(
+                    "active"
+                )
+        );
+
+    if (button)
+        button.classList.add("active");
+}
+
+
+/* =========================================================
+   Markdown 표시
+========================================================= */
+
+async function render(
+    handle,
+    button,
+    keepFE
+) {
+
+    if (!handle)
+        return;
+
+    const file =
+        await handle.getFile();
+
+    const markdown =
+        await file.text();
+
+
+    if (!keepFE) {
+
+        active(button);
+    }
+    else {
+
+        document
+            .querySelectorAll(
+                "#apis button, #bes button"
+            )
+            .forEach(
+                item =>
+                    item.classList.remove(
+                        "active"
+                    )
+            );
+
+        if (button)
+            button.classList.add("active");
+    }
+
+
+    if (window.marked) {
+
+        q("#viewer").innerHTML =
+            marked.parse(markdown);
+    }
+    else {
+
+        q("#viewer").innerHTML =
+            "<pre>" +
+            esc(markdown) +
+            "</pre>";
+    }
+
+
+    q("#status").innerHTML =
+        "표시 문서: <b>" +
+        esc(handle.name) +
+        "</b>";
+}
+
+
+/* =========================================================
+   화면 목록 검색
+========================================================= */
+
+async function scan() {
+
+    data.clear();
+
+
+    for await (
+        const [name, handle]
+        of root.entries()
+    ) {
+
+        if (handle.kind !== "directory")
+            continue;
+
+
+        const screen =
+            await file(
+                handle,
+                "SCREEN-" +
+                name +
+                ".md"
+            );
+
+
+        const frontend =
+            await dir(
+                handle,
+                "frontend"
+            );
+
+
+        const api =
+            await dir(
+                handle,
+                "api"
+            );
+
+
+        const backend =
+            await dir(
+                handle,
+                "backend"
+            );
+
+
+        if (
+            screen ||
+            frontend ||
+            api ||
+            backend
+        ) {
+
+            data.set(
+                name,
+                {
+                    screen,
+                    frontend,
+                    api,
+                    backend
+                }
+            );
+        }
+    }
+
+
+    const select =
+        q("#screen");
+
+
+    select.innerHTML =
+        '<option value="">' +
+        '화면 선택' +
+        '</option>';
+
+
+    [...data.keys()]
+        .sort()
+        .forEach(name => {
+
+            select.add(
+                new Option(
+                    name,
+                    name
+                )
+            );
+        });
+
+
+    q("#status").textContent =
+        data.size +
+        "개 화면을 찾았습니다.";
+}
+
+
+/* =========================================================
+   docs/analysis 선택
+========================================================= */
+
+q("#pick").onclick =
+async () => {
+
+    if (
+        !window.showDirectoryPicker
+    ) {
+
+        alert(
+            "Chrome 또는 Edge에서 열어주세요."
+        );
+
+        return;
+    }
+
+
+    try {
+
+        root =
+            await showDirectoryPicker({
+                mode: "read"
+            });
+
+        await scan();
+    }
+    catch (error) {
+
+        /* 사용자가 취소한 경우 */
+    }
+};
+
+
+/* =========================================================
+   화면 변경
+========================================================= */
+
+q("#screen").onchange =
+async event => {
+
+    screenName =
+        event.target.value;
+
+    action = "";
+
+
+    q("#sub")
+        .classList
+        .remove("show");
+
+
+    q("#screenTab").disabled =
+        !screenName;
+
+    q("#feTab").disabled =
+        !screenName;
+
+
+    if (!screenName)
+        return;
+
+
+    await showScreen();
+};
+
+
+/* =========================================================
+   SCREEN
+========================================================= */
+
+async function showScreen() {
+
+    const current =
+        data.get(screenName);
+
+
+    q("#sub")
+        .classList
+        .remove("show");
+
+
+    active(
+        q("#screenTab")
+    );
+
+
+    if (current.screen) {
+
+        await render(
+            current.screen,
+            q("#screenTab")
+        );
+    }
+    else {
+
+        q("#viewer").textContent =
+            "SCREEN 문서가 없습니다.";
+    }
+}
+
+
+q("#screenTab").onclick =
+    showScreen;
+
+
+/* =========================================================
+   FE 목록
+========================================================= */
+
+q("#feTab").onclick =
+async () => {
+
+    const current =
+        data.get(screenName);
+
+
+    active(
+        q("#feTab")
+    );
+
+
+    q("#sub")
+        .classList
+        .add("show");
+
+
+    q("#fes").innerHTML = "";
+    q("#apis").innerHTML = "";
+    q("#bes").innerHTML = "";
+
+
+    q("#apiRow").style.display =
+        "none";
+
+    q("#beRow").style.display =
+        "none";
+
+
+    const frontendFiles =
+        await mds(
+            current.frontend
+        );
+
+
+    if (
+        !frontendFiles.length
+    ) {
+
+        q("#fes").textContent =
+            "FE 문서 없음";
+
+        q("#viewer").textContent =
+            "이 화면에는 FE 문서가 없습니다.";
+
+        return;
+    }
+
+
+    frontendFiles.forEach(
+        handle => {
+
+            const button =
+                document.createElement(
+                    "button"
+                );
+
+
+            button.textContent =
+                feLabel(
+                    handle.name
+                );
+
+
+            button.onclick =
+                () =>
+                    selectFE(
+                        handle,
+                        button
+                    );
+
+
+            q("#fes")
+                .appendChild(
+                    button
+                );
+        }
+    );
+
+
+    q("#viewer").textContent =
+        "FE 기능을 선택하세요.";
+};
+
+
+/* =========================================================
+   FE 선택
+========================================================= */
+
+async function selectFE(
+    handle,
+    button
+) {
+
+    action =
+        act(
+            handle.name
+        );
+
+
+    document
+        .querySelectorAll(
+            "#fes button"
+        )
+        .forEach(
+            item =>
+                item.classList.remove(
+                    "active"
+                )
+        );
+
+
+    button.classList.add(
+        "active"
+    );
+
+
+    q("#feTab")
+        .classList
+        .add("active");
+
+
+    await render(
+        handle,
+        null,
+        true
+    );
+
+
+    const current =
+        data.get(
+            screenName
+        );
+
+
+    /*
+     * 현재 FE Action에 속하는
+     * API만 검색
+     */
+
+    const apiFiles =
+        (
+            await mds(
+                current.api
+            )
+        )
+        .filter(
+            item =>
+                child(
+                    item.name,
+                    action,
+                    "API"
+                )
+        );
+
+
+    /*
+     * 현재 FE Action에 속하는
+     * BE만 검색
+     */
+
+    const backendFiles =
+        (
+            await mds(
+                current.backend
+            )
+        )
+        .filter(
+            item =>
+                child(
+                    item.name,
+                    action,
+                    "BE"
+                )
+        );
+
+
+    /*
+     * API가 없으면
+     * API 영역 숨김
+     */
+
+    fill(
+        "#apis",
+        "#apiRow",
+        apiFiles,
+        "API"
+    );
+
+
+    /*
+     * BE가 없으면
+     * BE 영역 숨김
+     */
+
+    fill(
+        "#bes",
+        "#beRow",
+        backendFiles,
+        "BE"
+    );
+}
+
+
+/* =========================================================
+   API / BE 버튼 생성
+========================================================= */
+
+function fill(
+    box,
+    row,
+    items,
+    type
+) {
+
+    q(box).innerHTML = "";
+
+
+    /*
+     * 문서가 없으면
+     * 영역 자체를 표시하지 않음
+     */
+
+    if (!items.length) {
+
+        q(row).style.display =
+            "none";
+
+        return;
+    }
+
+
+    q(row).style.display =
+        "flex";
+
+
+    items.forEach(
+        handle => {
+
+            const button =
+                document.createElement(
+                    "button"
+                );
+
+
+            button.textContent =
+                childLabel(
+                    handle.name,
+                    type
+                );
+
+
+            /*
+             * API / BE 선택 시
+             * 위 UI는 그대로 유지
+             *
+             * Viewer 문서만 변경
+             */
+
+            button.onclick =
+                () =>
+                    render(
+                        handle,
+                        button,
+                        true
+                    );
+
+
+            q(box)
+                .appendChild(
+                    button
+                );
+        }
+    );
+}
+
+</script>
+
+</body>
+</html>
