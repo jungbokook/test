@@ -115,3 +115,17 @@ POST /api/equipment/save-history
 
 
 #####
+
+
+fe-parallel-orchestrator agent를 사용해서 실행해줘.
+
+MAX PARALLEL WORKERS:
+3
+
+TARGETS:
+equipment-search ACT-001
+workorder-list ACT-002
+pm-sheet ACT-001
+
+
+#####
