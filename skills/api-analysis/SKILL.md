@@ -74,6 +74,39 @@ Backend URL
 화면명은 해당 화면의 기존 분석 문서를 찾고
 API 문서 저장 위치를 결정하는 기준으로 사용한다.
 
+Orchestrator 또는 Worker를 통해 실행되는 경우
+다음 값이 추가로 전달될 수 있다.
+
+```text
+API ID
+Output File
+```
+
+예:
+
+```text
+화면명:
+equipment-search
+
+HTTP Method:
+POST
+
+Backend URL:
+/api/equipment/create
+
+API ID:
+API-001
+
+Output File:
+FE-ACT-010-create-API-001.md
+```
+
+`API ID`와 `Output File`은
+Orchestrator / Worker 실행을 위한 선택 입력이다.
+
+전달되지 않은 경우에는
+기존 직접 실행 방식을 그대로 사용한다.
+
 ### HTTP Method UNKNOWN 처리
 
 HTTP Method를 모르는 경우 `UNKNOWN`을 입력할 수 있다.
@@ -846,12 +879,12 @@ Controller에서 Service 호출이 발견되어도
 Service Method 내부로 진입하지 않는다.
 
 
-## 22. API ID 생성
+## 22. API ID 결정
 
 API 분석 문서를 생성할 때
-API ID를 부여한다.
+API ID를 결정한다.
 
-형식:
+API ID 형식:
 
 ```text
 API-001
@@ -860,8 +893,60 @@ API-003
 ...
 ```
 
+API ID 결정 방식은
+실행 방식에 따라 구분한다.
+
+
+### 22.1 Orchestrator / Worker에서 API ID를 전달한 경우
+
+Orchestrator 또는 Worker가
+API ID를 명시적으로 전달한 경우
+전달받은 API ID를 그대로 사용한다.
+
+예:
+
+```text
+API ID:
+API-001
+```
+
+이 경우:
+
+```text
+API-001
+```
+
+을 그대로 사용한다.
+
+새로운 API ID를 생성하지 않는다.
+
+다음 작업을 수행하지 않는다.
+
+```text
+기존 API 문서에서 최대 API ID 검색
+최근 생성된 API 문서를 기준으로 ID 결정
+파일 생성 순서를 기준으로 ID 변경
+다른 Worker의 API ID 확인
+전달받은 API ID 재배정
+```
+
+Worker 실행 순서나
+분석 완료 순서에 따라
+API ID를 변경하지 않는다.
+
+
+### 22.2 API ID를 전달받지 않은 경우
+
+기존 직접 실행:
+
+```text
+/api-analysis <화면명> <HTTP Method|UNKNOWN> <Backend URL>
+```
+
+에서는 기존 방식대로
 현재 화면의 기존 API 문서를 확인하여
-이미 사용 중인 API ID와 중복되지 않도록 한다.
+이미 사용 중인 API ID와 중복되지 않도록
+API ID를 결정한다.
 
 저장 위치:
 
@@ -891,7 +976,64 @@ HTTP Method가 `UNKNOWN`으로 입력되었지만
 을 기준으로 기존 문서 중복 여부를 다시 확인한다.
 
 
+### 22.3 API ID 결정 우선순위
+
+```text
+1순위
+Orchestrator / Worker가 전달한 API ID
+
+2순위
+기존 API Analysis의 API ID 생성 규칙
+```
+
+명시적으로 전달된 API ID가 있으면
+항상 전달받은 값을 우선한다.
+
+
 ## 23. 출력 파일명
+
+출력 파일명은
+실행 방식에 따라 결정한다.
+
+
+### 23.1 Orchestrator / Worker에서 Output File을 전달한 경우
+
+Orchestrator 또는 Worker가
+Output File을 명시적으로 전달한 경우
+전달받은 파일명을 그대로 사용한다.
+
+예:
+
+```text
+API ID:
+API-001
+
+Output File:
+FE-ACT-010-create-API-001.md
+```
+
+최종 파일명:
+
+```text
+FE-ACT-010-create-API-001.md
+```
+
+이 경우 기존 파일명 생성 규칙:
+
+```text
+{API ID}-{기능명}.md
+```
+
+을 적용하지 않는다.
+
+API ID 또는 기능명을 이용하여
+파일명을 다시 생성하지 않는다.
+
+
+### 23.2 Output File을 전달받지 않은 경우
+
+기존 직접 실행에서는
+기존 파일명 규칙을 그대로 사용한다.
 
 파일명 형식:
 
@@ -913,6 +1055,20 @@ API-API-001-equipment-search.md
 
 API ID 자체에 이미 `API-` Prefix가 포함되어 있으므로
 Prefix를 중복하지 않는다.
+
+
+### 23.3 출력 파일명 결정 우선순위
+
+```text
+1순위
+Orchestrator / Worker가 전달한 Output File
+
+2순위
+기존 {API ID}-{기능명}.md 규칙
+```
+
+Output File이 명시적으로 전달된 경우
+반드시 해당 파일명을 사용한다.
 
 
 ## 24. 출력 문서 필수 내용
@@ -1031,11 +1187,13 @@ Source에서 확인되지 않는 내용을 추측하지 않는다.
 
 ## 27. 문서 생성
 
-분석이 완료되면 다음 위치에
-API 문서를 생성한다.
+분석이 완료되면
+API Contract 문서를 생성한다.
+
+기본 저장 디렉터리:
 
 ```text
-docs/analysis/{화면명}/api/{API ID}-{기능명}.md
+docs/analysis/{화면명}/api/
 ```
 
 필요한 경우:
@@ -1046,7 +1204,71 @@ docs/analysis/{화면명}/api/
 
 디렉터리를 생성한다.
 
-분석 중간 결과를 별도 문서로 생성하지 않는다.
+
+### 27.1 Output File이 전달된 경우
+
+Orchestrator 또는 Worker가
+Output File을 전달한 경우:
+
+```text
+docs/analysis/{화면명}/api/{Output File}
+```
+
+에 저장한다.
+
+예:
+
+```text
+화면명:
+equipment-search
+
+API ID:
+API-001
+
+Output File:
+FE-ACT-010-create-API-001.md
+```
+
+최종 저장 위치:
+
+```text
+docs/analysis/equipment-search/api/FE-ACT-010-create-API-001.md
+```
+
+Output File이 전달된 경우
+다른 이름으로 변경하지 않는다.
+
+
+### 27.2 Output File이 전달되지 않은 경우
+
+기존 직접 실행에서는
+기존 파일명 규칙을 사용한다.
+
+```text
+docs/analysis/{화면명}/api/{API ID}-{기능명}.md
+```
+
+예:
+
+```text
+docs/analysis/equipment-search/api/API-001-equipment-search.md
+```
+
+
+### 27.3 기존 파일 보호
+
+최종 저장 대상 파일이 이미 존재하는 경우
+사용자의 명시적인 지시 없이
+자동으로 덮어쓰지 않는다.
+
+기존 문서를 삭제하거나
+다른 API 문서로 대체하지 않는다.
+
+
+### 27.4 문서 생성 제한
+
+분석 중간 결과를
+별도 문서로 생성하지 않는다.
 
 최종 API Contract 문서 하나만 생성한다.
 
@@ -1105,7 +1327,14 @@ docs/analysis/{화면명}/api/
 
 [ ] Mapper / MyBatis XML / SQL / Oracle을 분석하지 않았는가
 
-[ ] API ID가 기존 문서와 중복되지 않는가
+[ ] Orchestrator / Worker에서 API ID를 전달한 경우
+    전달받은 API ID를 그대로 사용했는가
+
+[ ] Orchestrator / Worker에서 Output File을 전달한 경우
+    전달받은 파일명을 그대로 사용했는가
+
+[ ] API ID를 전달받지 않은 일반 실행인 경우
+    API ID가 기존 문서와 중복되지 않는가
 ```
 
 
@@ -1151,3 +1380,10 @@ BE 분석을 자동으로 시작하지 않는다.
 
 사용자가 API 문서를 확인하고
 직접 Backend 분석 대상을 선택할 때까지 대기한다.
+
+단, Orchestrator / Worker에 의해 실행된 경우에도
+이 Skill 자체가 BE 분석을 직접 시작하지 않는다.
+
+API Analysis 완료 후 STOP하고
+생성된 API Document와 API ID를
+호출한 Orchestrator / Worker가 다음 단계에서 사용할 수 있도록 한다.
