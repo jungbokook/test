@@ -72,12 +72,13 @@ DB / RFC / REST / 기타 외부 연동은
 5. 전체 실행 Tree
 6. Business Logic 상세
 7. DB / SQL 상세
-8. 외부 연동 상세
-9. Exception / Transaction
-10. Response 생성
-11. Source Evidence
-12. 미확인 항목
-13. 분석 경계
+8. Oracle Metadata
+9. 외부 연동 상세
+10. Exception / Transaction
+11. Response 생성
+12. Source Evidence
+13. 미확인 항목
+14. 분석 경계
 ```
 
 실제 기능에 존재하지 않는 항목을
@@ -297,8 +298,6 @@ DB와 외부 연동을 별도 단계로 이동시키지 않는다.
 Business Logic은 실행 순서에 따라
 독립적인 Block으로 작성한다.
 
-예:
-
 ```text
 ┌─ Business Logic #1 : 요청값 검증 ────────────
 │ 호출 위치
@@ -365,7 +364,7 @@ Business Logic은 실행 순서에 따라
 └──────────────────────────────────────────────
 ```
 
-Source에 없는 YES/NO 결과를 만들지 않는다.
+Source에 없는 YES / NO 결과를 만들지 않는다.
 
 ---
 
@@ -433,6 +432,10 @@ DB #3
 └──────────────────────────────────────────────
 ```
 
+DB Block 하나만 복사해도
+호출 위치, Mapper, SQL 역할,
+입력과 후속 처리를 이해할 수 있어야 한다.
+
 ---
 
 # 12. SQL 상세
@@ -463,7 +466,7 @@ DB Block과 별도로 SQL 상세 Block을 작성한다.
 │     → E.PLANT_CODE = #{plantCode}
 │
 │   equipmentName 존재
-│     → E.EQUIPMENT_NAME LIKE ...
+│     → EQUIPMENT_NAME LIKE ...
 │
 │   equipmentIds 존재
 │     → foreach를 사용하여 IN 조건 생성
@@ -585,11 +588,18 @@ Mapping을 Source에서 확인할 수 없는 단계는
 └──────────────────────────────────────────────
 ```
 
-필드가 매우 많은 경우 대량 항목 규칙을 적용한다.
+필드가 매우 많은 경우
+대량 항목 표시 규칙을 적용한다.
 
 ---
 
 # 16. Oracle Metadata
+
+Oracle Metadata는 Column 단위 비교가 중요하므로
+가독성을 위해 이 영역에 한해 Markdown Table 사용을 허용한다.
+
+Oracle Object 자체의 기본 정보는
+독립 Block으로 표현한다.
 
 ```text
 ┌─ Oracle Object #1 ───────────────────────────
@@ -599,27 +609,91 @@ Mapping을 Source에서 확인할 수 없는 단계는
 │ Object Type
 │   TABLE
 │
-│ 분석 API에서 사용되는 주요 Column
-│
-│ EQUIPMENT_ID
-│   Type: VARCHAR2(...)
-│   Nullable: NO
-│   PK: YES
-│
-│ PLANT_CODE
-│   Type: VARCHAR2(...)
-│   Nullable: NO
-│
-│ EQUIPMENT_NAME
-│   Type: VARCHAR2(...)
-│   Nullable: YES
+│ 사용 위치
+│   DB #1 - 설비 기본정보 조회
 │
 │ Metadata Source
 │   Oracle MCP
 └──────────────────────────────────────────────
 ```
 
-Oracle Metadata는 실제 확인 결과만 기록한다.
+### 사용 Column
+
+| Column | Data Type | Nullable | PK | 사용 위치 / 용도 |
+|---|---|---|---|---|
+| EQUIPMENT_ID | VARCHAR2(...) | NO | YES | 조회 / Result Mapping |
+| PLANT_CODE | VARCHAR2(...) | NO | NO | 검색 조건 / JOIN |
+| EQUIPMENT_NAME | VARCHAR2(...) | YES | NO | 조회 / 검색 조건 |
+| USE_YN | VARCHAR2(...) | YES | NO | 검색 조건 |
+
+Oracle Metadata는 실제 Oracle MCP에서 확인된 정보만 기록한다.
+
+현재 API의 SQL에서 실제 사용되는 Column을 우선 표시한다.
+
+다음과 같이 SQL에서 사용되는 Column의 역할을
+가능한 경우 함께 기록한다.
+
+```text
+SELECT
+WHERE
+JOIN
+INSERT
+UPDATE
+DELETE
+MERGE
+GROUP BY
+ORDER BY
+Result Mapping
+```
+
+Column이 많더라도 현재 API의 SQL에서 실제 사용되는
+중요 Column을 임의로 누락하지 않는다.
+
+Oracle MCP에서 확인할 수 없는 값은 추측하지 않고:
+
+```text
+확인되지 않음
+```
+
+으로 기록한다.
+
+SQL Source와 Oracle Metadata가 서로 다른 경우
+차이를 숨기지 않고 별도로 명시한다.
+
+예:
+
+```text
+Metadata 확인 결과
+
+SQL Source
+  TB_EQUIPMENT.PLANT_CD
+
+Oracle Metadata
+  PLANT_CODE
+
+판정
+  Source와 Oracle Metadata 불일치
+
+추가 확인 필요
+```
+
+Table / View가 여러 개이면
+각 Object별로 Metadata를 분리한다.
+
+예:
+
+```text
+Oracle Object #1
+  TB_EQUIPMENT
+
+Oracle Object #2
+  TB_PLANT
+
+Oracle Object #3
+  VW_EQUIPMENT_STATUS
+```
+
+각 Object 아래에 해당 Object의 Column Metadata Table을 작성한다.
 
 ---
 
@@ -728,6 +802,16 @@ Parameter가 많거나 Mapping이 중요한 경우
 └──────────────────────────────────────────────
 ```
 
+Response Mapping도 같은 원칙으로 표현한다.
+
+```text
+RFC Response
+ ↓
+Backend Mapping
+ ↓
+Business Logic 사용
+```
+
 ---
 
 # 20. REST / HTTP 상세 Block
@@ -776,6 +860,11 @@ Parameter가 많거나 Mapping이 중요한 경우
 └──────────────────────────────────────────────
 ```
 
+URL이 Configuration과 Runtime 값의 조합으로 만들어지는 경우
+확인 가능한 구성 과정을 그대로 표현한다.
+
+확인되지 않은 Base URL을 임의로 완성하지 않는다.
+
 ---
 
 # 21. 기타 외부 연동
@@ -803,6 +892,54 @@ SOAP, Message, File 등의 연동도
 │   ...
 │
 │ 호출 후 처리
+│   ...
+└──────────────────────────────────────────────
+```
+
+Message 예:
+
+```text
+┌─ Message #1 ─────────────────────────────────
+│ 호출 위치
+│   ...
+│
+│ Destination
+│   실제 Source에서 확인된 Topic / Queue
+│
+│ Payload
+│   ...
+│
+│ Header
+│   ...
+│
+│ 호출 조건
+│   ...
+│
+│ 호출 후 처리
+│   ...
+└──────────────────────────────────────────────
+```
+
+File 연동 예:
+
+```text
+┌─ File #1 ────────────────────────────────────
+│ 호출 위치
+│   ...
+│
+│ File 처리
+│   생성 / 읽기 / 변환
+│
+│ Format
+│   ...
+│
+│ Field Mapping
+│   ...
+│
+│ 외부 전달 지점
+│   ...
+│
+│ Error 처리
 │   ...
 └──────────────────────────────────────────────
 ```
@@ -872,6 +1009,16 @@ Source에서 실제 반복 횟수를 알 수 없다면
 Framework 일반 동작만으로
 Exception 흐름을 추측하지 않는다.
 
+Exception이 여러 개이면:
+
+```text
+Exception #1
+Exception #2
+Exception #3
+```
+
+처럼 각각 구분한다.
+
 ---
 
 # 24. Transaction
@@ -901,6 +1048,15 @@ Exception 흐름을 추측하지 않는다.
 
 외부 연동 실패 시 Rollback 여부를
 추측하지 않는다.
+
+Transaction이 확인되지 않으면:
+
+```text
+Transaction
+  명시적인 Transaction 설정 확인되지 않음
+```
+
+으로 표현할 수 있다.
 
 ---
 
@@ -962,6 +1118,9 @@ Backend 분석은 SQL이나 외부 연동에서 끝내지 않고
 │   status
 └──────────────────────────────────────────────
 ```
+
+필드가 많으면 전체 개수와 그룹을 먼저 표시하고
+상세 Mapping을 이어서 작성한다.
 
 ---
 
@@ -1031,6 +1190,8 @@ Line Range:
 
 으로 기록한다.
 
+Line Range를 추측하지 않는다.
+
 ---
 
 # 28. 미확인 항목
@@ -1049,6 +1210,15 @@ Line Range:
 ```
 
 확인되지 않은 값을 추측해서 채우지 않는다.
+
+미확인 항목이 없으면:
+
+```text
+미확인 항목
+  없음
+```
+
+으로 표현할 수 있다.
 
 ---
 
@@ -1096,7 +1266,8 @@ Line Range:
 Backend 문서는 사용자가 필요한 영역을
 Excel 한 셀에 직접 복사하는 것을 고려하여 작성한다.
 
-따라서 기본적으로 Markdown Table을 사용하지 않는다.
+따라서 Oracle Metadata를 제외한 일반 영역에서는
+기본적으로 Markdown Table을 사용하지 않는다.
 
 다음 형식을 우선한다.
 
@@ -1121,6 +1292,9 @@ Excel 한 셀에 직접 복사하는 것을 고려하여 작성한다.
 ```
 
 각 Block은 독립적으로 복사 가능해야 한다.
+
+Oracle Metadata는 Column 비교 가독성을 위해
+Markdown Table 사용을 허용한다.
 
 ---
 
@@ -1148,17 +1322,66 @@ Excel 한 셀에 직접 복사하는 것을 고려하여 작성한다.
 
 # 32. Markdown Table 사용 제한
 
-Backend 최종 문서에서는 기본적으로:
+Backend 최종 문서는 Excel 단일 셀 복사와
+ASCII 실행 흐름의 가독성을 위해
+기본적으로 Markdown Table을 사용하지 않는다.
+
+다만 다음 영역은 가독성을 위해 예외적으로
+Markdown Table을 사용할 수 있다.
 
 ```text
-| 항목 | 내용 |
-|---|---|
+Oracle Metadata
 ```
 
-형태의 Markdown Table을 사용하지 않는다.
+Oracle Metadata는 Column별:
 
-Excel 단일 셀 복사와
-ASCII 실행 흐름의 가독성을 우선한다.
+```text
+Column
+Data Type
+Nullable
+PK
+사용 위치 / 용도
+```
+
+를 비교해야 하므로 Table 형식을 우선한다.
+
+예:
+
+| Column | Data Type | Nullable | PK | 사용 위치 / 용도 |
+|---|---|---|---|---|
+| EQUIPMENT_ID | VARCHAR2(...) | NO | YES | Result Mapping |
+| PLANT_CODE | VARCHAR2(...) | NO | NO | WHERE / JOIN |
+| USE_YN | VARCHAR2(...) | YES | NO | WHERE |
+
+그 외 영역:
+
+```text
+기능 정보
+기능 요약
+실행 Tree
+Business Logic
+조건 / 분기
+DB 상세
+SQL 상세
+Dynamic SQL
+Parameter Mapping
+Result Mapping
+RFC
+REST
+기타 외부 연동
+Exception
+Transaction
+Response
+Source Evidence
+미확인 항목
+분석 경계
+```
+
+은 기본적으로 독립 Text Block + ASCII Tree 형식을 사용한다.
+
+Oracle Metadata Table 역시
+실제 Oracle MCP에서 확인된 Metadata만 사용하며
+Reference의 Sample 값을 실제 결과에 복사하지 않는다.
 
 ---
 
@@ -1186,6 +1409,10 @@ Request Parameter
 
 `대표 5개만 표시`처럼
 근거 없이 일부를 생략하지 않는다.
+
+Oracle Column의 경우
+현재 API에서 실제 사용하는 Column을
+Metadata Table에 누락 없이 표시하는 것을 우선한다.
 
 ---
 
@@ -1220,10 +1447,14 @@ DB #5
 DB #1 상세
 DB #2 상세
 DB #3 상세
-...
+DB #4 상세
+DB #5 상세
 ```
 
 로 작성한다.
+
+동일 Mapper / Statement가 반복 호출되어도
+실제 실행 위치가 다르면 호출 자체는 구분한다.
 
 ---
 
@@ -1262,6 +1493,9 @@ DB #3
  ↓
 RFC #3
 ```
+
+같은 RFC Function이나 Endpoint가 반복 호출되어도
+실행 위치가 다르면 각각 표현한다.
 
 ---
 
@@ -1339,6 +1573,30 @@ Service A
  └─ Response
 ```
 
+더 깊은 구조도 동일한 원칙을 적용한다.
+
+```text
+Service A
+ │
+ ├─ Service B
+ │    │
+ │    ├─ Common Service
+ │    │    │
+ │    │    ├─ Adapter
+ │    │    │    ↓
+ │    │    │   RFC #1
+ │    │    │
+ │    │    └─ RFC 결과 변환
+ │    │
+ │    └─ Service B 결과 처리
+ │
+ ├─ Service A 복귀
+ │
+ ├─ DB #2
+ │
+ └─ Response
+```
+
 호출된 하위 기능만 설명하고
 원래 Caller의 후속 처리를 빠뜨리지 않는다.
 
@@ -1364,6 +1622,9 @@ Runtime 관찰
 Runtime에서 한 번 관찰된 값이
 전체 Business Rule인 것처럼 표현하지 않는다.
 
+Runtime에서 실행되지 않은 Source Branch도
+현재 API의 실제 Business Logic에 포함될 수 있다.
+
 ---
 
 # 39. Oracle Metadata와 SQL 구분
@@ -1372,14 +1633,26 @@ SQL Source와 Oracle Metadata는 역할이 다르다.
 
 ```text
 MyBatis SQL
-  실제 Query 및 조건 확인
+  실제 Query
+  JOIN
+  WHERE
+  Dynamic SQL
+  Parameter
+  Result Mapping
 
 Oracle MCP
-  실제 Object / Column / Type / Nullable / PK 확인
+  Object 존재 여부
+  Column
+  Data Type
+  Nullable
+  Primary Key
 ```
 
 Oracle Metadata만 보고
 Business Logic을 추측하지 않는다.
+
+반대로 SQL Source에 Column이 존재한다고 해서
+Oracle Metadata를 확인한 것처럼 표현하지 않는다.
 
 ---
 
@@ -1394,6 +1667,7 @@ Business Logic을 추측하지 않는다.
 ASCII Tree 형식
 Excel 복사 구조
 Block 독립성
+Oracle Metadata Table 형식
 ```
 
 이 Reference는 다음을 결정하지 않는다.
@@ -1404,13 +1678,15 @@ Block 독립성
 실제 Source Path
 실제 SQL
 실제 Table
+실제 Column
 실제 RFC Function
 실제 Endpoint
 실제 Parameter
 실제 Response
 ```
 
-실제 값은 분석 대상 Source에서 확인한다.
+실제 값은 분석 대상 Source와
+확인된 Metadata에서 가져온다.
 
 ---
 
@@ -1425,6 +1701,7 @@ EquipmentController
 EquipmentServiceImpl
 EquipmentMapper
 TB_EQUIPMENT
+TB_PLANT
 Z_PM_EQUIPMENT_SEARCH
 /api/equipment/search
 plantCode
@@ -1433,7 +1710,7 @@ plantCode
 최종 문서에 Sample 값을
 Evidence처럼 복사하지 않는다.
 
-실제 Source에서 확인되지 않은 경우:
+실제 Source 또는 Metadata에서 확인되지 않은 경우:
 
 ```text
 확인되지 않음
@@ -1443,31 +1720,297 @@ Evidence처럼 복사하지 않는다.
 
 ---
 
-# 42. 최종 문서 작성 원칙
+# 42. Source Evidence 원칙
+
+최종 문서의 중요한 판단은
+가능한 경우 Source Evidence와 연결한다.
+
+예:
+
+```text
+Business Logic
+ ↓
+Source Path
+ ↓
+Class / Method
+ ↓
+Line Range
+```
+
+DB:
+
+```text
+Service
+ ↓
+Mapper
+ ↓
+namespace + Statement ID
+ ↓
+MyBatis XML
+ ↓
+SQL
+ ↓
+Oracle Metadata
+```
+
+외부 연동:
+
+```text
+Service
+ ↓
+Common Service
+ ↓
+Adapter / Client
+ ↓
+RFC Function / Endpoint
+```
+
+Code Index 검색 결과만으로
+Business Logic을 확정하지 않는다.
+
+---
+
+# 43. 확인되지 않음 처리
+
+다음과 같은 경우 추측하지 않는다.
+
+```text
+실제 구현체를 확정할 수 없음
+Configuration 실제 값 확인 불가
+외부 Dependency 내부 구현
+Runtime에서만 보이고 Source Mapping 불가
+Oracle Metadata 확인 불가
+Line Range 확인 불가
+RFC Field 의미 확인 불가
+```
+
+표현:
+
+```text
+확인되지 않음
+```
+
+필요하면 이유를 함께 기록한다.
+
+예:
+
+```text
+Base URL
+  확인되지 않음
+
+사유
+  현재 Project Source에서 실제 Configuration 값을 확인할 수 없음
+```
+
+---
+
+# 44. JAR / 외부 Dependency 경계
+
+다음은 Backend 분석 범위로 자동 확장하지 않는다.
+
+```text
+*.jar
+JAR 내부 Class
+Decompiled Class
+.m2/
+.gradle/
+Maven Repository
+Gradle Cache
+Project Root 외부 Source
+```
+
+예:
+
+```text
+Current Project Source
+ ↓
+ExternalClient.execute(request)
+ ↓
+
+════════ External Dependency Boundary ════════
+
+외부 Library 내부 구현
+분석하지 않음
+```
+
+단:
+
+```text
+gipms-api-common
+gipms-api-interface
+```
+
+등이 실제 Project Root 아래 Source Project로 존재하고
+현재 API Call Path와 연결된다면 분석할 수 있다.
+
+---
+
+# 45. 안전 원칙
+
+Backend 문서 생성을 위한 분석은
+Read-Only 방식으로 수행한다.
+
+실행하지 않는다.
+
+```text
+Oracle INSERT
+Oracle UPDATE
+Oracle DELETE
+Oracle MERGE
+DDL
+실제 RFC 업무 Function
+상태 변경 REST 요청
+SOAP 업무 요청
+Message Publish
+업무 File 전송
+실제 저장 API
+실제 수정 API
+실제 삭제 API
+```
+
+실제 업무 데이터를 변경하지 않는다.
+
+---
+
+# 46. 최종 검증
+
+최종 Backend 문서를 작성하기 전에
+다음 항목을 확인한다.
+
+```text
+Controller 확인
+ ↓
+실제 Service / 구현체 확인
+ ↓
+Business Logic 실제 실행 순서 확인
+ ↓
+내부 Method 추적
+ ↓
+다른 Service / 공통 Service 추적
+ ↓
+하위 호출 후 Caller 복귀 확인
+ ↓
+Mapper 연결 확인
+ ↓
+namespace + Statement ID 확인
+ ↓
+MyBatis XML / Annotation SQL 확인
+ ↓
+Dynamic SQL 확인
+ ↓
+Parameter Mapping 확인
+ ↓
+Result Mapping 확인
+ ↓
+Oracle Metadata 확인
+ ↓
+RFC 확인
+ ↓
+REST / 기타 외부 연동 확인
+ ↓
+외부 연동 후 Caller 복귀 확인
+ ↓
+조건 / 분기 확인
+ ↓
+반복 구조 확인
+ ↓
+Exception 확인
+ ↓
+Transaction 확인
+ ↓
+Response 생성 확인
+ ↓
+Source Evidence 확인
+```
+
+현재 API에 존재하지 않는 항목은
+억지로 만들어내지 않는다.
+
+---
+
+# 47. 최종 출력 원칙
 
 최종 Backend 문서는 다음 조건을 만족해야 한다.
 
 ```text
 실제 Source 기반
+
 실제 실행 순서 기반
+
 Controller부터 Response까지 연결
+
 중간 Method / Service 호출 보존
+
+하위 호출 후 Caller 복귀
+
 DB 호출 위치 보존
+
 Mapper → MyBatis → SQL 연결
+
+namespace + Statement ID 확인
+
 Dynamic SQL 보존
+
+SQL Parameter Mapping
+
+SQL Result Mapping
+
 Oracle Metadata 교차 확인
+
+Oracle Metadata는 Table 형식 허용
+
 RFC / REST / 기타 외부 연동 위치 보존
+
+외부 연동 다중 호출 보존
+
 외부 연동 후 Caller 복귀
+
 조건 / 분기 / 반복 보존
+
 Exception / Transaction 확인
+
 Source Evidence 포함
+
 확인되지 않은 정보 추측 금지
+
 Project Root 상대경로 사용
+
 JAR / 외부 Dependency 경계 준수
+
 Excel 단일 셀 복사 가능
-Markdown Table 기본 사용 금지
+
+Oracle Metadata 이외 Markdown Table 기본 사용 금지
+
 각 상세 Block 독립적으로 이해 가능
 ```
 
 문서를 보기 좋게 만드는 것보다
 실제 Backend Business Logic을 정확하게 보존하는 것을 우선한다.
+
+동시에 개발자가 필요한 부분을
+Excel 한 셀에 복사했을 때도
+해당 Block만으로 내용을 이해할 수 있도록 작성한다.
+
+---
+
+# 48. STOP
+
+현재 선택한 API의 Backend 분석 문서가 완성되면 STOP 한다.
+
+자동으로 다음 API를 분석하지 않는다.
+
+자동으로 다른 화면을 분석하지 않는다.
+
+자동으로 관련 없는 다음 범위까지 확장하지 않는다.
+
+```text
+다른 Service
+다른 Mapper
+다른 SQL
+다른 Oracle Object
+다른 RFC
+다른 외부 API
+다른 Business Logic
+```
+
+현재 API의 실제 Call Path에 연결되는 범위까지만 작성한다.
