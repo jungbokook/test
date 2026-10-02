@@ -1,1 +1,1964 @@
-1
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>GIPMS Analysis Viewer</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        font-family:
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            "Malgun Gothic",
+            sans-serif;
+        background: #f5f6f8;
+        color: #24292f;
+    }
+
+    .app {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* ==============================
+       Header
+       ============================== */
+
+    .header {
+        background: #ffffff;
+        border-bottom: 1px solid #d8dee4;
+        padding: 14px 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .title {
+        font-size: 20px;
+        font-weight: 700;
+        margin-right: 10px;
+    }
+
+    .folder-button {
+        border: 1px solid #0969da;
+        background: #0969da;
+        color: white;
+        border-radius: 6px;
+        padding: 8px 14px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .folder-button:hover {
+        background: #0860ca;
+    }
+
+    .folder-name {
+        color: #57606a;
+        font-size: 13px;
+    }
+
+    /* ==============================
+       Screen selector
+       ============================== */
+
+    .screen-bar {
+        background: #ffffff;
+        border-bottom: 1px solid #d8dee4;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .screen-bar label {
+        font-weight: 600;
+    }
+
+    #screenSelect {
+        min-width: 260px;
+        padding: 7px 10px;
+        border: 1px solid #d0d7de;
+        border-radius: 6px;
+        background: white;
+    }
+
+    /* ==============================
+       Main tabs
+       ============================== */
+
+    .main-tabs {
+        background: #ffffff;
+        border-bottom: 1px solid #d8dee4;
+        padding: 0 20px;
+        display: flex;
+        gap: 4px;
+    }
+
+    .main-tab {
+        border: 0;
+        background: transparent;
+        padding: 13px 20px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        color: #57606a;
+        border-bottom: 3px solid transparent;
+    }
+
+    .main-tab:hover {
+        color: #0969da;
+    }
+
+    .main-tab.active {
+        color: #0969da;
+        border-bottom-color: #0969da;
+    }
+
+    .main-tab.disabled {
+        color: #afb8c1;
+        cursor: default;
+    }
+
+    /* ==============================
+       Sub tabs
+       ============================== */
+
+    .sub-tabs-container {
+        background: #f6f8fa;
+        border-bottom: 1px solid #d8dee4;
+        padding: 8px 20px;
+        min-height: 49px;
+    }
+
+    .sub-tabs {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+    }
+
+    .sub-tab {
+        white-space: nowrap;
+        padding: 7px 12px;
+        border: 1px solid #d0d7de;
+        border-radius: 6px;
+        background: white;
+        cursor: pointer;
+        font-size: 13px;
+    }
+
+    .sub-tab:hover {
+        border-color: #0969da;
+    }
+
+    .sub-tab.active {
+        background: #ddf4ff;
+        border-color: #54aeff;
+        color: #0969da;
+        font-weight: 600;
+    }
+
+    /* ==============================
+       Document info
+       ============================== */
+
+    .document-info {
+        padding: 8px 22px;
+        background: #ffffff;
+        border-bottom: 1px solid #d8dee4;
+        color: #57606a;
+        font-size: 12px;
+    }
+
+    /* ==============================
+       Content
+       ============================== */
+
+    .content-wrapper {
+        flex: 1;
+        overflow: auto;
+        padding: 28px;
+    }
+
+    .markdown-body {
+        max-width: 1300px;
+        margin: 0 auto;
+        background: white;
+        padding: 36px 44px;
+        border: 1px solid #d8dee4;
+        border-radius: 8px;
+        min-height: 500px;
+        line-height: 1.7;
+    }
+
+    .markdown-body h1 {
+        font-size: 28px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #d8dee4;
+        margin-top: 34px;
+    }
+
+    .markdown-body h1:first-child {
+        margin-top: 0;
+    }
+
+    .markdown-body h2 {
+        font-size: 22px;
+        margin-top: 30px;
+        padding-bottom: 7px;
+        border-bottom: 1px solid #d8dee4;
+    }
+
+    .markdown-body h3 {
+        font-size: 18px;
+        margin-top: 24px;
+    }
+
+    .markdown-body h4 {
+        font-size: 16px;
+        margin-top: 20px;
+    }
+
+    .markdown-body p {
+        margin: 10px 0;
+    }
+
+    .markdown-body ul,
+    .markdown-body ol {
+        padding-left: 28px;
+    }
+
+    .markdown-body li {
+        margin: 4px 0;
+    }
+
+    .markdown-body blockquote {
+        margin: 16px 0;
+        padding: 4px 16px;
+        color: #57606a;
+        border-left: 4px solid #d0d7de;
+        background: #f6f8fa;
+    }
+
+    /* ==============================
+       Code / ASCII Tree
+       ============================== */
+
+    .markdown-body pre {
+        background: #f6f8fa;
+        border: 1px solid #d8dee4;
+        border-radius: 6px;
+        padding: 16px;
+        overflow-x: auto;
+        line-height: 1.5;
+        font-family:
+            Consolas,
+            "Courier New",
+            monospace;
+        font-size: 13px;
+        white-space: pre;
+    }
+
+    .markdown-body code {
+        font-family:
+            Consolas,
+            "Courier New",
+            monospace;
+    }
+
+    .markdown-body :not(pre) > code {
+        background: #eff1f3;
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-size: 90%;
+    }
+
+    /* ==============================
+       Oracle Metadata / Markdown table
+       ============================== */
+
+    .markdown-body table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0 24px 0;
+        font-size: 13px;
+    }
+
+    .markdown-body th,
+    .markdown-body td {
+        border: 1px solid #d0d7de;
+        padding: 8px 10px;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    .markdown-body th {
+        background: #f6f8fa;
+        font-weight: 700;
+    }
+
+    .markdown-body tr:nth-child(even) td {
+        background: #fbfcfd;
+    }
+
+    /* ==============================
+       Empty / start state
+       ============================== */
+
+    .empty {
+        max-width: 800px;
+        margin: 80px auto;
+        text-align: center;
+        color: #57606a;
+    }
+
+    .empty-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #24292f;
+        margin-bottom: 12px;
+    }
+
+    .empty-description {
+        line-height: 1.8;
+    }
+
+    .status {
+        margin-left: auto;
+        font-size: 12px;
+        color: #57606a;
+    }
+
+    @media (max-width: 800px) {
+        .content-wrapper {
+            padding: 10px;
+        }
+
+        .markdown-body {
+            padding: 22px 18px;
+        }
+
+        .main-tab {
+            padding: 11px 12px;
+        }
+
+        #screenSelect {
+            min-width: 180px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <div class="header">
+        <div class="title">
+            GIPMS Analysis Viewer
+        </div>
+
+        <button
+            class="folder-button"
+            id="folderButton"
+        >
+            docs/analysis 폴더 선택
+        </button>
+
+        <div
+            class="folder-name"
+            id="folderName"
+        >
+            선택된 폴더 없음
+        </div>
+
+        <div
+            class="status"
+            id="status"
+        ></div>
+    </div>
+
+    <div class="screen-bar">
+        <label for="screenSelect">
+            화면
+        </label>
+
+        <select
+            id="screenSelect"
+            disabled
+        >
+            <option>
+                분석 폴더를 먼저 선택하세요
+            </option>
+        </select>
+    </div>
+
+    <div
+        class="main-tabs"
+        id="mainTabs"
+    >
+        <button
+            class="main-tab disabled"
+            data-type="SCREEN"
+        >
+            SCREEN
+        </button>
+
+        <button
+            class="main-tab disabled"
+            data-type="FE"
+        >
+            FE
+        </button>
+
+        <button
+            class="main-tab disabled"
+            data-type="API"
+        >
+            API
+        </button>
+
+        <button
+            class="main-tab disabled"
+            data-type="BE"
+        >
+            BE
+        </button>
+    </div>
+
+    <div class="sub-tabs-container">
+        <div
+            class="sub-tabs"
+            id="subTabs"
+        ></div>
+    </div>
+
+    <div
+        class="document-info"
+        id="documentInfo"
+    >
+        문서를 선택하세요.
+    </div>
+
+    <div
+        class="content-wrapper"
+        id="contentWrapper"
+    >
+        <div class="empty">
+            <div class="empty-title">
+                분석 문서 Viewer
+            </div>
+
+            <div class="empty-description">
+                <strong>docs/analysis</strong> 폴더를 선택하세요.
+                <br><br>
+                SCREEN / FE / API / BE 문서를 자동으로 찾아
+                화면별로 분류합니다.
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+
+/* =========================================================
+   State
+   ========================================================= */
+
+const state = {
+    rootName: "",
+    screens: {},
+    currentScreen: null,
+    currentType: null,
+    currentFile: null
+};
+
+
+/* =========================================================
+   DOM
+   ========================================================= */
+
+const folderButton =
+    document.getElementById("folderButton");
+
+const folderName =
+    document.getElementById("folderName");
+
+const screenSelect =
+    document.getElementById("screenSelect");
+
+const mainTabs =
+    document.getElementById("mainTabs");
+
+const subTabs =
+    document.getElementById("subTabs");
+
+const documentInfo =
+    document.getElementById("documentInfo");
+
+const contentWrapper =
+    document.getElementById("contentWrapper");
+
+const status =
+    document.getElementById("status");
+
+
+/* =========================================================
+   Folder selection
+   ========================================================= */
+
+folderButton.addEventListener(
+    "click",
+    async () => {
+
+        if (!window.showDirectoryPicker) {
+            alert(
+                "현재 브라우저에서는 폴더 선택 기능을 지원하지 않습니다.\n\n" +
+                "Chrome 또는 Edge 최신 버전에서 실행해 주세요."
+            );
+
+            return;
+        }
+
+        try {
+
+            const rootHandle =
+                await window.showDirectoryPicker();
+
+            state.rootName =
+                rootHandle.name;
+
+            folderName.textContent =
+                rootHandle.name;
+
+            status.textContent =
+                "문서 검색 중...";
+
+            state.screens = {};
+
+            await scanAnalysisDirectory(
+                rootHandle
+            );
+
+            status.textContent =
+                "화면 " +
+                Object.keys(state.screens).length +
+                "개";
+
+            initializeViewer();
+
+        }
+        catch (error) {
+
+            if (error.name !== "AbortError") {
+                console.error(error);
+
+                alert(
+                    "폴더를 읽는 중 오류가 발생했습니다.\n\n" +
+                    error.message
+                );
+            }
+        }
+    }
+);
+
+
+/* =========================================================
+   Scan docs/analysis
+   ========================================================= */
+
+async function scanAnalysisDirectory(
+    rootHandle
+) {
+
+    /*
+       사용자가 선택한 폴더를
+       docs/analysis 로 간주한다.
+
+       구조:
+
+       analysis/
+         equipment-search/
+           SCREEN-...
+           frontend/
+           api/
+           backend/
+    */
+
+    for await (
+        const [name, handle]
+        of rootHandle.entries()
+    ) {
+
+        if (handle.kind !== "directory") {
+            continue;
+        }
+
+        await scanScreenDirectory(
+            name,
+            handle
+        );
+    }
+}
+
+
+/* =========================================================
+   Scan one screen
+   ========================================================= */
+
+async function scanScreenDirectory(
+    screenName,
+    screenHandle
+) {
+
+    const screen = {
+        name: screenName,
+
+        SCREEN: [],
+        FE: [],
+        API: [],
+        BE: []
+    };
+
+    await scanDirectoryRecursive(
+        screenHandle,
+        screenName,
+        screen
+    );
+
+    const total =
+        screen.SCREEN.length +
+        screen.FE.length +
+        screen.API.length +
+        screen.BE.length;
+
+    if (total > 0) {
+
+        sortFiles(screen);
+
+        state.screens[screenName] =
+            screen;
+    }
+}
+
+
+/* =========================================================
+   Recursive scan
+   ========================================================= */
+
+async function scanDirectoryRecursive(
+    directoryHandle,
+    relativePath,
+    screen
+) {
+
+    for await (
+        const [name, handle]
+        of directoryHandle.entries()
+    ) {
+
+        const path =
+            relativePath +
+            "/" +
+            name;
+
+        if (handle.kind === "directory") {
+
+            await scanDirectoryRecursive(
+                handle,
+                path,
+                screen
+            );
+
+            continue;
+        }
+
+        if (
+            handle.kind !== "file" ||
+            !name.toLowerCase().endsWith(".md")
+        ) {
+            continue;
+        }
+
+        const type =
+            classifyFile(name);
+
+        if (!type) {
+            continue;
+        }
+
+        screen[type].push({
+            name: name,
+            path: path,
+            handle: handle
+        });
+    }
+}
+
+
+/* =========================================================
+   File classification
+   ========================================================= */
+
+function classifyFile(
+    fileName
+) {
+
+    const upper =
+        fileName.toUpperCase();
+
+    if (
+        upper.startsWith("SCREEN-")
+    ) {
+        return "SCREEN";
+    }
+
+    if (
+        upper.startsWith("FE-ACT-")
+    ) {
+        return "FE";
+    }
+
+    /*
+       BE를 API보다 먼저 검사한다.
+
+       BE-API-001-xxx.md 안에도
+       API 문자열이 포함되기 때문이다.
+    */
+
+    if (
+        upper.startsWith("BE-API-")
+    ) {
+        return "BE";
+    }
+
+    if (
+        upper.startsWith("API-")
+    ) {
+        return "API";
+    }
+
+    return null;
+}
+
+
+/* =========================================================
+   Sort
+   ========================================================= */
+
+function sortFiles(
+    screen
+) {
+
+    for (
+        const type
+        of ["SCREEN", "FE", "API", "BE"]
+    ) {
+
+        screen[type].sort(
+            (a, b) =>
+                a.name.localeCompare(
+                    b.name,
+                    undefined,
+                    {
+                        numeric: true,
+                        sensitivity: "base"
+                    }
+                )
+        );
+    }
+}
+
+
+/* =========================================================
+   Initialize
+   ========================================================= */
+
+function initializeViewer() {
+
+    const screenNames =
+        Object.keys(state.screens)
+            .sort(
+                (a, b) =>
+                    a.localeCompare(
+                        b,
+                        undefined,
+                        {
+                            numeric: true,
+                            sensitivity: "base"
+                        }
+                    )
+            );
+
+    screenSelect.innerHTML = "";
+
+    if (screenNames.length === 0) {
+
+        screenSelect.disabled = true;
+
+        screenSelect.innerHTML =
+            "<option>분석 문서 없음</option>";
+
+        showEmpty(
+            "분석 문서를 찾지 못했습니다.",
+            "docs/analysis 폴더를 선택했는지 확인하세요."
+        );
+
+        updateMainTabs();
+
+        return;
+    }
+
+    for (
+        const screenName
+        of screenNames
+    ) {
+
+        const option =
+            document.createElement(
+                "option"
+            );
+
+        option.value =
+            screenName;
+
+        option.textContent =
+            screenName;
+
+        screenSelect.appendChild(
+            option
+        );
+    }
+
+    screenSelect.disabled =
+        false;
+
+    state.currentScreen =
+        screenNames[0];
+
+    screenSelect.value =
+        state.currentScreen;
+
+    selectDefaultType();
+}
+
+
+/* =========================================================
+   Screen change
+   ========================================================= */
+
+screenSelect.addEventListener(
+    "change",
+    () => {
+
+        state.currentScreen =
+            screenSelect.value;
+
+        state.currentFile =
+            null;
+
+        selectDefaultType();
+    }
+);
+
+
+/* =========================================================
+   Default type
+   ========================================================= */
+
+function selectDefaultType() {
+
+    const screen =
+        state.screens[
+            state.currentScreen
+        ];
+
+    if (!screen) {
+        return;
+    }
+
+    const priority = [
+        "SCREEN",
+        "FE",
+        "API",
+        "BE"
+    ];
+
+    state.currentType =
+        null;
+
+    for (
+        const type
+        of priority
+    ) {
+
+        if (
+            screen[type].length > 0
+        ) {
+
+            state.currentType =
+                type;
+
+            break;
+        }
+    }
+
+    updateMainTabs();
+    updateSubTabs();
+}
+
+
+/* =========================================================
+   Main tabs
+   ========================================================= */
+
+mainTabs.addEventListener(
+    "click",
+    event => {
+
+        const button =
+            event.target.closest(
+                ".main-tab"
+            );
+
+        if (!button) {
+            return;
+        }
+
+        const type =
+            button.dataset.type;
+
+        const screen =
+            state.screens[
+                state.currentScreen
+            ];
+
+        if (
+            !screen ||
+            screen[type].length === 0
+        ) {
+            return;
+        }
+
+        state.currentType =
+            type;
+
+        state.currentFile =
+            null;
+
+        updateMainTabs();
+        updateSubTabs();
+    }
+);
+
+
+function updateMainTabs() {
+
+    const buttons =
+        mainTabs.querySelectorAll(
+            ".main-tab"
+        );
+
+    const screen =
+        state.screens[
+            state.currentScreen
+        ];
+
+    buttons.forEach(
+        button => {
+
+            const type =
+                button.dataset.type;
+
+            button.classList.remove(
+                "active",
+                "disabled"
+            );
+
+            if (
+                !screen ||
+                screen[type].length === 0
+            ) {
+
+                button.classList.add(
+                    "disabled"
+                );
+
+                return;
+            }
+
+            if (
+                type === state.currentType
+            ) {
+
+                button.classList.add(
+                    "active"
+                );
+            }
+        }
+    );
+}
+
+
+/* =========================================================
+   Sub tabs
+   ========================================================= */
+
+function updateSubTabs() {
+
+    subTabs.innerHTML = "";
+
+    const screen =
+        state.screens[
+            state.currentScreen
+        ];
+
+    if (
+        !screen ||
+        !state.currentType
+    ) {
+
+        showEmpty(
+            "문서가 없습니다.",
+            ""
+        );
+
+        return;
+    }
+
+    const files =
+        screen[
+            state.currentType
+        ];
+
+    if (
+        files.length === 0
+    ) {
+
+        showEmpty(
+            state.currentType +
+            " 문서가 없습니다.",
+            ""
+        );
+
+        return;
+    }
+
+    for (
+        const file
+        of files
+    ) {
+
+        const button =
+            document.createElement(
+                "button"
+            );
+
+        button.className =
+            "sub-tab";
+
+        button.textContent =
+            createTabLabel(
+                file.name,
+                state.currentType
+            );
+
+        button.title =
+            file.name;
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                selectFile(
+                    file,
+                    button
+                );
+            }
+        );
+
+        subTabs.appendChild(
+            button
+        );
+    }
+
+    /*
+       해당 Type의 첫 번째 문서를
+       자동 선택한다.
+    */
+
+    const firstButton =
+        subTabs.querySelector(
+            ".sub-tab"
+        );
+
+    if (
+        files.length > 0 &&
+        firstButton
+    ) {
+
+        selectFile(
+            files[0],
+            firstButton
+        );
+    }
+}
+
+
+/* =========================================================
+   Tab label
+   ========================================================= */
+
+function createTabLabel(
+    fileName,
+    type
+) {
+
+    let label =
+        fileName.replace(
+            /\.md$/i,
+            ""
+        );
+
+    if (type === "SCREEN") {
+
+        label =
+            label.replace(
+                /^SCREEN-/i,
+                ""
+            );
+
+        return label || "SCREEN";
+    }
+
+    if (type === "FE") {
+
+        label =
+            label.replace(
+                /^FE-/i,
+                ""
+            );
+
+        return label;
+    }
+
+    if (type === "API") {
+
+        return label;
+    }
+
+    if (type === "BE") {
+
+        label =
+            label.replace(
+                /^BE-/i,
+                ""
+            );
+
+        return label;
+    }
+
+    return label;
+}
+
+
+/* =========================================================
+   Select file
+   ========================================================= */
+
+async function selectFile(
+    fileInfo,
+    button
+) {
+
+    state.currentFile =
+        fileInfo;
+
+    const buttons =
+        subTabs.querySelectorAll(
+            ".sub-tab"
+        );
+
+    buttons.forEach(
+        item =>
+            item.classList.remove(
+                "active"
+            )
+    );
+
+    button.classList.add(
+        "active"
+    );
+
+    documentInfo.textContent =
+        fileInfo.path;
+
+    status.textContent =
+        "문서 읽는 중...";
+
+    try {
+
+        const file =
+            await fileInfo.handle.getFile();
+
+        const markdown =
+            await file.text();
+
+        renderMarkdown(
+            markdown
+        );
+
+        status.textContent =
+            "표시 완료";
+    }
+    catch (error) {
+
+        console.error(error);
+
+        showEmpty(
+            "문서를 읽지 못했습니다.",
+            error.message
+        );
+
+        status.textContent =
+            "오류";
+    }
+}
+
+
+/* =========================================================
+   Markdown renderer
+   ========================================================= */
+
+/*
+   외부 Markdown Library를 사용하지 않는다.
+
+   회사 환경에서 CDN이 차단되어도
+   HTML 하나만으로 동작하도록
+   필요한 Markdown 기능만 구현한다.
+
+   지원:
+   - Heading
+   - Paragraph
+   - Code Block
+   - Inline Code
+   - Bold
+   - Italic
+   - Blockquote
+   - UL / OL
+   - Horizontal Rule
+   - Markdown Table
+*/
+
+
+function renderMarkdown(
+    markdown
+) {
+
+    const html =
+        markdownToHtml(
+            markdown
+        );
+
+    contentWrapper.innerHTML =
+        '<div class="markdown-body">' +
+        html +
+        '</div>';
+
+    contentWrapper.scrollTop =
+        0;
+}
+
+
+/* =========================================================
+   Markdown → HTML
+   ========================================================= */
+
+function markdownToHtml(
+    markdown
+) {
+
+    markdown =
+        markdown.replace(
+            /\r\n/g,
+            "\n"
+        );
+
+    const lines =
+        markdown.split("\n");
+
+    let html = "";
+
+    let index = 0;
+
+    let inCode = false;
+
+    let codeLanguage = "";
+
+    let codeBuffer = [];
+
+    let listType = null;
+
+    while (
+        index < lines.length
+    ) {
+
+        const line =
+            lines[index];
+
+
+        /* -----------------------------------------
+           Code block
+           ----------------------------------------- */
+
+        if (
+            line.trim().startsWith("```")
+        ) {
+
+            closeList();
+
+            if (!inCode) {
+
+                inCode = true;
+
+                codeLanguage =
+                    line
+                        .trim()
+                        .substring(3)
+                        .trim();
+
+                codeBuffer = [];
+            }
+            else {
+
+                html +=
+                    "<pre><code" +
+                    (
+                        codeLanguage
+                            ? ' class="language-' +
+                              escapeAttribute(
+                                  codeLanguage
+                              ) +
+                              '"'
+                            : ""
+                    ) +
+                    ">" +
+                    escapeHtml(
+                        codeBuffer.join("\n")
+                    ) +
+                    "</code></pre>";
+
+                inCode = false;
+                codeLanguage = "";
+                codeBuffer = [];
+            }
+
+            index++;
+            continue;
+        }
+
+
+        if (inCode) {
+
+            codeBuffer.push(
+                line
+            );
+
+            index++;
+            continue;
+        }
+
+
+        /* -----------------------------------------
+           Table
+           ----------------------------------------- */
+
+        if (
+            isTableHeader(
+                lines,
+                index
+            )
+        ) {
+
+            closeList();
+
+            const result =
+                parseTable(
+                    lines,
+                    index
+                );
+
+            html +=
+                result.html;
+
+            index =
+                result.nextIndex;
+
+            continue;
+        }
+
+
+        /* -----------------------------------------
+           Blank
+           ----------------------------------------- */
+
+        if (
+            line.trim() === ""
+        ) {
+
+            closeList();
+
+            index++;
+            continue;
+        }
+
+
+        /* -----------------------------------------
+           Horizontal rule
+           ----------------------------------------- */
+
+        if (
+            /^(\s*)(---|\*\*\*|___)(\s*)$/
+                .test(line)
+        ) {
+
+            closeList();
+
+            html += "<hr>";
+
+            index++;
+            continue;
+        }
+
+
+        /* -----------------------------------------
+           Heading
+           ----------------------------------------- */
+
+        const headingMatch =
+            line.match(
+                /^(#{1,6})\s+(.+)$/
+            );
+
+        if (headingMatch) {
+
+            closeList();
+
+            const level =
+                headingMatch[1].length;
+
+            html +=
+                "<h" +
+                level +
+                ">" +
+                inlineMarkdown(
+                    headingMatch[2]
+                ) +
+                "</h" +
+                level +
+                ">";
+
+            index++;
+            continue;
+        }
+
+
+        /* -----------------------------------------
+           Blockquote
+           ----------------------------------------- */
+
+        if (
+            line.trimStart()
+                .startsWith(">")
+        ) {
+
+            closeList();
+
+            const quoteLines = [];
+
+            while (
+                index < lines.length &&
+                lines[index]
+                    .trimStart()
+                    .startsWith(">")
+            ) {
+
+                quoteLines.push(
+                    lines[index]
+                        .trimStart()
+                        .replace(
+                            /^>\s?/,
+                            ""
+                        )
+                );
+
+                index++;
+            }
+
+            html +=
+                "<blockquote>" +
+                quoteLines
+                    .map(
+                        item =>
+                            item.trim()
+                                ? inlineMarkdown(
+                                    item
+                                  )
+                                : "<br>"
+                    )
+                    .join("<br>") +
+                "</blockquote>";
+
+            continue;
+        }
+
+
+        /* -----------------------------------------
+           Unordered list
+           ----------------------------------------- */
+
+        const ulMatch =
+            line.match(
+                /^\s*[-*+]\s+(.+)$/
+            );
+
+        if (ulMatch) {
+
+            if (
+                listType !== "ul"
+            ) {
+
+                closeList();
+
+                html += "<ul>";
+                listType = "ul";
+            }
+
+            html +=
+                "<li>" +
+                inlineMarkdown(
+                    ulMatch[1]
+                ) +
+                "</li>";
+
+            index++;
+            continue;
+        }
+
+
+        /* -----------------------------------------
+           Ordered list
+           ----------------------------------------- */
+
+        const olMatch =
+            line.match(
+                /^\s*\d+\.\s+(.+)$/
+            );
+
+        if (olMatch) {
+
+            if (
+                listType !== "ol"
+            ) {
+
+                closeList();
+
+                html += "<ol>";
+                listType = "ol";
+            }
+
+            html +=
+                "<li>" +
+                inlineMarkdown(
+                    olMatch[1]
+                ) +
+                "</li>";
+
+            index++;
+            continue;
+        }
+
+
+        /* -----------------------------------------
+           Paragraph
+           ----------------------------------------- */
+
+        closeList();
+
+        const paragraphLines = [
+            line
+        ];
+
+        index++;
+
+        while (
+            index < lines.length
+        ) {
+
+            const next =
+                lines[index];
+
+            if (
+                next.trim() === "" ||
+                next.trim().startsWith("```") ||
+                /^#{1,6}\s+/.test(next) ||
+                /^(\s*)(---|\*\*\*|___)(\s*)$/.test(next) ||
+                next.trimStart().startsWith(">") ||
+                /^\s*[-*+]\s+/.test(next) ||
+                /^\s*\d+\.\s+/.test(next) ||
+                isTableHeader(
+                    lines,
+                    index
+                )
+            ) {
+                break;
+            }
+
+            paragraphLines.push(
+                next
+            );
+
+            index++;
+        }
+
+        html +=
+            "<p>" +
+            paragraphLines
+                .map(
+                    item =>
+                        inlineMarkdown(
+                            item
+                        )
+                )
+                .join("<br>") +
+            "</p>";
+    }
+
+
+    if (inCode) {
+
+        html +=
+            "<pre><code>" +
+            escapeHtml(
+                codeBuffer.join("\n")
+            ) +
+            "</code></pre>";
+    }
+
+
+    closeList();
+
+    return html;
+
+
+    function closeList() {
+
+        if (
+            listType === "ul"
+        ) {
+
+            html += "</ul>";
+        }
+
+        if (
+            listType === "ol"
+        ) {
+
+            html += "</ol>";
+        }
+
+        listType = null;
+    }
+}
+
+
+/* =========================================================
+   Markdown table
+   ========================================================= */
+
+function isTableHeader(
+    lines,
+    index
+) {
+
+    if (
+        index + 1 >=
+        lines.length
+    ) {
+        return false;
+    }
+
+    const first =
+        lines[index].trim();
+
+    const second =
+        lines[index + 1].trim();
+
+    if (
+        !first.includes("|")
+    ) {
+        return false;
+    }
+
+    if (
+        !second.includes("|")
+    ) {
+        return false;
+    }
+
+    const cells =
+        splitTableRow(
+            second
+        );
+
+    if (
+        cells.length === 0
+    ) {
+        return false;
+    }
+
+    return cells.every(
+        cell =>
+            /^:?-{3,}:?$/
+                .test(
+                    cell.trim()
+                )
+    );
+}
+
+
+function parseTable(
+    lines,
+    startIndex
+) {
+
+    const headers =
+        splitTableRow(
+            lines[startIndex]
+        );
+
+    let index =
+        startIndex + 2;
+
+    const rows = [];
+
+    while (
+        index < lines.length
+    ) {
+
+        const line =
+            lines[index].trim();
+
+        if (
+            line === "" ||
+            !line.includes("|")
+        ) {
+            break;
+        }
+
+        rows.push(
+            splitTableRow(
+                line
+            )
+        );
+
+        index++;
+    }
+
+    let html =
+        "<table><thead><tr>";
+
+    for (
+        const header
+        of headers
+    ) {
+
+        html +=
+            "<th>" +
+            inlineMarkdown(
+                header.trim()
+            ) +
+            "</th>";
+    }
+
+    html +=
+        "</tr></thead><tbody>";
+
+    for (
+        const row
+        of rows
+    ) {
+
+        html += "<tr>";
+
+        for (
+            let column = 0;
+            column < headers.length;
+            column++
+        ) {
+
+            const value =
+                row[column] ?? "";
+
+            html +=
+                "<td>" +
+                inlineMarkdown(
+                    value.trim()
+                ) +
+                "</td>";
+        }
+
+        html += "</tr>";
+    }
+
+    html +=
+        "</tbody></table>";
+
+    return {
+        html: html,
+        nextIndex: index
+    };
+}
+
+
+function splitTableRow(
+    line
+) {
+
+    let value =
+        line.trim();
+
+    if (
+        value.startsWith("|")
+    ) {
+        value =
+            value.substring(1);
+    }
+
+    if (
+        value.endsWith("|")
+    ) {
+        value =
+            value.substring(
+                0,
+                value.length - 1
+            );
+    }
+
+    return value.split("|");
+}
+
+
+/* =========================================================
+   Inline markdown
+   ========================================================= */
+
+function inlineMarkdown(
+    text
+) {
+
+    /*
+       먼저 HTML Escape.
+       MD 파일 안의 HTML을 직접 실행하지 않도록 한다.
+    */
+
+    let value =
+        escapeHtml(text);
+
+    /*
+       Inline code
+    */
+
+    value =
+        value.replace(
+            /`([^`]+)`/g,
+            "<code>$1</code>"
+        );
+
+    /*
+       Bold
+    */
+
+    value =
+        value.replace(
+            /\*\*(.+?)\*\*/g,
+            "<strong>$1</strong>"
+        );
+
+    /*
+       Italic
+    */
+
+    value =
+        value.replace(
+            /(?<!\*)\*([^*]+)\*(?!\*)/g,
+            "<em>$1</em>"
+        );
+
+    return value;
+}
+
+
+/* =========================================================
+   Escape
+   ========================================================= */
+
+function escapeHtml(
+    value
+) {
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+
+function escapeAttribute(
+    value
+) {
+
+    return escapeHtml(value);
+}
+
+
+/* =========================================================
+   Empty state
+   ========================================================= */
+
+function showEmpty(
+    title,
+    description
+) {
+
+    contentWrapper.innerHTML =
+        '<div class="empty">' +
+            '<div class="empty-title">' +
+                escapeHtml(title) +
+            '</div>' +
+            '<div class="empty-description">' +
+                escapeHtml(description) +
+            '</div>' +
+        '</div>';
+
+    documentInfo.textContent =
+        "문서를 선택하세요.";
+}
+
+</script>
+
+</body>
+</html>
