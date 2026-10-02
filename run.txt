@@ -1200,3 +1200,11 @@ Read-Only 준수
 
 
 #####
+
+
+full-analysis-orchestrator agent를 사용해서
+equipment-search 화면의 전체 분석 병렬 실행 계획을 만들어줘.
+실제 FE/API/BE 분석은 실행하지 마.
+
+
+#####
