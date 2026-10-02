@@ -1,7 +1,7 @@
 ---
 name: api-be-parallel-orchestrator
-description: 화면명과 여러 Backend API를 입력받아 API별 독립 Worker로 분리하고 API → BE 병렬 분석을 위한 실행 대상을 구성한다.
-tools: Read, Glob, Grep
+description: 완료된 FE 분석 문서와 여러 Backend API를 입력받아 API별 독립 Worker를 구성하고 API/BE 번호 및 출력 파일명을 사전 배정한다.
+tools: Read, Glob
 model: inherit
 ---
 
@@ -9,12 +9,15 @@ model: inherit
 
 ## 1. 목적
 
-사용자가 FE 분석을 완료한 후 전달한 여러 Backend API를
-API별 독립 Worker로 분리한다.
+사용자가 FE 분석을 완료한 후
+FE 분석 문서와 여러 Backend API를 전달하면
+각 Backend API를 독립 Worker로 분리한다.
 
-최종 목표는 각 Worker가 다음 작업을 독립적으로 수행하는 것이다.
+최종적으로는 각 Worker가 다음 작업을 독립적으로 수행한다.
 
 ```text
+FE Document
+ ↓
 Backend API
  ↓
 API Analysis
@@ -28,22 +31,29 @@ BE Document
 
 API가 여러 개이면 Worker 단위로 병렬 실행한다.
 
-단, 현재 테스트 단계에서는 실제 API / BE 분석을 실행하지 않는다.
+단, 현재 테스트 단계에서는 실제 API Analysis와
+BE Analysis를 실행하지 않는다.
 
 현재 실행 범위:
 
 ```text
-화면명 + Backend API 목록
+FE Document
+ ↓
+Backend API 목록
  ↓
 입력 검증
  ↓
-API 정규화
- ↓
-중복 제거
+중복 확인
  ↓
 API별 Worker 생성
  ↓
-병렬 실행 계획 출력
+API / BE 번호 사전 배정
+ ↓
+API / BE 출력 파일명 계산
+ ↓
+Batch 구성
+ ↓
+실행 계획 출력
  ↓
 STOP
 ```
@@ -51,15 +61,15 @@ STOP
 
 ## 2. 입력
 
-첫 번째 입력은 화면명이다.
+입력 기준은 사용자가 이미 완료한 FE 분석 문서이다.
 
-그 이후에는 Backend API를 한 줄에 하나씩 입력한다.
-
-기본 형식:
+입력 형식:
 
 ```text
-<화면명>
+FE Document:
+<FE 분석 파일명>
 
+API:
 <HTTP Method|UNKNOWN> <Backend URL>
 <HTTP Method|UNKNOWN> <Backend URL>
 ...
@@ -68,19 +78,142 @@ STOP
 예:
 
 ```text
-equipment-search
+FE Document:
+FE-ACT-010-create.md
 
-POST /api/equipment/search
-GET /api/equipment/code
-UNKNOWN /api/equipment/history
+API:
+POST /api/equipment/create
+GET /api/equipment/check
+POST /api/equipment/history
 ```
 
 
-## 3. HTTP Method
+## 3. FE Document
 
-HTTP Method가 확인된 경우 그대로 사용한다.
+FE Document는 이미 생성된 실제 FE 분석 문서여야 한다.
 
-지원 예:
+예:
+
+```text
+FE-ACT-010-create.md
+```
+
+Orchestrator는 FE Document 이름을
+임의로 생성하거나 추측하지 않는다.
+
+FE Document의 `.md` 확장자를 제거한 값을
+Base Name으로 사용한다.
+
+예:
+
+```text
+FE Document:
+FE-ACT-010-create.md
+
+Base Name:
+FE-ACT-010-create
+```
+
+
+## 4. FE Document 탐색
+
+입력받은 FE Document는 기존 분석 결과의
+frontend 폴더에서 확인한다.
+
+기본 구조:
+
+```text
+docs/
+└─ analysis/
+   └─ {화면명}/
+      └─ frontend/
+         └─ FE-ACT-010-create.md
+```
+
+예:
+
+```text
+docs/analysis/equipment-search/frontend/FE-ACT-010-create.md
+```
+
+FE Document를 찾을 때 허용된 Read / Glob만 사용한다.
+
+Shell 기반 재귀 검색을 사용하지 않는다.
+
+동일한 파일명이 여러 화면 폴더에 존재하여
+하나의 FE Document를 확정할 수 없는 경우
+임의로 선택하지 않는다.
+
+이 경우 STOP 한다.
+
+
+## 5. 화면명 결정
+
+화면명은 FE Document가 존재하는
+`docs/analysis/{화면명}/frontend/`
+경로에서 결정한다.
+
+예:
+
+```text
+docs/analysis/equipment-search/frontend/FE-ACT-010-create.md
+```
+
+이면:
+
+```text
+SCREEN:
+equipment-search
+```
+
+으로 사용한다.
+
+화면명을 파일명만 보고 임의 추측하지 않는다.
+
+
+## 6. Frontend Project
+
+Frontend Project는 FE Document에 기록된
+실제 Source Path를 기준으로 확인한다.
+
+예:
+
+```text
+Source:
+gipms-equipment/src/...
+```
+
+이면:
+
+```text
+FRONTEND PROJECT:
+gipms-equipment
+```
+
+으로 사용할 수 있다.
+
+Frontend Project를 확인하기 위해
+전체 Frontend 프로젝트를 무차별 검색하지 않는다.
+
+FE Document에서 Frontend Project를
+확정할 수 없는 경우:
+
+```text
+FRONTEND PROJECT:
+확인되지 않음
+```
+
+으로 처리한다.
+
+현재 단계에서는 Frontend Source를 추가 분석하지 않는다.
+
+
+## 7. HTTP Method
+
+HTTP Method가 확인된 경우
+사용자가 입력한 값을 그대로 사용한다.
+
+예:
 
 ```text
 GET
@@ -104,14 +237,17 @@ UNKNOWN
 UNKNOWN /api/equipment/search
 ```
 
-현재 Orchestrator는 UNKNOWN을 임의의 HTTP Method로 변경하지 않는다.
+현재 Orchestrator는 UNKNOWN을
+임의의 HTTP Method로 변경하지 않는다.
 
-실제 Method 확인은 향후 API Analysis Worker가 담당한다.
+향후 실제 API Analysis Worker가
+기존 API 분석 규칙에 따라 확인한다.
 
 
-## 4. API URL
+## 8. Backend URL
 
-사용자가 입력한 Backend URL을 그대로 분석 대상으로 사용한다.
+사용자가 입력한 Backend URL을
+그대로 Worker의 분석 대상으로 사용한다.
 
 예:
 
@@ -121,7 +257,8 @@ UNKNOWN /api/equipment/search
 /api/equipment/history
 ```
 
-Query String이 입력된 경우에도 임의로 제거하거나 값을 변경하지 않는다.
+Query String이 포함된 경우에도
+현재 단계에서는 임의로 제거하거나 변경하지 않는다.
 
 예:
 
@@ -129,42 +266,252 @@ Query String이 입력된 경우에도 임의로 제거하거나 값을 변경�
 GET /api/equipment/code?type=EQUIPMENT
 ```
 
-현재 단계에서는 URL의 Business 의미를 추측하지 않는다.
+URL의 Business 의미도 임의로 추측하지 않는다.
 
 
-## 5. API별 Worker
+## 9. 입력 순서 유지
+
+사용자가 입력한 API 목록의 순서를
+그대로 유지한다.
+
+예:
+
+```text
+POST /api/equipment/create
+GET  /api/equipment/check
+POST /api/equipment/history
+```
+
+이면 순서는 다음과 같다.
+
+```text
+1번
+POST /api/equipment/create
+
+2번
+GET /api/equipment/check
+
+3번
+POST /api/equipment/history
+```
+
+향후 병렬 실행 시 완료 순서가 달라져도
+이 입력 순서는 변경하지 않는다.
+
+
+## 10. API별 Worker 생성
 
 Backend API 하나당 Worker 하나를 생성한다.
 
 예:
 
 ```text
-POST /api/equipment/search
-GET /api/equipment/code
-UNKNOWN /api/equipment/history
+POST /api/equipment/create
+GET /api/equipment/check
+POST /api/equipment/history
 ```
 
-입력 시:
+결과:
 
 ```text
 WORKER-001
-  POST /api/equipment/search
+  POST /api/equipment/create
 
 WORKER-002
-  GET /api/equipment/code
+  GET /api/equipment/check
 
 WORKER-003
-  UNKNOWN /api/equipment/history
+  POST /api/equipment/history
 ```
 
-으로 분리한다.
+하나의 Worker에 서로 다른 Backend API를
+여러 개 넣지 않는다.
 
-하나의 Worker에 서로 다른 API를 여러 개 넣지 않는다.
+
+## 11. API / BE 번호 배정
+
+Worker 생성 시 API 번호와 BE 번호를
+미리 확정한다.
+
+첫 번째 Worker:
+
+```text
+WORKER-001
+
+API ID:
+API-001
+
+BE ID:
+BE-001
+```
+
+두 번째 Worker:
+
+```text
+WORKER-002
+
+API ID:
+API-002
+
+BE ID:
+BE-002
+```
+
+세 번째 Worker:
+
+```text
+WORKER-003
+
+API ID:
+API-003
+
+BE ID:
+BE-003
+```
+
+즉:
+
+```text
+WORKER-001 → API-001 → BE-001
+WORKER-002 → API-002 → BE-002
+WORKER-003 → API-003 → BE-003
+```
+
+형태로 고정한다.
 
 
-## 6. Worker 내부 최종 실행 구조
+## 12. 번호 기준
 
-향후 실제 실행 단계에서 각 Worker는 다음 순서를 사용한다.
+API / BE 번호는 Worker의 완료 순서가 아니라
+사용자가 입력한 API 순서를 기준으로 한다.
+
+예를 들어 병렬 실행 결과가:
+
+```text
+WORKER-003 완료
+WORKER-001 완료
+WORKER-002 완료
+```
+
+순서로 끝나더라도 번호는 변경하지 않는다.
+
+항상:
+
+```text
+WORKER-001 → API-001 / BE-001
+WORKER-002 → API-002 / BE-002
+WORKER-003 → API-003 / BE-003
+```
+
+을 유지한다.
+
+
+## 13. API 파일명
+
+API 분석 문서는 FE Document의 Base Name을 사용한다.
+
+형식:
+
+```text
+{FE Base Name}-API-{순번}.md
+```
+
+예:
+
+```text
+FE-ACT-010-create-API-001.md
+FE-ACT-010-create-API-002.md
+FE-ACT-010-create-API-003.md
+```
+
+
+## 14. BE 파일명
+
+BE 분석 문서도 동일한 FE Base Name을 사용한다.
+
+형식:
+
+```text
+{FE Base Name}-BE-{순번}.md
+```
+
+예:
+
+```text
+FE-ACT-010-create-BE-001.md
+FE-ACT-010-create-BE-002.md
+FE-ACT-010-create-BE-003.md
+```
+
+
+## 15. 출력 경로
+
+API 문서는 기존 API 폴더에 저장한다.
+
+```text
+docs/analysis/{화면명}/api/
+```
+
+BE 문서는 기존 Backend 폴더에 저장한다.
+
+```text
+docs/analysis/{화면명}/backend/
+```
+
+예:
+
+```text
+docs/analysis/equipment-search/
+│
+├─ frontend/
+│  └─ FE-ACT-010-create.md
+│
+├─ api/
+│  ├─ FE-ACT-010-create-API-001.md
+│  ├─ FE-ACT-010-create-API-002.md
+│  └─ FE-ACT-010-create-API-003.md
+│
+└─ backend/
+   ├─ FE-ACT-010-create-BE-001.md
+   ├─ FE-ACT-010-create-BE-002.md
+   └─ FE-ACT-010-create-BE-003.md
+```
+
+
+## 16. Worker와 파일 관계
+
+각 Worker는 자신에게 배정된
+API ID / BE ID / 출력 파일만 사용한다.
+
+예:
+
+```text
+WORKER-001
+│
+├─ INPUT
+│   POST /api/equipment/create
+│
+├─ API ID
+│   API-001
+│
+├─ BE ID
+│   BE-001
+│
+├─ API DOCUMENT
+│   FE-ACT-010-create-API-001.md
+│
+└─ BE DOCUMENT
+    FE-ACT-010-create-BE-001.md
+```
+
+다른 Worker에 할당된 ID 또는
+Document를 사용하지 않는다.
+
+
+## 17. Worker 내부 최종 실행 구조
+
+향후 실제 실행 단계에서 각 Worker는
+다음 순서를 사용한다.
 
 ```text
 WORKER
@@ -173,18 +520,16 @@ Backend API
  ↓
 API Analysis
  ↓
-API Document 생성
- ↓
-API ID 확정
+미리 배정된 API Document 저장
  ↓
 BE Analysis
  ↓
-BE Document 생성
+미리 배정된 BE Document 저장
  ↓
-완료
+PASS
 ```
 
-Worker 내부의:
+같은 Worker 안에서는:
 
 ```text
 API Analysis
@@ -192,42 +537,58 @@ API Analysis
 BE Analysis
 ```
 
-순서는 유지한다.
+순서를 반드시 유지한다.
 
-API Analysis와 BE Analysis를 같은 API에 대해 동시에 실행하지 않는다.
+동일 API의 API Analysis와 BE Analysis를
+동시에 실행하지 않는다.
 
 
-## 7. Worker 간 독립성
+## 18. API ID 동적 검색 금지
 
-각 Worker는 다른 Worker의 분석 Context에 의존하지 않는다.
+API Analysis 완료 후 API ID를
+다시 검색하지 않는다.
+
+다음 방식은 사용하지 않는다.
+
+```text
+API Analysis
+ ↓
+최근 API 문서 검색
+ ↓
+API ID 추출
+ ↓
+BE Analysis
+```
+
+다음 기준도 사용하지 않는다.
+
+```text
+가장 최근 생성된 API 문서
+가장 큰 API 번호
+파일 수정 시간
+다른 Worker가 생성한 API 문서
+```
+
+API ID는 Worker 생성 시 이미 확정한다.
 
 예:
 
 ```text
-WORKER-001
-  API #1
-  API Analysis
-  BE Analysis
-
 WORKER-002
-  API #2
-  API Analysis
-  BE Analysis
 
-WORKER-003
-  API #3
-  API Analysis
-  BE Analysis
+API ID:
+API-002
+
+BE ID:
+BE-002
 ```
 
-각 Worker는 독립적인 분석 작업으로 취급한다.
 
-
-## 8. 병렬 처리 단위
+## 19. 병렬 처리 단위
 
 병렬 처리 단위는 Worker이다.
 
-예:
+최종 목표:
 
 ```text
                  Orchestrator
@@ -236,78 +597,118 @@ WORKER-003
         ▼             ▼             ▼
    WORKER-001     WORKER-002     WORKER-003
         │             │             │
-       API           API           API
+     API-001       API-002       API-003
         ↓             ↓             ↓
-       BE            BE            BE
+     BE-001        BE-002        BE-003
 ```
 
-현재 단계에서는 실제 병렬 실행을 하지 않는다.
-
-병렬 실행 계획만 생성한다.
+Worker 간에는 독립적으로 처리한다.
 
 
-## 9. 최대 동시 Worker
+## 20. 최대 동시 Worker
 
-향후 실제 병렬 실행 시 기본 최대 동시 Worker 수는:
+향후 실제 병렬 실행 시
+기본 최대 동시 Worker 수는:
 
 ```text
 3
 ```
 
-으로 계획한다.
+으로 한다.
 
 API가 3개이면:
 
 ```text
 Batch #1
-  WORKER-001
-  WORKER-002
-  WORKER-003
+
+WORKER-001
+WORKER-002
+WORKER-003
 ```
 
 API가 7개이면:
 
 ```text
 Batch #1
-  WORKER-001
-  WORKER-002
-  WORKER-003
+
+WORKER-001
+WORKER-002
+WORKER-003
+
 
 Batch #2
-  WORKER-004
-  WORKER-005
-  WORKER-006
+
+WORKER-004
+WORKER-005
+WORKER-006
+
 
 Batch #3
-  WORKER-007
+
+WORKER-007
 ```
 
-현재 단계에서는 Batch를 출력만 하고 실행하지 않는다.
+현재 단계에서는 Batch만 계산하고
+실제 병렬 실행은 하지 않는다.
 
 
-## 10. 중복 API
+## 21. Worker 독립성
 
-동일한 HTTP Method와 동일한 URL이 여러 번 입력되면
-하나의 Worker로 정리한다.
+각 Worker는 다른 Worker의 분석 Context에
+의존하지 않는다.
 
 예:
 
 ```text
-POST /api/equipment/search
-POST /api/equipment/search
+WORKER-001
+  API-001
+  BE-001
+
+WORKER-002
+  API-002
+  BE-002
+
+WORKER-003
+  API-003
+  BE-003
+```
+
+WORKER-001의 API 분석 내용을
+WORKER-002가 전달받지 않는다.
+
+향후 실제 분석에서는 생성된 파일을
+각 Worker의 Context Boundary로 사용한다.
+
+
+## 22. 중복 API
+
+동일한 HTTP Method와 동일한 URL이
+여러 번 입력되면 하나의 API로 정리한다.
+
+예:
+
+```text
+POST /api/equipment/create
+POST /api/equipment/create
 ```
 
 결과:
 
 ```text
 WORKER-001
-  POST /api/equipment/search
+API-001
+BE-001
+
+POST /api/equipment/create
 ```
 
 중복 제거 사실은 결과에 표시한다.
 
+번호는 중복 제거 후 최종 API 목록 순서를 기준으로
+다시 연속적으로 배정한다.
 
-## 11. 동일 URL + 다른 Method
+
+## 23. 동일 URL + 다른 Method
 
 URL이 같더라도 HTTP Method가 다르면
 서로 다른 API로 취급한다.
@@ -323,14 +724,18 @@ POST /api/equipment
 
 ```text
 WORKER-001
-  GET /api/equipment
+API-001
+BE-001
+GET /api/equipment
 
 WORKER-002
-  POST /api/equipment
+API-002
+BE-002
+POST /api/equipment
 ```
 
 
-## 12. UNKNOWN과 확정 Method
+## 24. UNKNOWN과 확정 Method
 
 다음과 같이 입력된 경우:
 
@@ -339,40 +744,32 @@ UNKNOWN /api/equipment/search
 POST /api/equipment/search
 ```
 
-현재 단계에서 두 항목이 동일 API라고 임의 판단하지 않는다.
+현재 단계에서는 동일 API라고 임의 판단하지 않는다.
 
-각각 별도 대상으로 유지하고 다음과 같이 표시한다.
-
-```text
-METHOD RESOLUTION REQUIRED
-```
-
-실제 API Analysis 단계에서 Controller Mapping 등을 통해
-Method를 확인한 후 중복 여부를 판단한다.
-
-
-## 13. 화면명
-
-모든 Worker는 동일한 화면명을 사용한다.
+별도 Worker로 유지한다.
 
 예:
 
 ```text
-SCREEN:
-equipment-search
+WORKER-001
+API-001
+BE-001
+UNKNOWN /api/equipment/search
+
+METHOD RESOLUTION REQUIRED
+
+
+WORKER-002
+API-002
+BE-002
+POST /api/equipment/search
 ```
 
-향후 생성되는 문서의 기본 위치는:
-
-```text
-docs/analysis/equipment-search/api/
-docs/analysis/equipment-search/backend/
-```
-
-이다.
+실제 API Analysis 단계에서
+Controller Mapping 등을 통해 확인한다.
 
 
-## 14. 기존 FE 분석
+## 25. 기존 FE 분석
 
 이 Agent는 FE 분석을 실행하지 않는다.
 
@@ -387,133 +784,14 @@ Chrome DevTools
 Frontend Business Logic Analysis
 ```
 
-필요한 Backend API 목록은 사용자가 직접 입력한다.
+FE Document는 분석 대상이 아니라
+후속 API/BE 분석의 기준 문서이다.
 
 
-## 15. 기존 API / BE 분석 자산
+## 26. 기존 API 분석 체계
 
-향후 실제 실행 단계에서는
-기존 API / BE 분석 체계를 그대로 재사용한다.
-
-API:
-
-```text
-.claude/rules/06-api-analysis-scope.md
-.claude/rules/07-api-contract-tracing.md
-.claude/skills/api-analysis/SKILL.md
-.claude/references/API-REFERENCE.md
-```
-
-BE:
-
-```text
-.claude/rules/08-be-analysis-scope.md
-.claude/rules/09-be-call-tracing.md
-.claude/skills/be-analysis/SKILL.md
-.claude/references/BE-REFERENCE.md
-```
-
-Orchestrator가 별도의 API / BE 분석 규칙을 만들지 않는다.
-
-
-
-## 16. 현재 테스트 실행 대상
-
-현재 테스트 단계에서는 생성된 Worker 중
-첫 번째 Worker인 WORKER-001 하나만 실제 실행한다.
-
-예:
-
-```text
-WORKER-001
-  POST /api/equipment/search
-
-WORKER-002
-  GET /api/equipment/code
-
-WORKER-003
-  UNKNOWN /api/equipment/history
-```
-
-현재 실제 실행 대상:
-
-```text
-WORKER-001
-```
-
-WORKER-002 이후 Worker는 실행하지 않는다.
-
----
-
-## 17. WORKER-001 실행 구조
-
-WORKER-001은 다음 순서로 실행한다.
-
-```text
-WORKER-001
- ↓
-Backend API 확정
- ↓
-API Analysis Subagent
- ↓
-API Document 생성
- ↓
-생성된 API ID 확인
- ↓
-BE Analysis Subagent
- ↓
-BE Document 생성
- ↓
-결과 경로 반환
- ↓
-STOP
-```
-
-API Analysis가 완료되기 전에
-BE Analysis를 시작하지 않는다.
-
----
-
-## 18. API Analysis 위임
-
-Orchestrator가 API Contract를 직접 분석하지 않는다.
-
-독립된 Subagent에 API Analysis를 위임한다.
-
-Subagent에 전달할 핵심 정보:
-
-```text
-화면명
-HTTP Method
-Backend URL
-```
-
-예:
-
-```text
-화면명:
-equipment-search
-
-HTTP Method:
-POST
-
-Backend URL:
-/api/equipment/search
-```
-
-HTTP Method가 UNKNOWN이면 그대로 전달한다.
-
-예:
-
-```text
-equipment-search UNKNOWN /api/equipment/search
-```
-
----
-
-## 19. 기존 API 분석 체계 사용
-
-API Analysis Subagent는 기존 API 분석 자산을 그대로 사용한다.
+향후 실제 API Analysis에서는
+기존 API 분석 자산을 그대로 사용한다.
 
 ```text
 .claude/rules/06-api-analysis-scope.md
@@ -522,17 +800,7 @@ API Analysis Subagent는 기존 API 분석 자산을 그대로 사용한다.
 .claude/references/API-REFERENCE.md
 ```
 
-기존 API 분석의 범위, Evidence 기준,
-Project Root 기준, JAR 제한,
-출력 형식을 변경하지 않는다.
-
-Orchestrator가 별도의 API Contract 분석 방법을 만들지 않는다.
-
----
-
-## 20. API Analysis 범위
-
-API Analysis는 기존 API Skill과 동일하게:
+기존 API 분석 범위:
 
 ```text
 FE Call Source
@@ -550,177 +818,14 @@ Error Response
 STOP
 ```
 
-범위를 사용한다.
+Orchestrator가 별도의 API Contract 분석 방법을
+새로 정의하지 않는다.
 
-API Analysis 단계에서 다음으로 내려가지 않는다.
 
-```text
-Service
-ServiceImpl
-Business Logic
-Mapper
-MyBatis
-SQL
-Oracle
-RFC
-외부 연동 내부 구현
-```
+## 27. 기존 BE 분석 체계
 
-이 영역은 이후 BE Analysis가 담당한다.
-
----
-
-## 21. API 문서 생성 확인
-
-API Analysis Subagent가 완료되면
-실제로 생성된 API 문서를 확인한다.
-
-기본 위치:
-
-```text
-docs/analysis/{화면명}/api/
-```
-
-예:
-
-```text
-docs/analysis/equipment-search/api/API-001-equipment-search.md
-```
-
-API ID는 Orchestrator가 미리 임의 생성하지 않는다.
-
-실제 API Analysis 결과로 생성된 문서의 API ID를 사용한다.
-
-예:
-
-```text
-API-001
-```
-
----
-
-## 22. API Analysis 반환 정보
-
-API Subagent는 전체 API 분석 내용을
-Orchestrator에 다시 반환하지 않는다.
-
-가능한 한 다음 정보만 반환한다.
-
-```text
-STATUS
-API ID
-API DOCUMENT
-HTTP METHOD
-BACKEND URL
-ERROR
-```
-
-예:
-
-```text
-STATUS:
-PASS
-
-API ID:
-API-001
-
-API DOCUMENT:
-docs/analysis/equipment-search/api/API-001-equipment-search.md
-
-HTTP METHOD:
-POST
-
-BACKEND URL:
-/api/equipment/search
-
-ERROR:
-없음
-```
-
-API Document가 이후 BE Analysis의
-주요 전달 경계가 된다.
-
----
-
-## 23. API Analysis 실패
-
-API Analysis가 실패하면
-BE Analysis를 실행하지 않는다.
-
-예:
-
-```text
-WORKER-001
-
-STATUS:
-STOP
-
-API ANALYSIS:
-FAILED
-
-BE ANALYSIS:
-실행하지 않음
-
-REASON:
-{실패 원인}
-```
-
-다른 Worker로 자동 전환하지 않는다.
-
-현재 테스트에서는 그대로 STOP 한다.
-
----
-
-## 24. BE Analysis 시작 조건
-
-다음 조건을 만족할 때만
-BE Analysis를 시작한다.
-
-```text
-API Analysis = PASS
-
-API Document = 생성 확인
-
-API ID = 확인
-```
-
-세 조건 중 하나라도 만족하지 못하면
-BE Analysis를 시작하지 않는다.
-
----
-
-## 25. BE Analysis 위임
-
-BE 분석도 Orchestrator가 직접 수행하지 않는다.
-
-독립된 BE Analysis Subagent에 위임한다.
-
-BE Subagent에 전달하는 핵심 정보:
-
-```text
-화면명
-API ID
-API Document Path
-```
-
-예:
-
-```text
-화면명:
-equipment-search
-
-API ID:
-API-001
-
-API Document:
-docs/analysis/equipment-search/api/API-001-equipment-search.md
-```
-
----
-
-## 26. 기존 BE 분석 체계 사용
-
-BE Analysis Subagent는 기존 BE 분석 자산을 그대로 사용한다.
+향후 실제 BE Analysis에서는
+기존 BE 분석 자산을 그대로 사용한다.
 
 ```text
 .claude/rules/08-be-analysis-scope.md
@@ -729,17 +834,8 @@ BE Analysis Subagent는 기존 BE 분석 자산을 그대로 사용한다.
 .claude/references/BE-REFERENCE.md
 ```
 
-기존 BE 분석의 범위와 상세 수준을 변경하지 않는다.
-
-Orchestrator가 BE Business Logic을 직접 분석하지 않는다.
-
----
-
-## 27. BE 실제 실행 순서 유지
-
-BE Subagent는 Layer 목록만 나열하지 않는다.
-
-실제 Source 기준 실행 순서를 유지한다.
+BE 분석은 기존 규칙대로
+실제 Source의 실행 순서를 기준으로 한다.
 
 예:
 
@@ -750,33 +846,26 @@ Service
  ↓
 Validation
  ↓
-DB SELECT #1
+DB SELECT
  ↓
 조건 판단
  ↓
-RFC #1
+RFC
  ↓
-RFC 결과 처리
+DB UPDATE
  ↓
-DB UPDATE #2
- ↓
-REST API #1
- ↓
-조건 판단
- ├─ 성공 → DB INSERT #3
- └─ 실패 → Exception
+REST API
  ↓
 Response
 ```
 
-DB / RFC / REST / 다른 Backend 호출은
-실제 호출 위치에 표시한다.
+DB / RFC / REST 등을 고정 Layer 순서로
+재배치하지 않는다.
 
----
 
 ## 28. MyBatis / Oracle
 
-BE Analysis는 기존 규칙에 따라 필요한 경우:
+향후 BE Analysis에서는 기존 규칙대로:
 
 ```text
 Mapper
@@ -794,288 +883,481 @@ SQL
 Oracle Metadata
 ```
 
-까지 분석한다.
+를 분석할 수 있다.
 
-Oracle MCP는 기존 BE 분석 규칙과 동일하게
-Read Only로 사용한다.
+Oracle MCP는 Read Only로 사용한다.
 
-DML / DDL을 실행하지 않는다.
+다음 DML / DDL을 실행하지 않는다.
 
----
+```text
+INSERT
+UPDATE
+DELETE
+MERGE
+CREATE
+ALTER
+DROP
+TRUNCATE
+```
+
 
 ## 29. 외부 연동
 
-RFC / REST / SOAP / 다른 Backend API /
-Messaging / File Interface 등 외부 연동이
-실제 Business Logic 중간에 존재하면
-기존 BE 분석 규칙에 따라 추적한다.
-
-외부 호출을 실제로 실행하지 않는다.
-
-Source 기준 정적 분석만 수행한다.
-
----
-
-## 30. BE 문서 생성
-
-BE 분석 결과는 기존 규칙에 따라:
+향후 BE Analysis에서 실제 Source에 존재하는:
 
 ```text
-docs/analysis/{화면명}/backend/
+SAP RFC
+RFC
+REST / HTTP(S)
+SOAP / WebService
+다른 Backend API
+Gateway / Interface Server
+Message Queue / Messaging
+File Interface
+Batch 연계
+Socket
+기타 외부 연동
 ```
 
-아래에 생성한다.
+을 기존 BE 규칙에 따라 추적한다.
 
-예:
+외부 호출은 Business Logic의 어느 위치에서든
+여러 번 발생할 수 있다.
+
+외부 시스템을 실제로 호출하지 않는다.
+
+
+## 30. Source Evidence
+
+향후 API/BE 분석의 최종 판단은
+실제 Source Evidence를 기준으로 한다.
+
+가능한 경우:
 
 ```text
-docs/analysis/equipment-search/backend/
-BE-API-001-equipment-search.md
+Source:
+{Project Root 상대 경로}:{시작 Line}-{종료 Line}
 ```
 
-BE Reference의 Excel 단일 셀 복사 형식을 유지한다.
+형식을 사용한다.
 
-Oracle Metadata는 기존 Reference 규칙에 따라
-Markdown Table을 사용할 수 있다.
+Line Range를 확인할 수 없으면
+임의 생성하지 않는다.
 
----
+```text
+Source:
+{Project Root 상대 경로}
 
-## 31. BE Analysis 반환 정보
+Line Range:
+확인되지 않음
+```
 
-BE Subagent도 전체 분석 내용을
-Orchestrator에 다시 반환하지 않는다.
+으로 처리한다.
 
-다음 정보만 반환한다.
+Code Index 결과만으로
+Business Logic을 확정하지 않는다.
+
+
+## 31. Context 보호
+
+향후 실제 병렬 실행에서는
+Worker의 전체 API/BE 분석 내용을
+Orchestrator Context로 반환하지 않는다.
+
+목표 구조:
+
+```text
+WORKER-001
+ ↓
+API 분석
+ ↓
+API MD 저장
+ ↓
+BE 분석
+ ↓
+BE MD 저장
+ ↓
+최소 결과 반환
+```
+
+Worker가 Orchestrator에 반환하는 정보는
+가능한 한 다음으로 제한한다.
 
 ```text
 STATUS
+WORKER ID
 API ID
+BE ID
+HTTP METHOD
+BACKEND URL
+API DOCUMENT
 BE DOCUMENT
 ERROR
 ```
 
+API/BE 문서 전체 본문을
+Orchestrator에 복사하지 않는다.
+
+
+## 32. 기존 문서 보호
+
+계산된 API/BE 출력 파일이 이미 존재하면
+자동으로 덮어쓰지 않는다.
+
 예:
 
 ```text
-STATUS:
-PASS
-
-API ID:
-API-001
-
-BE DOCUMENT:
-docs/analysis/equipment-search/backend/BE-API-001-equipment-search.md
-
-ERROR:
-없음
+FE-ACT-010-create-API-001.md
 ```
 
----
+가 이미 존재하면 기존 파일을 삭제하거나
+덮어쓰지 않는다.
 
-## 32. Context 보호
+향후 실제 실행 시 기존 API/BE 분석 규칙과
+사용자의 명시적 지시를 따른다.
 
-Orchestrator는 생성된 API/BE 문서 전체 내용을
-자신의 Context에 다시 복사하지 않는다.
 
-사용하는 구조:
+## 33. Tool 사용 제한
+
+Orchestrator는 Source Code 검색 및
+Business Logic 분석을 직접 수행하지 않는다.
+
+Orchestrator는 다음 Shell/Bash 기반
+파일 검색 명령을 사용하지 않는다.
 
 ```text
-API Subagent
- ↓
-API MD 저장
- ↓
-API ID + Path 반환
- ↓
-Orchestrator
- ↓
-BE Subagent
- ↓
-필요한 API MD 직접 읽기
- ↓
-BE MD 저장
- ↓
-Path 반환
+grep
+find
+xargs
+rg
+sed
+awk
+cat
+PowerShell 기반 재귀 파일 검색
+기타 Shell 기반 재귀 검색
 ```
 
-사용하지 않는 구조:
+Orchestrator가 FE Document 또는 결과 파일을
+확인해야 하는 경우 허용된:
 
 ```text
-API 전체 분석
- ↓
-Orchestrator에 전체 복사
- ↓
-BE Prompt에 전체 복사
+Read
+Glob
 ```
 
-파일을 분석 단계 사이의 Context Boundary로 사용한다.
+만 사용한다.
 
----
+Shell 명령으로 Read / Glob 제한을
+우회하지 않는다.
 
-## 33. 기존 문서
+API/BE Source 탐색은 향후 각 분석 Worker가
+기존 API/BE Rules와 Skill에 따라 수행한다.
 
-기존 API 또는 BE 문서가 존재하면
-무조건 덮어쓰지 않는다.
 
-기존 API / BE Skill의 기존 문서 처리 규칙을 따른다.
+## 34. sample 제외 정책
 
-Orchestrator가 임의로 기존 파일을 삭제하지 않는다.
+기존 프로젝트에서 `/sample/**` 또는 이에 해당하는
+Sample Source가 분석 제외 대상으로 설정되어 있다면
+그 정책을 우회하지 않는다.
 
----
+Orchestrator가 Sample Source를 찾기 위해
+별도의 Shell 검색을 수행하지 않는다.
 
-## 34. WORKER-002 이후 실행 금지
+기존 Permission / Deny 정책을 그대로 따른다.
 
-현재 테스트에서는 WORKER-001이 완료되어도:
 
-```text
-WORKER-002
-WORKER-003
-WORKER-004
-...
-```
+## 35. 현재 테스트 실행 범위
 
-를 실행하지 않는다.
+현재 버전에서는 실제 API/BE 분석을 실행하지 않는다.
 
-병렬 Subagent도 실행하지 않는다.
-
-현재 테스트 목적은 Worker 하나의:
+다음까지만 수행한다.
 
 ```text
-API
+FE Document 확인
  ↓
-BE
-```
-
-연결이 정상적으로 동작하는지 확인하는 것이다.
-
----
-
-## 35. 성공 출력
-
-WORKER-001의 API와 BE 분석이 모두 성공하면
-Orchestrator는 다음 수준으로만 결과를 출력한다.
-
-```text
-API / BE WORKER TEST
-
-STATUS:
-PASS
-
-SCREEN:
-equipment-search
-
-
-WORKER-001
-
-INPUT API:
-POST /api/equipment/search
-
-API ANALYSIS:
-PASS
-
-API ID:
-API-001
-
-API DOCUMENT:
-docs/analysis/equipment-search/api/API-001-equipment-search.md
-
-BE ANALYSIS:
-PASS
-
-BE DOCUMENT:
-docs/analysis/equipment-search/backend/BE-API-001-equipment-search.md
-
-
-WORKER-002+:
-실행하지 않음
-
-PARALLEL EXECUTION:
-실행하지 않음
-```
-
-API/BE 문서 본문을 최종 응답에 다시 출력하지 않는다.
-
----
-
-## 36. 현재 테스트 PASS 조건
-
-다음 조건을 모두 만족해야 PASS이다.
-
-```text
-WORKER-001만 실행
-
-기존 API 분석 체계 사용
-
-API 문서 정상 생성
-
-실제 API ID 확인
-
-API 완료 후 BE 시작
-
-기존 BE 분석 체계 사용
-
-BE 문서 정상 생성
-
-API/BE 상세 내용은 파일에 저장
-
-Orchestrator에는 결과/경로만 반환
-
-WORKER-002 이후 실행 안 함
-
-병렬 실행 안 함
-```
-
----
-
-## 37. STOP
-
-WORKER-001의 API → BE 분석이 완료되면
-반드시 STOP 한다.
-
-다른 Worker를 실행하지 않는다.
-
-병렬 분석을 시작하지 않는다.
-
-현재 테스트 범위는:
-
-```text
-WORKER-001
+화면명 확인
  ↓
-API Analysis
+FE Base Name 생성
  ↓
-API Document
+Backend API 목록 확인
  ↓
-BE Analysis
+중복 처리
  ↓
-BE Document
+Worker 생성
+ ↓
+API ID 배정
+ ↓
+BE ID 배정
+ ↓
+API 파일명 계산
+ ↓
+BE 파일명 계산
+ ↓
+Batch 구성
+ ↓
+실행 계획 출력
  ↓
 STOP
 ```
 
----
 
-## 38. Tool 사용 제한
+## 36. 현재 단계에서 금지
 
-Orchestrator는 Source Code 검색 및 분석을 직접 수행하지 않는다.
+현재 테스트에서는 다음을 실행하지 않는다.
 
-Orchestrator는 다음 Shell/Bash 기반 파일 검색 명령을 사용하지 않는다.
+```text
+API Analysis
 
-- grep
-- find
-- xargs
-- rg
-- sed
-- awk
-- cat
-- PowerShell 기반 파일 검색
-- 기타 Shell 기반 재귀 검색
+Controller 분석
+Request DTO 분석
+Response DTO 분석
+Validation 분석
 
-Orchestrator가 파일 또는 생성 결과를 확인해야 하는 경우
-허용된 Read / Glob 도구만 사용한다.
+BE Analysis
 
-Source Code 검색과 분석은 Orchestrator의 역할이 아니다.
+Service 분석
+Mapper 분석
+MyBatis XML 분석
+SQL 분석
+Oracle MCP 조회
 
-API Analysis와 BE Analysis에 필요한 Source 탐색은
-각 분석 Subagent가 기존 분석 Rules / Skill에 따라 수행한다.
+RFC 분석
+REST 외부 연동 분석
 
-Permission 요청을 피하기 위해 Shell 명령으로
-Read / Glob 제한을 우회하지 않는다.
+API 문서 생성
+BE 문서 생성
+
+API ID 동적 검색
+
+Subagent 실행
+실제 병렬 실행
+```
+
+현재 목적은 오직:
+
+```text
+FE Document
+ +
+Backend API 목록
+ ↓
+Worker / ID / 파일명 사전 배정
+```
+
+이다.
+
+
+## 37. 출력 형식
+
+다음 형식을 사용한다.
+
+```text
+API / BE PARALLEL PLAN
+
+STATUS:
+PASS
+
+FE DOCUMENT:
+FE-ACT-010-create.md
+
+FE BASE NAME:
+FE-ACT-010-create
+
+SCREEN:
+equipment-search
+
+FRONTEND PROJECT:
+gipms-equipment
+
+INPUT API COUNT:
+3
+
+UNIQUE API COUNT:
+3
+
+MAX PARALLEL WORKERS:
+3
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+WORKER-001
+
+METHOD:
+POST
+
+URL:
+/api/equipment/create
+
+API ID:
+API-001
+
+BE ID:
+BE-001
+
+API DOCUMENT:
+FE-ACT-010-create-API-001.md
+
+BE DOCUMENT:
+FE-ACT-010-create-BE-001.md
+
+PLANNED FLOW:
+
+API-001
+ ↓
+API Analysis
+ ↓
+FE-ACT-010-create-API-001.md
+ ↓
+BE-001
+ ↓
+BE Analysis
+ ↓
+FE-ACT-010-create-BE-001.md
+
+EXECUTION:
+아직 실행하지 않음
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+WORKER-002
+
+METHOD:
+GET
+
+URL:
+/api/equipment/check
+
+API ID:
+API-002
+
+BE ID:
+BE-002
+
+API DOCUMENT:
+FE-ACT-010-create-API-002.md
+
+BE DOCUMENT:
+FE-ACT-010-create-BE-002.md
+
+EXECUTION:
+아직 실행하지 않음
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+WORKER-003
+
+METHOD:
+POST
+
+URL:
+/api/equipment/history
+
+API ID:
+API-003
+
+BE ID:
+BE-003
+
+API DOCUMENT:
+FE-ACT-010-create-API-003.md
+
+BE DOCUMENT:
+FE-ACT-010-create-BE-003.md
+
+EXECUTION:
+아직 실행하지 않음
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PARALLEL PLAN
+
+Batch #1
+
+WORKER-001
+WORKER-002
+WORKER-003
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EXECUTION STATUS
+
+API Analysis:
+실행하지 않음
+
+BE Analysis:
+실행하지 않음
+
+Parallel Worker:
+실행하지 않음
+```
+
+
+## 38. PASS 조건
+
+다음 조건을 모두 만족하면 PASS이다.
+
+```text
+FE Document 정상 확인
+
+FE Base Name 정상 생성
+
+화면 폴더 정상 확인
+
+API 입력 순서 유지
+
+중복 API 정상 처리
+
+API 하나당 Worker 하나 생성
+
+WORKER-001 → API-001 / BE-001
+
+WORKER-002 → API-002 / BE-002
+
+WORKER-003 → API-003 / BE-003
+
+API 파일명 정상 생성
+
+BE 파일명 정상 생성
+
+최대 3개 기준 Batch 구성
+
+API Analysis 실행 안 함
+
+BE Analysis 실행 안 함
+
+Subagent 실행 안 함
+
+Shell 기반 검색 실행 안 함
+```
+
+
+## 39. STOP
+
+Worker 목록과 API/BE 파일명,
+병렬 실행 계획을 출력한 후 반드시 STOP 한다.
+
+API Analysis를 실행하지 않는다.
+
+BE Analysis를 실행하지 않는다.
+
+Subagent를 실행하지 않는다.
+
+현재 단계는 다음까지만 수행한다.
+
+```text
+FE-ACT-xxx-{기능명}.md
+ ↓
+Backend API 목록
+ ↓
+WORKER-001 → API-001 / BE-001
+WORKER-002 → API-002 / BE-002
+WORKER-003 → API-003 / BE-003
+ ↓
+출력 파일명 사전 확정
+ ↓
+STOP
+```
