@@ -7,1260 +7,1654 @@
 <title>GIPMS Analysis Viewer</title>
 
 <style>
-    * {
-        box-sizing: border-box;
-    }
 
-    body {
-        margin: 0;
-        font-family:
-            -apple-system,
-            BlinkMacSystemFont,
-            "Segoe UI",
-            "Malgun Gothic",
-            sans-serif;
-        background: #f5f6f8;
-        color: #24292f;
-    }
+/* =========================================================
+   Base
+========================================================= */
 
-    .app {
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-    }
+* {
+    box-sizing: border-box;
+}
 
-    /* ==============================
-       Header
-       ============================== */
+body {
+    margin: 0;
+    background: #f5f6f8;
+    color: #24292f;
 
-    .header {
-        background: #ffffff;
-        border-bottom: 1px solid #d8dee4;
-        padding: 14px 20px;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        flex-wrap: wrap;
-    }
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Malgun Gothic",
+        sans-serif;
+}
 
-    .title {
-        font-size: 20px;
-        font-weight: 700;
-        margin-right: 10px;
-    }
 
-    .folder-button {
-        border: 1px solid #0969da;
-        background: #0969da;
-        color: white;
-        border-radius: 6px;
-        padding: 8px 14px;
-        cursor: pointer;
-        font-weight: 600;
-    }
+/* =========================================================
+   Header
+========================================================= */
 
-    .folder-button:hover {
-        background: #0860ca;
-    }
+header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
 
-    .folder-name {
-        color: #57606a;
-        font-size: 13px;
-    }
+    background: #ffffff;
+    border-bottom: 1px solid #d8dee4;
+}
 
-    /* ==============================
-       Screen selector
-       ============================== */
+.controls {
+    width: 90%;
+    max-width: 90%;
+    margin: auto;
 
-    .screen-bar {
-        background: #ffffff;
-        border-bottom: 1px solid #d8dee4;
-        padding: 12px 20px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
+    padding: 16px 0;
+}
 
-    .screen-bar label {
-        font-weight: 600;
-    }
 
-    #screenSelect {
-        min-width: 260px;
-        padding: 7px 10px;
-        border: 1px solid #d0d7de;
-        border-radius: 6px;
-        background: white;
-    }
+/* =========================================================
+   Common Row
+========================================================= */
 
-    /* ==============================
-       Main tabs
-       ============================== */
+.row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 
-    .main-tabs {
-        background: #ffffff;
-        border-bottom: 1px solid #d8dee4;
-        padding: 0 20px;
-        display: flex;
-        gap: 4px;
-    }
+    flex-wrap: wrap;
 
-    .main-tab {
-        border: 0;
-        background: transparent;
-        padding: 13px 20px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 600;
-        color: #57606a;
-        border-bottom: 3px solid transparent;
-    }
+    margin: 8px 0;
+}
 
-    .main-tab:hover {
-        color: #0969da;
-    }
+.row label {
+    min-width: 55px;
 
-    .main-tab.active {
-        color: #0969da;
-        border-bottom-color: #0969da;
-    }
+    font-weight: 600;
+}
 
-    .main-tab.disabled {
-        color: #afb8c1;
-        cursor: default;
-    }
 
-    /* ==============================
-       Sub tabs
-       ============================== */
+/* =========================================================
+   Select / Button
+========================================================= */
 
-    .sub-tabs-container {
-        background: #f6f8fa;
-        border-bottom: 1px solid #d8dee4;
-        padding: 8px 20px;
-        min-height: 49px;
-    }
+select,
+button {
+    padding: 8px 13px;
 
-    .sub-tabs {
-        display: flex;
-        gap: 6px;
-        overflow-x: auto;
-    }
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
 
-    .sub-tab {
-        white-space: nowrap;
-        padding: 7px 12px;
-        border: 1px solid #d0d7de;
-        border-radius: 6px;
-        background: white;
-        cursor: pointer;
-        font-size: 13px;
-    }
+    background: white;
 
-    .sub-tab:hover {
-        border-color: #0969da;
-    }
+    font: inherit;
+}
 
-    .sub-tab.active {
-        background: #ddf4ff;
-        border-color: #54aeff;
-        color: #0969da;
-        font-weight: 600;
-    }
+select {
+    min-width: 260px;
+}
 
-    /* ==============================
-       Document info
-       ============================== */
+button {
+    cursor: pointer;
+}
 
-    .document-info {
-        padding: 8px 22px;
-        background: #ffffff;
-        border-bottom: 1px solid #d8dee4;
-        color: #57606a;
-        font-size: 12px;
-    }
+button:hover {
+    border-color: #0969da;
+}
 
-    /* ==============================
-       Content
-       ============================== */
+button.active {
+    background: #ddf4ff;
+    border-color: #54aeff;
 
-    .content-wrapper {
-        flex: 1;
-        overflow: auto;
-        padding: 28px;
-    }
+    color: #0969da;
 
-    .markdown-body {
-        max-width: 1300px;
-        margin: 0 auto;
-        background: white;
-        padding: 36px 44px;
-        border: 1px solid #d8dee4;
-        border-radius: 8px;
-        min-height: 500px;
-        line-height: 1.7;
-    }
+    font-weight: 600;
+}
 
-    .markdown-body h1 {
-        font-size: 28px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid #d8dee4;
-        margin-top: 34px;
-    }
+button:disabled {
+    color: #afb8c1;
+    cursor: default;
+}
 
-    .markdown-body h1:first-child {
-        margin-top: 0;
-    }
 
-    .markdown-body h2 {
-        font-size: 22px;
-        margin-top: 30px;
-        padding-bottom: 7px;
-        border-bottom: 1px solid #d8dee4;
-    }
+/* =========================================================
+   Main Tabs
+========================================================= */
 
-    .markdown-body h3 {
-        font-size: 18px;
-        margin-top: 24px;
-    }
+.main-tabs {
+    display: flex;
+    gap: 6px;
 
-    .markdown-body h4 {
-        font-size: 16px;
-        margin-top: 20px;
-    }
+    margin-top: 12px;
+}
 
-    .markdown-body p {
-        margin: 10px 0;
-    }
+.main-tab {
+    min-width: 90px;
 
-    .markdown-body ul,
-    .markdown-body ol {
-        padding-left: 28px;
-    }
+    font-weight: 600;
+}
 
-    .markdown-body li {
-        margin: 4px 0;
-    }
 
-    .markdown-body blockquote {
-        margin: 16px 0;
-        padding: 4px 16px;
-        color: #57606a;
-        border-left: 4px solid #d0d7de;
-        background: #f6f8fa;
-    }
+/* =========================================================
+   FE / API / BE Area
+========================================================= */
 
-    /* ==============================
-       Code / ASCII Tree
-       ============================== */
+.sub {
+    display: none;
 
-    .markdown-body pre {
-        background: #f6f8fa;
-        border: 1px solid #d8dee4;
-        border-radius: 6px;
-        padding: 16px;
-        overflow-x: auto;
-        line-height: 1.5;
-        font-family:
-            Consolas,
-            "Courier New",
-            monospace;
-        font-size: 13px;
-        white-space: pre;
-    }
+    margin-top: 12px;
+    padding-top: 8px;
 
-    .markdown-body code {
-        font-family:
-            Consolas,
-            "Courier New",
-            monospace;
-    }
+    border-top: 1px solid #d8dee4;
+}
 
-    .markdown-body :not(pre) > code {
-        background: #eff1f3;
-        padding: 2px 5px;
-        border-radius: 4px;
-        font-size: 90%;
-    }
+.sub.show {
+    display: block;
+}
 
-    /* ==============================
-       Oracle Metadata / Markdown table
-       ============================== */
 
-    .markdown-body table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 16px 0 24px 0;
-        font-size: 13px;
-    }
+/* =========================================================
+   FE Horizontal Scroll
+========================================================= */
 
-    .markdown-body th,
-    .markdown-body td {
-        border: 1px solid #d0d7de;
-        padding: 8px 10px;
-        text-align: left;
-        vertical-align: top;
-    }
+.fe-row {
+    display: flex;
 
-    .markdown-body th {
-        background: #f6f8fa;
-        font-weight: 700;
-    }
+    flex-wrap: nowrap;
 
-    .markdown-body tr:nth-child(even) td {
-        background: #fbfcfd;
-    }
+    align-items: center;
 
-    /* ==============================
-       Empty / start state
-       ============================== */
+    width: 100%;
+}
 
-    .empty {
-        max-width: 800px;
-        margin: 80px auto;
-        text-align: center;
-        color: #57606a;
-    }
+.fe-scroll {
+    flex: 1;
 
-    .empty-title {
-        font-size: 22px;
-        font-weight: 700;
-        color: #24292f;
-        margin-bottom: 12px;
-    }
+    min-width: 0;
 
-    .empty-description {
-        line-height: 1.8;
-    }
+    overflow-x: auto;
+    overflow-y: hidden;
 
+    padding-bottom: 7px;
+}
+
+#fes {
+    display: flex;
+
+    flex-wrap: nowrap;
+
+    gap: 7px;
+
+    width: max-content;
+}
+
+#fes button {
+    flex: 0 0 auto;
+
+    white-space: nowrap;
+}
+
+
+/* scrollbar */
+
+.fe-scroll::-webkit-scrollbar {
+    height: 7px;
+}
+
+.fe-scroll::-webkit-scrollbar-track {
+    background: #f1f3f5;
+
+    border-radius: 5px;
+}
+
+.fe-scroll::-webkit-scrollbar-thumb {
+    background: #afb8c1;
+
+    border-radius: 5px;
+}
+
+.fe-scroll::-webkit-scrollbar-thumb:hover {
+    background: #8c959f;
+}
+
+
+/* =========================================================
+   API / BE
+========================================================= */
+
+#apis,
+#bes {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 7px;
+}
+
+
+/* =========================================================
+   Document Info
+========================================================= */
+
+.status {
+    width: 90%;
+    max-width: 90%;
+
+    margin: 14px auto 0;
+
+    color: #57606a;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   Viewer
+========================================================= */
+
+.viewer {
+    width: 90%;
+    max-width: 90%;
+
+    margin: 16px auto 50px;
+
+    min-height: 500px;
+
+    padding: 36px 44px;
+
+    background: white;
+
+    border: 1px solid #d8dee4;
+
+    border-radius: 8px;
+
+    overflow-x: auto;
+
+    line-height: 1.7;
+}
+
+
+/* =========================================================
+   Markdown Heading
+========================================================= */
+
+.viewer h1 {
+    font-size: 28px;
+
+    margin-top: 34px;
+
+    padding-bottom: 10px;
+
+    border-bottom: 1px solid #d8dee4;
+}
+
+.viewer h1:first-child {
+    margin-top: 0;
+}
+
+.viewer h2 {
+    font-size: 22px;
+
+    margin-top: 30px;
+
+    padding-bottom: 7px;
+
+    border-bottom: 1px solid #d8dee4;
+}
+
+.viewer h3 {
+    font-size: 18px;
+
+    margin-top: 24px;
+}
+
+.viewer h4 {
+    font-size: 16px;
+
+    margin-top: 20px;
+}
+
+
+/* =========================================================
+   Paragraph
+========================================================= */
+
+.viewer p {
+    margin: 10px 0;
+}
+
+
+/* =========================================================
+   List
+========================================================= */
+
+.viewer ul,
+.viewer ol {
+    padding-left: 28px;
+}
+
+.viewer li {
+    margin: 4px 0;
+}
+
+
+/* =========================================================
+   Blockquote
+========================================================= */
+
+.viewer blockquote {
+    margin: 16px 0;
+
+    padding: 4px 16px;
+
+    color: #57606a;
+
+    border-left: 4px solid #d0d7de;
+
+    background: #f6f8fa;
+}
+
+
+/* =========================================================
+   Code / Tree
+========================================================= */
+
+.viewer pre {
+    background: #f6f8fa;
+
+    border: 1px solid #d8dee4;
+
+    border-radius: 6px;
+
+    padding: 16px;
+
+    overflow-x: auto;
+
+    line-height: 1.5;
+
+    font-family:
+        Consolas,
+        "Courier New",
+        monospace;
+
+    font-size: 13px;
+
+    white-space: pre;
+}
+
+.viewer code {
+    font-family:
+        Consolas,
+        "Courier New",
+        monospace;
+}
+
+.viewer :not(pre) > code {
+    background: #eff1f3;
+
+    padding: 2px 5px;
+
+    border-radius: 4px;
+
+    font-size: 90%;
+}
+
+
+/* =========================================================
+   Markdown Table
+========================================================= */
+
+.viewer table {
+    width: 100%;
+
+    border-collapse: collapse;
+
+    margin: 16px 0 24px;
+
+    font-size: 13px;
+}
+
+.viewer th,
+.viewer td {
+    border: 1px solid #d0d7de;
+
+    padding: 8px 10px;
+
+    text-align: left;
+
+    vertical-align: top;
+}
+
+.viewer th {
+    background: #f6f8fa;
+
+    font-weight: 700;
+}
+
+.viewer tr:nth-child(even) td {
+    background: #fbfcfd;
+}
+
+
+/* =========================================================
+   HR
+========================================================= */
+
+.viewer hr {
+    border: 0;
+
+    border-top: 1px solid #d8dee4;
+
+    margin: 24px 0;
+}
+
+
+/* =========================================================
+   Empty
+========================================================= */
+
+.empty {
+    padding: 60px 20px;
+
+    text-align: center;
+
+    color: #57606a;
+}
+
+
+/* =========================================================
+   Mobile
+========================================================= */
+
+@media (max-width: 800px) {
+
+    .controls,
+    .viewer,
     .status {
-        margin-left: auto;
-        font-size: 12px;
-        color: #57606a;
+        width: 96%;
+        max-width: 96%;
     }
 
-    @media (max-width: 800px) {
-        .content-wrapper {
-            padding: 10px;
-        }
-
-        .markdown-body {
-            padding: 22px 18px;
-        }
-
-        .main-tab {
-            padding: 11px 12px;
-        }
-
-        #screenSelect {
-            min-width: 180px;
-        }
+    .viewer {
+        padding: 22px 18px;
     }
+
+    select {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
 </style>
 </head>
 
+
 <body>
 
-<div class="app">
 
-    <div class="header">
-        <div class="title">
-            GIPMS Analysis Viewer
-        </div>
+<header>
 
-        <button
-            class="folder-button"
-            id="folderButton"
-        >
-            docs/analysis 폴더 선택
-        </button>
+<div class="controls">
 
-        <div
-            class="folder-name"
-            id="folderName"
-        >
-            선택된 폴더 없음
-        </div>
 
-        <div
-            class="status"
-            id="status"
-        ></div>
-    </div>
+    <!-- =====================================================
+         Screen Select
+    ====================================================== -->
 
-    <div class="screen-bar">
-        <label for="screenSelect">
-            화면
+    <div class="row">
+
+        <label>
+            화면명
         </label>
 
-        <select
-            id="screenSelect"
-            disabled
-        >
-            <option>
-                분석 폴더를 먼저 선택하세요
+        <select id="screen">
+
+            <option value="">
+                화면 선택
             </option>
+
         </select>
+
+
+        <button id="pick">
+            docs/analysis 선택
+        </button>
+
     </div>
 
-    <div
-        class="main-tabs"
-        id="mainTabs"
-    >
+
+    <!-- =====================================================
+         SCREEN / FE
+    ====================================================== -->
+
+    <div class="main-tabs">
+
         <button
-            class="main-tab disabled"
-            data-type="SCREEN"
+            id="screenTab"
+            class="main-tab"
+            disabled
         >
             SCREEN
         </button>
 
         <button
-            class="main-tab disabled"
-            data-type="FE"
+            id="feTab"
+            class="main-tab"
+            disabled
         >
             FE
         </button>
 
-        <button
-            class="main-tab disabled"
-            data-type="API"
-        >
-            API
-        </button>
-
-        <button
-            class="main-tab disabled"
-            data-type="BE"
-        >
-            BE
-        </button>
     </div>
 
-    <div class="sub-tabs-container">
-        <div
-            class="sub-tabs"
-            id="subTabs"
-        ></div>
-    </div>
+
+    <!-- =====================================================
+         FE / API / BE
+    ====================================================== -->
 
     <div
-        class="document-info"
-        id="documentInfo"
+        id="sub"
+        class="sub"
     >
-        문서를 선택하세요.
-    </div>
 
-    <div
-        class="content-wrapper"
-        id="contentWrapper"
-    >
-        <div class="empty">
-            <div class="empty-title">
-                분석 문서 Viewer
+
+        <!-- FE -->
+
+        <div class="row fe-row">
+
+            <label>
+                FE
+            </label>
+
+
+            <div class="fe-scroll">
+
+                <div id="fes"></div>
+
             </div>
 
-            <div class="empty-description">
-                <strong>docs/analysis</strong> 폴더를 선택하세요.
-                <br><br>
-                SCREEN / FE / API / BE 문서를 자동으로 찾아
-                화면별로 분류합니다.
-            </div>
         </div>
+
+
+        <!-- API -->
+
+        <div
+            id="apiRow"
+            class="row"
+            style="display:none"
+        >
+
+            <label>
+                API
+            </label>
+
+            <div id="apis"></div>
+
+        </div>
+
+
+        <!-- BE -->
+
+        <div
+            id="beRow"
+            class="row"
+            style="display:none"
+        >
+
+            <label>
+                BE
+            </label>
+
+            <div id="bes"></div>
+
+        </div>
+
+
     </div>
 
 </div>
+
+</header>
+
+
+<!-- =========================================================
+     Status
+========================================================= -->
+
+<div
+    id="status"
+    class="status"
+>
+    Chrome/Edge에서
+    <b>docs/analysis 선택</b>
+    버튼으로 분석 폴더를 선택하세요.
+</div>
+
+
+<!-- =========================================================
+     Viewer
+========================================================= -->
+
+<main
+    id="viewer"
+    class="viewer"
+>
+
+    <div class="empty">
+
+        문서를 선택하면
+        여기에 표시됩니다.
+
+    </div>
+
+</main>
+
+
 
 <script>
 
 /* =========================================================
    State
-   ========================================================= */
+========================================================= */
 
-const state = {
-    rootName: "",
-    screens: {},
-    currentScreen: null,
-    currentType: null,
-    currentFile: null
-};
-
-
-/* =========================================================
-   DOM
-   ========================================================= */
-
-const folderButton =
-    document.getElementById("folderButton");
-
-const folderName =
-    document.getElementById("folderName");
-
-const screenSelect =
-    document.getElementById("screenSelect");
-
-const mainTabs =
-    document.getElementById("mainTabs");
-
-const subTabs =
-    document.getElementById("subTabs");
-
-const documentInfo =
-    document.getElementById("documentInfo");
-
-const contentWrapper =
-    document.getElementById("contentWrapper");
-
-const status =
-    document.getElementById("status");
-
-
-/* =========================================================
-   Folder selection
-   ========================================================= */
-
-folderButton.addEventListener(
-    "click",
-    async () => {
-
-        if (!window.showDirectoryPicker) {
-            alert(
-                "현재 브라우저에서는 폴더 선택 기능을 지원하지 않습니다.\n\n" +
-                "Chrome 또는 Edge 최신 버전에서 실행해 주세요."
-            );
-
-            return;
-        }
-
-        try {
-
-            const rootHandle =
-                await window.showDirectoryPicker();
-
-            state.rootName =
-                rootHandle.name;
-
-            folderName.textContent =
-                rootHandle.name;
-
-            status.textContent =
-                "문서 검색 중...";
-
-            state.screens = {};
-
-            await scanAnalysisDirectory(
-                rootHandle
-            );
-
-            status.textContent =
-                "화면 " +
-                Object.keys(state.screens).length +
-                "개";
-
-            initializeViewer();
-
-        }
-        catch (error) {
-
-            if (error.name !== "AbortError") {
-                console.error(error);
-
-                alert(
-                    "폴더를 읽는 중 오류가 발생했습니다.\n\n" +
-                    error.message
-                );
-            }
-        }
-    }
-);
-
-
-/* =========================================================
-   Scan docs/analysis
-   ========================================================= */
-
-async function scanAnalysisDirectory(
-    rootHandle
-) {
-
-    /*
-       사용자가 선택한 폴더를
-       docs/analysis 로 간주한다.
-
-       구조:
-
-       analysis/
-         equipment-search/
-           SCREEN-...
-           frontend/
-           api/
-           backend/
-    */
-
-    for await (
-        const [name, handle]
-        of rootHandle.entries()
-    ) {
-
-        if (handle.kind !== "directory") {
-            continue;
-        }
-
-        await scanScreenDirectory(
-            name,
-            handle
+const q =
+    selector =>
+        document.querySelector(
+            selector
         );
-    }
-}
+
+
+let root = null;
+
+let data =
+    new Map();
+
+
+let screenName = "";
+
+let action = "";
 
 
 /* =========================================================
-   Scan one screen
-   ========================================================= */
+   Escape
+========================================================= */
 
-async function scanScreenDirectory(
-    screenName,
-    screenHandle
+function escapeHtml(
+    value
 ) {
 
-    const screen = {
-        name: screenName,
+    return String(value)
 
-        SCREEN: [],
-        FE: [],
-        API: [],
-        BE: []
-    };
+        .replace(
+            /&/g,
+            "&amp;"
+        )
 
-    await scanDirectoryRecursive(
-        screenHandle,
-        screenName,
-        screen
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+}
+
+
+function escapeAttribute(
+    value
+) {
+
+    return escapeHtml(
+        value
     );
+}
 
-    const total =
-        screen.SCREEN.length +
-        screen.FE.length +
-        screen.API.length +
-        screen.BE.length;
 
-    if (total > 0) {
+/* =========================================================
+   Directory Helper
+========================================================= */
 
-        sortFiles(screen);
+async function dir(
+    handle,
+    name
+) {
 
-        state.screens[screenName] =
-            screen;
+    try {
+
+        return await handle
+            .getDirectoryHandle(
+                name
+            );
+    }
+    catch {
+
+        return null;
+    }
+}
+
+
+async function file(
+    handle,
+    name
+) {
+
+    try {
+
+        return await handle
+            .getFileHandle(
+                name
+            );
+    }
+    catch {
+
+        return null;
     }
 }
 
 
 /* =========================================================
-   Recursive scan
-   ========================================================= */
+   Markdown Files
+========================================================= */
 
-async function scanDirectoryRecursive(
-    directoryHandle,
-    relativePath,
-    screen
+async function mds(
+    handle
 ) {
+
+    const result = [];
+
+
+    if (!handle) {
+
+        return result;
+    }
+
 
     for await (
-        const [name, handle]
-        of directoryHandle.entries()
+        const [name, item]
+        of handle.entries()
     ) {
-
-        const path =
-            relativePath +
-            "/" +
-            name;
-
-        if (handle.kind === "directory") {
-
-            await scanDirectoryRecursive(
-                handle,
-                path,
-                screen
-            );
-
-            continue;
-        }
 
         if (
-            handle.kind !== "file" ||
-            !name.toLowerCase().endsWith(".md")
+            item.kind === "file" &&
+            name
+                .toLowerCase()
+                .endsWith(".md")
         ) {
-            continue;
+
+            result.push(
+                item
+            );
         }
-
-        const type =
-            classifyFile(name);
-
-        if (!type) {
-            continue;
-        }
-
-        screen[type].push({
-            name: name,
-            path: path,
-            handle: handle
-        });
     }
+
+
+    return result.sort(
+        (a, b) =>
+
+            a.name.localeCompare(
+                b.name,
+                undefined,
+                {
+                    numeric: true,
+                    sensitivity: "base"
+                }
+            )
+    );
 }
 
 
 /* =========================================================
-   File classification
-   ========================================================= */
+   FE Action ID
+========================================================= */
 
-function classifyFile(
-    fileName
+function act(
+    name
+) {
+
+    const match =
+        name.match(
+            /^FE-(ACT-\d+)/i
+        );
+
+
+    return match
+        ? match[1].toUpperCase()
+        : "";
+}
+
+
+/* =========================================================
+   FE Label
+========================================================= */
+
+function feLabel(
+    name
+) {
+
+    const match =
+        name.match(
+            /^FE-(ACT-\d+)-(.+)\.md$/i
+        );
+
+
+    if (!match) {
+
+        return name.replace(
+            /\.md$/i,
+            ""
+        );
+    }
+
+
+    return (
+        match[1] +
+        " " +
+        match[2]
+            .replaceAll(
+                "-",
+                " "
+            )
+    );
+}
+
+
+/* =========================================================
+   FE → API / BE Match
+========================================================= */
+
+function child(
+    name,
+    actionId,
+    type
 ) {
 
     const upper =
-        fileName.toUpperCase();
+        name.toUpperCase();
 
-    if (
-        upper.startsWith("SCREEN-")
-    ) {
-        return "SCREEN";
-    }
 
-    if (
-        upper.startsWith("FE-ACT-")
-    ) {
-        return "FE";
-    }
+    return (
 
-    /*
-       BE를 API보다 먼저 검사한다.
+        upper.startsWith(
+            "FE-" +
+            actionId +
+            "-"
+        )
 
-       BE-API-001-xxx.md 안에도
-       API 문자열이 포함되기 때문이다.
-    */
+        &&
 
-    if (
-        upper.startsWith("BE-API-")
-    ) {
-        return "BE";
-    }
-
-    if (
-        upper.startsWith("API-")
-    ) {
-        return "API";
-    }
-
-    return null;
+        upper.includes(
+            "-" +
+            type +
+            "-"
+        )
+    );
 }
 
 
 /* =========================================================
-   Sort
-   ========================================================= */
+   API / BE Label
+========================================================= */
 
-function sortFiles(
-    screen
+function childLabel(
+    name,
+    type
 ) {
 
-    for (
-        const type
-        of ["SCREEN", "FE", "API", "BE"]
+    const regex =
+        new RegExp(
+            "-(" +
+            type +
+            "-\\d+)\\.md$",
+            "i"
+        );
+
+
+    const match =
+        name.match(
+            regex
+        );
+
+
+    return match
+        ? match[1].toUpperCase()
+        : name.replace(
+            /\.md$/i,
+            ""
+        );
+}
+
+
+/* =========================================================
+   Main Active
+========================================================= */
+
+function setMainActive(
+    button
+) {
+
+    q("#screenTab")
+        .classList
+        .remove(
+            "active"
+        );
+
+
+    q("#feTab")
+        .classList
+        .remove(
+            "active"
+        );
+
+
+    if (button) {
+
+        button
+            .classList
+            .add(
+                "active"
+            );
+    }
+}
+
+
+/* =========================================================
+   Render File
+========================================================= */
+
+async function renderFile(
+    handle
+) {
+
+    if (!handle) {
+
+        return;
+    }
+
+
+    try {
+
+        const target =
+            await handle.getFile();
+
+
+        const markdown =
+            await target.text();
+
+
+        renderMarkdown(
+            markdown
+        );
+
+
+        q("#status")
+            .innerHTML =
+
+            "표시 문서: <b>" +
+
+            escapeHtml(
+                handle.name
+            )
+
+            + "</b>";
+    }
+    catch (error) {
+
+        q("#viewer")
+            .innerHTML =
+
+            '<div class="empty">' +
+
+            '문서를 읽을 수 없습니다.<br>' +
+
+            escapeHtml(
+                error.message
+            )
+
+            + '</div>';
+    }
+}
+
+
+/* =========================================================
+   Scan Screen Directories
+========================================================= */
+
+async function scan() {
+
+    data.clear();
+
+
+    for await (
+        const [name, handle]
+        of root.entries()
     ) {
 
-        screen[type].sort(
+        if (
+            handle.kind !==
+            "directory"
+        ) {
+
+            continue;
+        }
+
+
+        const screen =
+            await file(
+                handle,
+                "SCREEN-" +
+                name +
+                ".md"
+            );
+
+
+        const frontend =
+            await dir(
+                handle,
+                "frontend"
+            );
+
+
+        const api =
+            await dir(
+                handle,
+                "api"
+            );
+
+
+        const backend =
+            await dir(
+                handle,
+                "backend"
+            );
+
+
+        if (
+            screen ||
+            frontend ||
+            api ||
+            backend
+        ) {
+
+            data.set(
+                name,
+                {
+                    screen,
+                    frontend,
+                    api,
+                    backend
+                }
+            );
+        }
+    }
+
+
+    const select =
+        q("#screen");
+
+
+    select.innerHTML =
+        '<option value="">' +
+        '화면 선택' +
+        '</option>';
+
+
+    [...data.keys()]
+
+        .sort(
             (a, b) =>
-                a.name.localeCompare(
-                    b.name,
+                a.localeCompare(
+                    b,
                     undefined,
                     {
                         numeric: true,
                         sensitivity: "base"
                     }
                 )
-        );
-    }
-}
+        )
 
+        .forEach(
+            name => {
 
-/* =========================================================
-   Initialize
-   ========================================================= */
-
-function initializeViewer() {
-
-    const screenNames =
-        Object.keys(state.screens)
-            .sort(
-                (a, b) =>
-                    a.localeCompare(
-                        b,
-                        undefined,
-                        {
-                            numeric: true,
-                            sensitivity: "base"
-                        }
+                select.add(
+                    new Option(
+                        name,
+                        name
                     )
-            );
-
-    screenSelect.innerHTML = "";
-
-    if (screenNames.length === 0) {
-
-        screenSelect.disabled = true;
-
-        screenSelect.innerHTML =
-            "<option>분석 문서 없음</option>";
-
-        showEmpty(
-            "분석 문서를 찾지 못했습니다.",
-            "docs/analysis 폴더를 선택했는지 확인하세요."
-        );
-
-        updateMainTabs();
-
-        return;
-    }
-
-    for (
-        const screenName
-        of screenNames
-    ) {
-
-        const option =
-            document.createElement(
-                "option"
-            );
-
-        option.value =
-            screenName;
-
-        option.textContent =
-            screenName;
-
-        screenSelect.appendChild(
-            option
-        );
-    }
-
-    screenSelect.disabled =
-        false;
-
-    state.currentScreen =
-        screenNames[0];
-
-    screenSelect.value =
-        state.currentScreen;
-
-    selectDefaultType();
-}
-
-
-/* =========================================================
-   Screen change
-   ========================================================= */
-
-screenSelect.addEventListener(
-    "change",
-    () => {
-
-        state.currentScreen =
-            screenSelect.value;
-
-        state.currentFile =
-            null;
-
-        selectDefaultType();
-    }
-);
-
-
-/* =========================================================
-   Default type
-   ========================================================= */
-
-function selectDefaultType() {
-
-    const screen =
-        state.screens[
-            state.currentScreen
-        ];
-
-    if (!screen) {
-        return;
-    }
-
-    const priority = [
-        "SCREEN",
-        "FE",
-        "API",
-        "BE"
-    ];
-
-    state.currentType =
-        null;
-
-    for (
-        const type
-        of priority
-    ) {
-
-        if (
-            screen[type].length > 0
-        ) {
-
-            state.currentType =
-                type;
-
-            break;
-        }
-    }
-
-    updateMainTabs();
-    updateSubTabs();
-}
-
-
-/* =========================================================
-   Main tabs
-   ========================================================= */
-
-mainTabs.addEventListener(
-    "click",
-    event => {
-
-        const button =
-            event.target.closest(
-                ".main-tab"
-            );
-
-        if (!button) {
-            return;
-        }
-
-        const type =
-            button.dataset.type;
-
-        const screen =
-            state.screens[
-                state.currentScreen
-            ];
-
-        if (
-            !screen ||
-            screen[type].length === 0
-        ) {
-            return;
-        }
-
-        state.currentType =
-            type;
-
-        state.currentFile =
-            null;
-
-        updateMainTabs();
-        updateSubTabs();
-    }
-);
-
-
-function updateMainTabs() {
-
-    const buttons =
-        mainTabs.querySelectorAll(
-            ".main-tab"
-        );
-
-    const screen =
-        state.screens[
-            state.currentScreen
-        ];
-
-    buttons.forEach(
-        button => {
-
-            const type =
-                button.dataset.type;
-
-            button.classList.remove(
-                "active",
-                "disabled"
-            );
-
-            if (
-                !screen ||
-                screen[type].length === 0
-            ) {
-
-                button.classList.add(
-                    "disabled"
-                );
-
-                return;
-            }
-
-            if (
-                type === state.currentType
-            ) {
-
-                button.classList.add(
-                    "active"
-                );
-            }
-        }
-    );
-}
-
-
-/* =========================================================
-   Sub tabs
-   ========================================================= */
-
-function updateSubTabs() {
-
-    subTabs.innerHTML = "";
-
-    const screen =
-        state.screens[
-            state.currentScreen
-        ];
-
-    if (
-        !screen ||
-        !state.currentType
-    ) {
-
-        showEmpty(
-            "문서가 없습니다.",
-            ""
-        );
-
-        return;
-    }
-
-    const files =
-        screen[
-            state.currentType
-        ];
-
-    if (
-        files.length === 0
-    ) {
-
-        showEmpty(
-            state.currentType +
-            " 문서가 없습니다.",
-            ""
-        );
-
-        return;
-    }
-
-    for (
-        const file
-        of files
-    ) {
-
-        const button =
-            document.createElement(
-                "button"
-            );
-
-        button.className =
-            "sub-tab";
-
-        button.textContent =
-            createTabLabel(
-                file.name,
-                state.currentType
-            );
-
-        button.title =
-            file.name;
-
-        button.addEventListener(
-            "click",
-            () => {
-
-                selectFile(
-                    file,
-                    button
                 );
             }
         );
 
-        subTabs.appendChild(
-            button
-        );
-    }
 
-    /*
-       해당 Type의 첫 번째 문서를
-       자동 선택한다.
-    */
+    q("#status")
+        .textContent =
 
-    const firstButton =
-        subTabs.querySelector(
-            ".sub-tab"
-        );
+        data.size +
+        "개 화면을 찾았습니다.";
+}
+
+
+/* =========================================================
+   Select docs/analysis
+========================================================= */
+
+q("#pick")
+    .onclick =
+async () => {
 
     if (
-        files.length > 0 &&
-        firstButton
+        !window
+            .showDirectoryPicker
     ) {
 
-        selectFile(
-            files[0],
-            firstButton
-        );
-    }
-}
-
-
-/* =========================================================
-   Tab label
-   ========================================================= */
-
-function createTabLabel(
-    fileName,
-    type
-) {
-
-    let label =
-        fileName.replace(
-            /\.md$/i,
-            ""
+        alert(
+            "현재 브라우저에서는 폴더 선택 기능을 지원하지 않습니다.\n\n" +
+            "Chrome 또는 Edge 최신 버전에서 실행해 주세요."
         );
 
-    if (type === "SCREEN") {
-
-        label =
-            label.replace(
-                /^SCREEN-/i,
-                ""
-            );
-
-        return label || "SCREEN";
+        return;
     }
 
-    if (type === "FE") {
-
-        label =
-            label.replace(
-                /^FE-/i,
-                ""
-            );
-
-        return label;
-    }
-
-    if (type === "API") {
-
-        return label;
-    }
-
-    if (type === "BE") {
-
-        label =
-            label.replace(
-                /^BE-/i,
-                ""
-            );
-
-        return label;
-    }
-
-    return label;
-}
-
-
-/* =========================================================
-   Select file
-   ========================================================= */
-
-async function selectFile(
-    fileInfo,
-    button
-) {
-
-    state.currentFile =
-        fileInfo;
-
-    const buttons =
-        subTabs.querySelectorAll(
-            ".sub-tab"
-        );
-
-    buttons.forEach(
-        item =>
-            item.classList.remove(
-                "active"
-            )
-    );
-
-    button.classList.add(
-        "active"
-    );
-
-    documentInfo.textContent =
-        fileInfo.path;
-
-    status.textContent =
-        "문서 읽는 중...";
 
     try {
 
-        const file =
-            await fileInfo.handle.getFile();
+        root =
+            await window
+                .showDirectoryPicker({
+                    mode: "read"
+                });
 
-        const markdown =
-            await file.text();
 
-        renderMarkdown(
-            markdown
-        );
+        await scan();
 
-        status.textContent =
-            "표시 완료";
     }
     catch (error) {
 
-        console.error(error);
+        if (
+            error.name !==
+            "AbortError"
+        ) {
 
-        showEmpty(
-            "문서를 읽지 못했습니다.",
-            error.message
+            console.error(
+                error
+            );
+        }
+    }
+};
+
+
+/* =========================================================
+   Screen Change
+========================================================= */
+
+q("#screen")
+    .onchange =
+async event => {
+
+    screenName =
+        event.target.value;
+
+
+    action = "";
+
+
+    q("#sub")
+        .classList
+        .remove(
+            "show"
         );
 
-        status.textContent =
-            "오류";
+
+    q("#screenTab")
+        .disabled =
+        !screenName;
+
+
+    q("#feTab")
+        .disabled =
+        !screenName;
+
+
+    if (!screenName) {
+
+        return;
+    }
+
+
+    await showScreen();
+};
+
+
+/* =========================================================
+   SCREEN
+========================================================= */
+
+async function showScreen() {
+
+    const current =
+        data.get(
+            screenName
+        );
+
+
+    if (!current) {
+
+        return;
+    }
+
+
+    q("#sub")
+        .classList
+        .remove(
+            "show"
+        );
+
+
+    setMainActive(
+        q("#screenTab")
+    );
+
+
+    if (
+        current.screen
+    ) {
+
+        await renderFile(
+            current.screen
+        );
+    }
+    else {
+
+        q("#viewer")
+            .innerHTML =
+
+            '<div class="empty">' +
+            'SCREEN 문서가 없습니다.' +
+            '</div>';
     }
 }
 
 
+q("#screenTab")
+    .onclick =
+    showScreen;
+
+
 /* =========================================================
-   Markdown renderer
-   ========================================================= */
+   FE
+========================================================= */
 
-/*
-   외부 Markdown Library를 사용하지 않는다.
+q("#feTab")
+    .onclick =
+async () => {
 
-   회사 환경에서 CDN이 차단되어도
-   HTML 하나만으로 동작하도록
-   필요한 Markdown 기능만 구현한다.
+    const current =
+        data.get(
+            screenName
+        );
 
-   지원:
-   - Heading
-   - Paragraph
-   - Code Block
-   - Inline Code
-   - Bold
-   - Italic
-   - Blockquote
-   - UL / OL
-   - Horizontal Rule
-   - Markdown Table
-*/
 
+    if (!current) {
+
+        return;
+    }
+
+
+    setMainActive(
+        q("#feTab")
+    );
+
+
+    q("#sub")
+        .classList
+        .add(
+            "show"
+        );
+
+
+    q("#fes")
+        .innerHTML = "";
+
+
+    q("#apis")
+        .innerHTML = "";
+
+
+    q("#bes")
+        .innerHTML = "";
+
+
+    q("#apiRow")
+        .style.display =
+        "none";
+
+
+    q("#beRow")
+        .style.display =
+        "none";
+
+
+    const frontendFiles =
+        await mds(
+            current.frontend
+        );
+
+
+    if (
+        !frontendFiles.length
+    ) {
+
+        q("#fes")
+            .textContent =
+            "FE 문서 없음";
+
+
+        q("#viewer")
+            .innerHTML =
+
+            '<div class="empty">' +
+            '이 화면에는 FE 문서가 없습니다.' +
+            '</div>';
+
+        return;
+    }
+
+
+    frontendFiles.forEach(
+        handle => {
+
+            const button =
+                document.createElement(
+                    "button"
+                );
+
+
+            button.textContent =
+                feLabel(
+                    handle.name
+                );
+
+
+            button.title =
+                handle.name;
+
+
+            button.onclick =
+                () =>
+
+                    selectFE(
+                        handle,
+                        button
+                    );
+
+
+            q("#fes")
+                .appendChild(
+                    button
+                );
+        }
+    );
+
+
+    q("#viewer")
+        .innerHTML =
+
+        '<div class="empty">' +
+        'FE 기능을 선택하세요.' +
+        '</div>';
+};
+
+
+/* =========================================================
+   Select FE
+========================================================= */
+
+async function selectFE(
+    handle,
+    button
+) {
+
+    action =
+        act(
+            handle.name
+        );
+
+
+    document
+        .querySelectorAll(
+            "#fes button"
+        )
+        .forEach(
+            item =>
+
+                item.classList
+                    .remove(
+                        "active"
+                    )
+        );
+
+
+    button
+        .classList
+        .add(
+            "active"
+        );
+
+
+    setMainActive(
+        q("#feTab")
+    );
+
+
+    /*
+       FE 문서 표시
+    */
+
+    await renderFile(
+        handle
+    );
+
+
+    const current =
+        data.get(
+            screenName
+        );
+
+
+    /*
+       선택 FE의 API
+    */
+
+    const apiFiles =
+        (
+            await mds(
+                current.api
+            )
+        )
+        .filter(
+            item =>
+
+                child(
+                    item.name,
+                    action,
+                    "API"
+                )
+        );
+
+
+    /*
+       선택 FE의 BE
+    */
+
+    const backendFiles =
+        (
+            await mds(
+                current.backend
+            )
+        )
+        .filter(
+            item =>
+
+                child(
+                    item.name,
+                    action,
+                    "BE"
+                )
+        );
+
+
+    /*
+       API / BE 생성
+    */
+
+    fillChildren(
+        "#apis",
+        "#apiRow",
+        apiFiles,
+        "API"
+    );
+
+
+    fillChildren(
+        "#bes",
+        "#beRow",
+        backendFiles,
+        "BE"
+    );
+}
+
+
+/* =========================================================
+   API / BE Buttons
+========================================================= */
+
+function fillChildren(
+    box,
+    row,
+    items,
+    type
+) {
+
+    const container =
+        q(box);
+
+
+    container.innerHTML =
+        "";
+
+
+    /*
+       해당 FE에 문서가 없으면
+       영역 자체 숨김
+    */
+
+    if (
+        !items.length
+    ) {
+
+        q(row)
+            .style.display =
+            "none";
+
+        return;
+    }
+
+
+    q(row)
+        .style.display =
+        "flex";
+
+
+    items.forEach(
+        handle => {
+
+            const button =
+                document.createElement(
+                    "button"
+                );
+
+
+            button.textContent =
+                childLabel(
+                    handle.name,
+                    type
+                );
+
+
+            button.title =
+                handle.name;
+
+
+            button.onclick =
+async () => {
+
+    /*
+       API / BE 선택 표시
+    */
+
+    document
+        .querySelectorAll(
+            "#apis button, #bes button"
+        )
+        .forEach(
+            item =>
+
+                item.classList
+                    .remove(
+                        "active"
+                    )
+        );
+
+
+    button
+        .classList
+        .add(
+            "active"
+        );
+
+
+    /*
+       FE 선택 상태는 유지
+       상단 UI도 유지
+    */
+
+    setMainActive(
+        q("#feTab")
+    );
+
+
+    /*
+       아래 문서만 변경
+    */
+
+    await renderFile(
+        handle
+    );
+};
+
+
+            container
+                .appendChild(
+                    button
+                );
+        }
+    );
+}
+
+
+/* =========================================================
+   Markdown Renderer
+========================================================= */
 
 function renderMarkdown(
     markdown
@@ -1271,19 +1665,26 @@ function renderMarkdown(
             markdown
         );
 
-    contentWrapper.innerHTML =
-        '<div class="markdown-body">' +
-        html +
-        '</div>';
 
-    contentWrapper.scrollTop =
-        0;
+    q("#viewer")
+        .innerHTML =
+        html;
+
+
+    window.scrollTo({
+        top:
+            q("#viewer")
+                .offsetTop - 20,
+
+        behavior:
+            "auto"
+    });
 }
 
 
 /* =========================================================
    Markdown → HTML
-   ========================================================= */
+========================================================= */
 
 function markdownToHtml(
     markdown
@@ -1295,8 +1696,12 @@ function markdownToHtml(
             "\n"
         );
 
+
     const lines =
-        markdown.split("\n");
+        markdown.split(
+            "\n"
+        );
+
 
     let html = "";
 
@@ -1310,27 +1715,37 @@ function markdownToHtml(
 
     let listType = null;
 
+
     while (
-        index < lines.length
+        index <
+        lines.length
     ) {
 
         const line =
             lines[index];
 
 
-        /* -----------------------------------------
-           Code block
-           ----------------------------------------- */
+        /* =================================================
+           Code Block
+        ================================================= */
 
         if (
-            line.trim().startsWith("```")
+            line.trim()
+                .startsWith(
+                    "```"
+                )
         ) {
 
             closeList();
 
-            if (!inCode) {
 
-                inCode = true;
+            if (
+                !inCode
+            ) {
+
+                inCode =
+                    true;
+
 
                 codeLanguage =
                     line
@@ -1338,51 +1753,77 @@ function markdownToHtml(
                         .substring(3)
                         .trim();
 
-                codeBuffer = [];
+
+                codeBuffer =
+                    [];
             }
             else {
 
                 html +=
+
                     "<pre><code" +
+
                     (
                         codeLanguage
+
                             ? ' class="language-' +
                               escapeAttribute(
                                   codeLanguage
                               ) +
                               '"'
-                            : ""
-                    ) +
-                    ">" +
-                    escapeHtml(
-                        codeBuffer.join("\n")
-                    ) +
-                    "</code></pre>";
 
-                inCode = false;
-                codeLanguage = "";
-                codeBuffer = [];
+                            : ""
+                    )
+
+                    + ">" +
+
+                    escapeHtml(
+                        codeBuffer
+                            .join(
+                                "\n"
+                            )
+                    )
+
+                    + "</code></pre>";
+
+
+                inCode =
+                    false;
+
+
+                codeLanguage =
+                    "";
+
+
+                codeBuffer =
+                    [];
             }
 
+
             index++;
+
             continue;
         }
 
 
-        if (inCode) {
+        if (
+            inCode
+        ) {
 
             codeBuffer.push(
                 line
             );
 
+
             index++;
+
             continue;
         }
 
 
-        /* -----------------------------------------
+        /* =================================================
            Table
-           ----------------------------------------- */
+        ================================================= */
 
         if (
             isTableHeader(
@@ -1393,108 +1834,142 @@ function markdownToHtml(
 
             closeList();
 
+
             const result =
                 parseTable(
                     lines,
                     index
                 );
 
+
             html +=
                 result.html;
+
 
             index =
                 result.nextIndex;
 
+
             continue;
         }
 
 
-        /* -----------------------------------------
+        /* =================================================
            Blank
-           ----------------------------------------- */
+        ================================================= */
 
         if (
-            line.trim() === ""
+            line.trim() ===
+            ""
         ) {
 
             closeList();
 
             index++;
+
             continue;
         }
 
 
-        /* -----------------------------------------
-           Horizontal rule
-           ----------------------------------------- */
+        /* =================================================
+           Horizontal Rule
+        ================================================= */
 
         if (
             /^(\s*)(---|\*\*\*|___)(\s*)$/
-                .test(line)
+                .test(
+                    line
+                )
         ) {
 
             closeList();
 
-            html += "<hr>";
+            html +=
+                "<hr>";
 
             index++;
+
             continue;
         }
 
 
-        /* -----------------------------------------
+        /* =================================================
            Heading
-           ----------------------------------------- */
+        ================================================= */
 
         const headingMatch =
             line.match(
                 /^(#{1,6})\s+(.+)$/
             );
 
-        if (headingMatch) {
-
-            closeList();
-
-            const level =
-                headingMatch[1].length;
-
-            html +=
-                "<h" +
-                level +
-                ">" +
-                inlineMarkdown(
-                    headingMatch[2]
-                ) +
-                "</h" +
-                level +
-                ">";
-
-            index++;
-            continue;
-        }
-
-
-        /* -----------------------------------------
-           Blockquote
-           ----------------------------------------- */
 
         if (
-            line.trimStart()
-                .startsWith(">")
+            headingMatch
         ) {
 
             closeList();
 
-            const quoteLines = [];
+
+            const level =
+                headingMatch[1]
+                    .length;
+
+
+            html +=
+
+                "<h" +
+                level +
+                ">" +
+
+                inlineMarkdown(
+                    headingMatch[2]
+                ) +
+
+                "</h" +
+                level +
+                ">";
+
+
+            index++;
+
+            continue;
+        }
+
+
+        /* =================================================
+           Blockquote
+        ================================================= */
+
+        if (
+            line
+                .trimStart()
+                .startsWith(
+                    ">"
+                )
+        ) {
+
+            closeList();
+
+
+            const quoteLines =
+                [];
+
 
             while (
-                index < lines.length &&
+                index <
+                    lines.length
+
+                &&
+
                 lines[index]
                     .trimStart()
-                    .startsWith(">")
+                    .startsWith(
+                        ">"
+                    )
             ) {
 
                 quoteLines.push(
+
                     lines[index]
                         .trimStart()
                         .replace(
@@ -1503,161 +1978,265 @@ function markdownToHtml(
                         )
                 );
 
+
                 index++;
             }
 
+
             html +=
+
                 "<blockquote>" +
+
                 quoteLines
                     .map(
                         item =>
+
                             item.trim()
+
                                 ? inlineMarkdown(
                                     item
-                                  )
+                                )
+
                                 : "<br>"
                     )
-                    .join("<br>") +
-                "</blockquote>";
+                    .join(
+                        "<br>"
+                    )
+
+                + "</blockquote>";
+
 
             continue;
         }
 
 
-        /* -----------------------------------------
-           Unordered list
-           ----------------------------------------- */
+        /* =================================================
+           Unordered List
+        ================================================= */
 
         const ulMatch =
             line.match(
                 /^\s*[-*+]\s+(.+)$/
             );
 
-        if (ulMatch) {
+
+        if (
+            ulMatch
+        ) {
 
             if (
-                listType !== "ul"
+                listType !==
+                "ul"
             ) {
 
                 closeList();
 
-                html += "<ul>";
-                listType = "ul";
+                html +=
+                    "<ul>";
+
+                listType =
+                    "ul";
             }
 
+
             html +=
+
                 "<li>" +
+
                 inlineMarkdown(
                     ulMatch[1]
-                ) +
-                "</li>";
+                )
+
+                + "</li>";
+
 
             index++;
+
             continue;
         }
 
 
-        /* -----------------------------------------
-           Ordered list
-           ----------------------------------------- */
+        /* =================================================
+           Ordered List
+        ================================================= */
 
         const olMatch =
             line.match(
                 /^\s*\d+\.\s+(.+)$/
             );
 
-        if (olMatch) {
+
+        if (
+            olMatch
+        ) {
 
             if (
-                listType !== "ol"
+                listType !==
+                "ol"
             ) {
 
                 closeList();
 
-                html += "<ol>";
-                listType = "ol";
+                html +=
+                    "<ol>";
+
+                listType =
+                    "ol";
             }
 
+
             html +=
+
                 "<li>" +
+
                 inlineMarkdown(
                     olMatch[1]
-                ) +
-                "</li>";
+                )
+
+                + "</li>";
+
 
             index++;
+
             continue;
         }
 
 
-        /* -----------------------------------------
+        /* =================================================
            Paragraph
-           ----------------------------------------- */
+        ================================================= */
 
         closeList();
 
-        const paragraphLines = [
-            line
-        ];
+
+        const paragraphLines =
+            [
+                line
+            ];
+
 
         index++;
 
+
         while (
-            index < lines.length
+            index <
+            lines.length
         ) {
 
             const next =
                 lines[index];
 
+
             if (
-                next.trim() === "" ||
-                next.trim().startsWith("```") ||
-                /^#{1,6}\s+/.test(next) ||
-                /^(\s*)(---|\*\*\*|___)(\s*)$/.test(next) ||
-                next.trimStart().startsWith(">") ||
-                /^\s*[-*+]\s+/.test(next) ||
-                /^\s*\d+\.\s+/.test(next) ||
+                next.trim() ===
+                    ""
+
+                ||
+
+                next
+                    .trim()
+                    .startsWith(
+                        "```"
+                    )
+
+                ||
+
+                /^#{1,6}\s+/
+                    .test(
+                        next
+                    )
+
+                ||
+
+                /^(\s*)(---|\*\*\*|___)(\s*)$/
+                    .test(
+                        next
+                    )
+
+                ||
+
+                next
+                    .trimStart()
+                    .startsWith(
+                        ">"
+                    )
+
+                ||
+
+                /^\s*[-*+]\s+/
+                    .test(
+                        next
+                    )
+
+                ||
+
+                /^\s*\d+\.\s+/
+                    .test(
+                        next
+                    )
+
+                ||
+
                 isTableHeader(
                     lines,
                     index
                 )
             ) {
+
                 break;
             }
+
 
             paragraphLines.push(
                 next
             );
 
+
             index++;
         }
 
+
         html +=
+
             "<p>" +
+
             paragraphLines
                 .map(
                     item =>
+
                         inlineMarkdown(
                             item
                         )
                 )
-                .join("<br>") +
-            "</p>";
+                .join(
+                    "<br>"
+                )
+
+            + "</p>";
     }
 
 
-    if (inCode) {
+    if (
+        inCode
+    ) {
 
         html +=
+
             "<pre><code>" +
+
             escapeHtml(
-                codeBuffer.join("\n")
-            ) +
-            "</code></pre>";
+                codeBuffer
+                    .join(
+                        "\n"
+                    )
+            )
+
+            + "</code></pre>";
     }
 
 
     closeList();
+
 
     return html;
 
@@ -1665,27 +2244,34 @@ function markdownToHtml(
     function closeList() {
 
         if (
-            listType === "ul"
+            listType ===
+            "ul"
         ) {
 
-            html += "</ul>";
+            html +=
+                "</ul>";
         }
+
 
         if (
-            listType === "ol"
+            listType ===
+            "ol"
         ) {
 
-            html += "</ol>";
+            html +=
+                "</ol>";
         }
 
-        listType = null;
+
+        listType =
+            null;
     }
 }
 
 
 /* =========================================================
-   Markdown table
-   ========================================================= */
+   Markdown Table Detection
+========================================================= */
 
 function isTableHeader(
     lines,
@@ -1696,40 +2282,59 @@ function isTableHeader(
         index + 1 >=
         lines.length
     ) {
+
         return false;
     }
+
 
     const first =
-        lines[index].trim();
+        lines[index]
+            .trim();
+
 
     const second =
-        lines[index + 1].trim();
+        lines[index + 1]
+            .trim();
+
 
     if (
-        !first.includes("|")
+        !first.includes(
+            "|"
+        )
     ) {
+
         return false;
     }
 
+
     if (
-        !second.includes("|")
+        !second.includes(
+            "|"
+        )
     ) {
+
         return false;
     }
+
 
     const cells =
         splitTableRow(
             second
         );
 
+
     if (
-        cells.length === 0
+        cells.length ===
+        0
     ) {
+
         return false;
     }
 
+
     return cells.every(
         cell =>
+
             /^:?-{3,}:?$/
                 .test(
                     cell.trim()
@@ -1738,6 +2343,10 @@ function isTableHeader(
 }
 
 
+/* =========================================================
+   Parse Markdown Table
+========================================================= */
+
 function parseTable(
     lines,
     startIndex
@@ -1745,27 +2354,44 @@ function parseTable(
 
     const headers =
         splitTableRow(
-            lines[startIndex]
+            lines[
+                startIndex
+            ]
         );
+
 
     let index =
         startIndex + 2;
 
-    const rows = [];
+
+    const rows =
+        [];
+
 
     while (
-        index < lines.length
+        index <
+        lines.length
     ) {
 
         const line =
-            lines[index].trim();
+            lines[index]
+                .trim();
+
 
         if (
-            line === "" ||
-            !line.includes("|")
+            line ===
+                ""
+
+            ||
+
+            !line.includes(
+                "|"
+            )
         ) {
+
             break;
         }
+
 
         rows.push(
             splitTableRow(
@@ -1773,11 +2399,16 @@ function parseTable(
             )
         );
 
+
         index++;
     }
 
+
     let html =
-        "<table><thead><tr>";
+        "<table>" +
+        "<thead>" +
+        "<tr>";
+
 
     for (
         const header
@@ -1785,52 +2416,79 @@ function parseTable(
     ) {
 
         html +=
+
             "<th>" +
+
             inlineMarkdown(
                 header.trim()
-            ) +
-            "</th>";
+            )
+
+            + "</th>";
     }
 
+
     html +=
-        "</tr></thead><tbody>";
+        "</tr>" +
+        "</thead>" +
+        "<tbody>";
+
 
     for (
         const row
         of rows
     ) {
 
-        html += "<tr>";
+        html +=
+            "<tr>";
+
 
         for (
             let column = 0;
-            column < headers.length;
+            column <
+                headers.length;
             column++
         ) {
 
             const value =
-                row[column] ?? "";
+                row[column] ??
+                "";
+
 
             html +=
+
                 "<td>" +
+
                 inlineMarkdown(
                     value.trim()
-                ) +
-                "</td>";
+                )
+
+                + "</td>";
         }
 
-        html += "</tr>";
+
+        html +=
+            "</tr>";
     }
 
+
     html +=
-        "</tbody></table>";
+        "</tbody>" +
+        "</table>";
+
 
     return {
-        html: html,
-        nextIndex: index
+        html:
+            html,
+
+        nextIndex:
+            index
     };
 }
 
+
+/* =========================================================
+   Split Table Row
+========================================================= */
 
 function splitTableRow(
     line
@@ -1839,16 +2497,26 @@ function splitTableRow(
     let value =
         line.trim();
 
-    if (
-        value.startsWith("|")
-    ) {
-        value =
-            value.substring(1);
-    }
 
     if (
-        value.endsWith("|")
+        value.startsWith(
+            "|"
+        )
     ) {
+
+        value =
+            value.substring(
+                1
+            );
+    }
+
+
+    if (
+        value.endsWith(
+            "|"
+        )
+    ) {
+
         value =
             value.substring(
                 0,
@@ -1856,28 +2524,33 @@ function splitTableRow(
             );
     }
 
-    return value.split("|");
+
+    return value.split(
+        "|"
+    );
 }
 
 
 /* =========================================================
-   Inline markdown
-   ========================================================= */
+   Inline Markdown
+========================================================= */
 
 function inlineMarkdown(
     text
 ) {
 
     /*
-       먼저 HTML Escape.
-       MD 파일 안의 HTML을 직접 실행하지 않도록 한다.
+       HTML Escape 먼저 수행.
     */
 
     let value =
-        escapeHtml(text);
+        escapeHtml(
+            text
+        );
+
 
     /*
-       Inline code
+       Inline Code
     */
 
     value =
@@ -1885,6 +2558,7 @@ function inlineMarkdown(
             /`([^`]+)`/g,
             "<code>$1</code>"
         );
+
 
     /*
        Bold
@@ -1896,6 +2570,7 @@ function inlineMarkdown(
             "<strong>$1</strong>"
         );
 
+
     /*
        Italic
     */
@@ -1906,56 +2581,8 @@ function inlineMarkdown(
             "<em>$1</em>"
         );
 
+
     return value;
-}
-
-
-/* =========================================================
-   Escape
-   ========================================================= */
-
-function escapeHtml(
-    value
-) {
-
-    return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-
-function escapeAttribute(
-    value
-) {
-
-    return escapeHtml(value);
-}
-
-
-/* =========================================================
-   Empty state
-   ========================================================= */
-
-function showEmpty(
-    title,
-    description
-) {
-
-    contentWrapper.innerHTML =
-        '<div class="empty">' +
-            '<div class="empty-title">' +
-                escapeHtml(title) +
-            '</div>' +
-            '<div class="empty-description">' +
-                escapeHtml(description) +
-            '</div>' +
-        '</div>';
-
-    documentInfo.textContent =
-        "문서를 선택하세요.";
 }
 
 </script>
