@@ -7,11 +7,6 @@
 <title>GIPMS Analysis Viewer</title>
 
 <style>
-
-/* =========================================================
-   Base
-========================================================= */
-
 * {
     box-sizing: border-box;
 }
@@ -20,7 +15,6 @@ body {
     margin: 0;
     background: #f5f6f8;
     color: #24292f;
-
     font-family:
         -apple-system,
         BlinkMacSystemFont,
@@ -28,7 +22,6 @@ body {
         "Malgun Gothic",
         sans-serif;
 }
-
 
 /* =========================================================
    Header
@@ -38,7 +31,6 @@ header {
     position: sticky;
     top: 0;
     z-index: 10;
-
     background: #ffffff;
     border-bottom: 1px solid #d8dee4;
 }
@@ -47,31 +39,41 @@ header {
     width: 90%;
     max-width: 90%;
     margin: auto;
-
-    padding: 16px 0;
+    padding: 10px 0;
 }
-
-
-/* =========================================================
-   Common Row
-========================================================= */
 
 .row {
     display: flex;
     align-items: center;
-    gap: 10px;
-
-    flex-wrap: wrap;
-
-    margin: 8px 0;
+    gap: 8px;
+    margin: 6px 0;
 }
 
-.row label {
+label {
     min-width: 55px;
-
     font-weight: 600;
 }
 
+/* =========================================================
+   Top Row
+========================================================= */
+
+.top-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 2px;
+}
+
+.top-row select {
+    flex: 0 1 300px;
+    min-width: 180px;
+}
+
+.top-row button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
 
 /* =========================================================
    Select / Button
@@ -79,13 +81,10 @@ header {
 
 select,
 button {
-    padding: 8px 13px;
-
+    padding: 8px 12px;
     border: 1px solid #d0d7de;
     border-radius: 6px;
-
     background: white;
-
     font: inherit;
 }
 
@@ -97,16 +96,14 @@ button {
     cursor: pointer;
 }
 
-button:hover {
+button:hover:not(:disabled) {
     border-color: #0969da;
 }
 
 button.active {
     background: #ddf4ff;
     border-color: #54aeff;
-
     color: #0969da;
-
     font-weight: 600;
 }
 
@@ -115,24 +112,14 @@ button:disabled {
     cursor: default;
 }
 
-
 /* =========================================================
-   Main Tabs
+   Main Tab
 ========================================================= */
 
-.main-tabs {
-    display: flex;
-    gap: 6px;
-
-    margin-top: 12px;
-}
-
 .main-tab {
-    min-width: 90px;
-
+    min-width: 80px;
     font-weight: 600;
 }
-
 
 /* =========================================================
    FE / API / BE Area
@@ -140,10 +127,8 @@ button:disabled {
 
 .sub {
     display: none;
-
-    margin-top: 12px;
-    padding-top: 8px;
-
+    margin-top: 6px;
+    padding-top: 6px;
     border-top: 1px solid #d8dee4;
 }
 
@@ -151,101 +136,106 @@ button:disabled {
     display: block;
 }
 
-
 /* =========================================================
    FE Horizontal Scroll
 ========================================================= */
 
 .fe-row {
-    display: flex;
-
     flex-wrap: nowrap;
-
-    align-items: center;
-
     width: 100%;
 }
 
 .fe-scroll {
     flex: 1;
-
     min-width: 0;
-
     overflow-x: auto;
     overflow-y: hidden;
-
-    padding-bottom: 7px;
+    padding-bottom: 6px;
 }
 
 #fes {
     display: flex;
-
     flex-wrap: nowrap;
-
     gap: 7px;
-
     width: max-content;
 }
 
 #fes button {
     flex: 0 0 auto;
-
     white-space: nowrap;
 }
 
-
-/* scrollbar */
-
-.fe-scroll::-webkit-scrollbar {
-    height: 7px;
-}
-
-.fe-scroll::-webkit-scrollbar-track {
-    background: #f1f3f5;
-
-    border-radius: 5px;
-}
-
-.fe-scroll::-webkit-scrollbar-thumb {
-    background: #afb8c1;
-
-    border-radius: 5px;
-}
-
-.fe-scroll::-webkit-scrollbar-thumb:hover {
-    background: #8c959f;
-}
-
-
 /* =========================================================
-   API / BE
+   API + BE Same Row
 ========================================================= */
 
-#apis,
-#bes {
+.backend-row {
+    align-items: center;
+    gap: 28px;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 6px;
+}
+
+.backend-group {
     display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+}
 
-    flex-wrap: wrap;
+.backend-group label {
+    min-width: auto;
+    font-weight: 700;
+}
 
+.backend-buttons {
+    display: flex;
+    flex-wrap: nowrap;
     gap: 7px;
 }
 
+.backend-buttons button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
 
 /* =========================================================
-   Document Info
+   Scrollbar
+========================================================= */
+
+.fe-scroll::-webkit-scrollbar,
+.backend-row::-webkit-scrollbar,
+.top-row::-webkit-scrollbar {
+    height: 6px;
+}
+
+.fe-scroll::-webkit-scrollbar-track,
+.backend-row::-webkit-scrollbar-track,
+.top-row::-webkit-scrollbar-track {
+    background: #f1f3f5;
+    border-radius: 5px;
+}
+
+.fe-scroll::-webkit-scrollbar-thumb,
+.backend-row::-webkit-scrollbar-thumb,
+.top-row::-webkit-scrollbar-thumb {
+    background: #afb8c1;
+    border-radius: 5px;
+}
+
+/* =========================================================
+   Status
 ========================================================= */
 
 .status {
     width: 90%;
     max-width: 90%;
-
-    margin: 14px auto 0;
-
+    margin: 10px auto 0;
     color: #57606a;
-
     font-size: 12px;
 }
-
 
 /* =========================================================
    Viewer
@@ -254,24 +244,15 @@ button:disabled {
 .viewer {
     width: 90%;
     max-width: 90%;
-
-    margin: 16px auto 50px;
-
+    margin: 12px auto 50px;
     min-height: 500px;
-
-    padding: 36px 44px;
-
+    padding: 32px 40px;
     background: white;
-
     border: 1px solid #d8dee4;
-
     border-radius: 8px;
-
     overflow-x: auto;
-
     line-height: 1.7;
 }
-
 
 /* =========================================================
    Markdown Heading
@@ -279,11 +260,8 @@ button:disabled {
 
 .viewer h1 {
     font-size: 28px;
-
     margin-top: 34px;
-
     padding-bottom: 10px;
-
     border-bottom: 1px solid #d8dee4;
 }
 
@@ -293,38 +271,27 @@ button:disabled {
 
 .viewer h2 {
     font-size: 22px;
-
     margin-top: 30px;
-
     padding-bottom: 7px;
-
     border-bottom: 1px solid #d8dee4;
 }
 
 .viewer h3 {
     font-size: 18px;
-
     margin-top: 24px;
 }
 
 .viewer h4 {
     font-size: 16px;
-
     margin-top: 20px;
 }
-
-
-/* =========================================================
-   Paragraph
-========================================================= */
 
 .viewer p {
     margin: 10px 0;
 }
 
-
 /* =========================================================
-   List
+   Lists
 ========================================================= */
 
 .viewer ul,
@@ -336,48 +303,34 @@ button:disabled {
     margin: 4px 0;
 }
 
-
 /* =========================================================
    Blockquote
 ========================================================= */
 
 .viewer blockquote {
     margin: 16px 0;
-
     padding: 4px 16px;
-
     color: #57606a;
-
     border-left: 4px solid #d0d7de;
-
     background: #f6f8fa;
 }
 
-
 /* =========================================================
-   Code / Tree
+   Code / ASCII Tree
 ========================================================= */
 
 .viewer pre {
     background: #f6f8fa;
-
     border: 1px solid #d8dee4;
-
     border-radius: 6px;
-
     padding: 16px;
-
     overflow-x: auto;
-
     line-height: 1.5;
-
     font-family:
         Consolas,
         "Courier New",
         monospace;
-
     font-size: 13px;
-
     white-space: pre;
 }
 
@@ -390,14 +343,10 @@ button:disabled {
 
 .viewer :not(pre) > code {
     background: #eff1f3;
-
     padding: 2px 5px;
-
     border-radius: 4px;
-
     font-size: 90%;
 }
-
 
 /* =========================================================
    Markdown Table
@@ -405,28 +354,21 @@ button:disabled {
 
 .viewer table {
     width: 100%;
-
     border-collapse: collapse;
-
     margin: 16px 0 24px;
-
     font-size: 13px;
 }
 
 .viewer th,
 .viewer td {
     border: 1px solid #d0d7de;
-
     padding: 8px 10px;
-
     text-align: left;
-
     vertical-align: top;
 }
 
 .viewer th {
     background: #f6f8fa;
-
     font-weight: 700;
 }
 
@@ -434,19 +376,11 @@ button:disabled {
     background: #fbfcfd;
 }
 
-
-/* =========================================================
-   HR
-========================================================= */
-
 .viewer hr {
     border: 0;
-
     border-top: 1px solid #d8dee4;
-
     margin: 24px 0;
 }
-
 
 /* =========================================================
    Empty
@@ -454,12 +388,9 @@ button:disabled {
 
 .empty {
     padding: 60px 20px;
-
     text-align: center;
-
     color: #57606a;
 }
-
 
 /* =========================================================
    Mobile
@@ -478,55 +409,37 @@ button:disabled {
         padding: 22px 18px;
     }
 
-    select {
-        width: 100%;
-        min-width: 0;
+    .top-row select {
+        min-width: 160px;
     }
 }
 
 </style>
 </head>
 
-
 <body>
-
 
 <header>
 
 <div class="controls">
 
-
     <!-- =====================================================
-         Screen Select
+         화면명 + 폴더 + SCREEN + FE
     ====================================================== -->
 
-    <div class="row">
+    <div class="row top-row">
 
-        <label>
-            화면명
-        </label>
+        <label>화면명</label>
 
         <select id="screen">
-
             <option value="">
                 화면 선택
             </option>
-
         </select>
-
 
         <button id="pick">
             docs/analysis 선택
         </button>
-
-    </div>
-
-
-    <!-- =====================================================
-         SCREEN / FE
-    ====================================================== -->
-
-    <div class="main-tabs">
 
         <button
             id="screenTab"
@@ -546,7 +459,6 @@ button:disabled {
 
     </div>
 
-
     <!-- =====================================================
          FE / API / BE
     ====================================================== -->
@@ -556,65 +468,63 @@ button:disabled {
         class="sub"
     >
 
-
         <!-- FE -->
 
         <div class="row fe-row">
 
-            <label>
-                FE
-            </label>
-
+            <label>FE</label>
 
             <div class="fe-scroll">
-
                 <div id="fes"></div>
-
             </div>
 
         </div>
 
-
-        <!-- API -->
+        <!-- API + BE -->
 
         <div
-            id="apiRow"
-            class="row"
+            id="backendRow"
+            class="backend-row"
             style="display:none"
         >
 
-            <label>
-                API
-            </label>
+            <div
+                id="apiRow"
+                class="backend-group"
+                style="display:none"
+            >
 
-            <div id="apis"></div>
+                <label>API</label>
+
+                <div
+                    id="apis"
+                    class="backend-buttons"
+                ></div>
+
+            </div>
+
+            <div
+                id="beRow"
+                class="backend-group"
+                style="display:none"
+            >
+
+                <label>BE</label>
+
+                <div
+                    id="bes"
+                    class="backend-buttons"
+                ></div>
+
+            </div>
 
         </div>
-
-
-        <!-- BE -->
-
-        <div
-            id="beRow"
-            class="row"
-            style="display:none"
-        >
-
-            <label>
-                BE
-            </label>
-
-            <div id="bes"></div>
-
-        </div>
-
 
     </div>
 
 </div>
 
 </header>
-
 
 <!-- =========================================================
      Status
@@ -629,7 +539,6 @@ button:disabled {
     버튼으로 분석 폴더를 선택하세요.
 </div>
 
-
 <!-- =========================================================
      Viewer
 ========================================================= -->
@@ -640,15 +549,10 @@ button:disabled {
 >
 
     <div class="empty">
-
-        문서를 선택하면
-        여기에 표시됩니다.
-
+        문서를 선택하면 여기에 표시됩니다.
     </div>
 
 </main>
-
-
 
 <script>
 
@@ -662,12 +566,10 @@ const q =
             selector
         );
 
-
 let root = null;
 
 let data =
     new Map();
-
 
 let screenName = "";
 
@@ -773,12 +675,10 @@ async function mds(
 
     const result = [];
 
-
     if (!handle) {
 
         return result;
     }
-
 
     for await (
         const [name, item]
@@ -798,7 +698,6 @@ async function mds(
         }
     }
 
-
     return result.sort(
         (a, b) =>
 
@@ -815,7 +714,7 @@ async function mds(
 
 
 /* =========================================================
-   FE Action ID
+   Filename Analysis
 ========================================================= */
 
 function act(
@@ -827,16 +726,11 @@ function act(
             /^FE-(ACT-\d+)/i
         );
 
-
     return match
         ? match[1].toUpperCase()
         : "";
 }
 
-
-/* =========================================================
-   FE Label
-========================================================= */
 
 function feLabel(
     name
@@ -847,7 +741,6 @@ function feLabel(
             /^FE-(ACT-\d+)-(.+)\.md$/i
         );
 
-
     if (!match) {
 
         return name.replace(
@@ -855,7 +748,6 @@ function feLabel(
             ""
         );
     }
-
 
     return (
         match[1] +
@@ -869,10 +761,6 @@ function feLabel(
 }
 
 
-/* =========================================================
-   FE → API / BE Match
-========================================================= */
-
 function child(
     name,
     actionId,
@@ -881,7 +769,6 @@ function child(
 
     const upper =
         name.toUpperCase();
-
 
     return (
 
@@ -902,10 +789,6 @@ function child(
 }
 
 
-/* =========================================================
-   API / BE Label
-========================================================= */
-
 function childLabel(
     name,
     type
@@ -919,12 +802,10 @@ function childLabel(
             "i"
         );
 
-
     const match =
         name.match(
             regex
         );
-
 
     return match
         ? match[1].toUpperCase()
@@ -949,13 +830,11 @@ function setMainActive(
             "active"
         );
 
-
     q("#feTab")
         .classList
         .remove(
             "active"
         );
-
 
     if (button) {
 
@@ -981,21 +860,17 @@ async function renderFile(
         return;
     }
 
-
     try {
 
         const target =
             await handle.getFile();
 
-
         const markdown =
             await target.text();
-
 
         renderMarkdown(
             markdown
         );
-
 
         q("#status")
             .innerHTML =
@@ -1027,13 +902,12 @@ async function renderFile(
 
 
 /* =========================================================
-   Scan Screen Directories
+   Scan
 ========================================================= */
 
 async function scan() {
 
     data.clear();
-
 
     for await (
         const [name, handle]
@@ -1048,7 +922,6 @@ async function scan() {
             continue;
         }
 
-
         const screen =
             await file(
                 handle,
@@ -1057,13 +930,11 @@ async function scan() {
                 ".md"
             );
 
-
         const frontend =
             await dir(
                 handle,
                 "frontend"
             );
-
 
         const api =
             await dir(
@@ -1071,13 +942,11 @@ async function scan() {
                 "api"
             );
 
-
         const backend =
             await dir(
                 handle,
                 "backend"
             );
-
 
         if (
             screen ||
@@ -1098,16 +967,13 @@ async function scan() {
         }
     }
 
-
     const select =
         q("#screen");
-
 
     select.innerHTML =
         '<option value="">' +
         '화면 선택' +
         '</option>';
-
 
     [...data.keys()]
 
@@ -1134,7 +1000,6 @@ async function scan() {
                 );
             }
         );
-
 
     q("#status")
         .textContent =
@@ -1165,7 +1030,6 @@ async () => {
         return;
     }
 
-
     try {
 
         root =
@@ -1173,7 +1037,6 @@ async () => {
                 .showDirectoryPicker({
                     mode: "read"
                 });
-
 
         await scan();
 
@@ -1204,9 +1067,7 @@ async event => {
     screenName =
         event.target.value;
 
-
     action = "";
-
 
     q("#sub")
         .classList
@@ -1214,22 +1075,22 @@ async event => {
             "show"
         );
 
+    q("#backendRow")
+        .style.display =
+        "none";
 
     q("#screenTab")
         .disabled =
         !screenName;
 
-
     q("#feTab")
         .disabled =
         !screenName;
-
 
     if (!screenName) {
 
         return;
     }
-
 
     await showScreen();
 };
@@ -1246,12 +1107,10 @@ async function showScreen() {
             screenName
         );
 
-
     if (!current) {
 
         return;
     }
-
 
     q("#sub")
         .classList
@@ -1259,11 +1118,13 @@ async function showScreen() {
             "show"
         );
 
+    q("#backendRow")
+        .style.display =
+        "none";
 
     setMainActive(
         q("#screenTab")
     );
-
 
     if (
         current.screen
@@ -1303,17 +1164,14 @@ async () => {
             screenName
         );
 
-
     if (!current) {
 
         return;
     }
 
-
     setMainActive(
         q("#feTab")
     );
-
 
     q("#sub")
         .classList
@@ -1321,34 +1179,31 @@ async () => {
             "show"
         );
 
-
     q("#fes")
         .innerHTML = "";
-
 
     q("#apis")
         .innerHTML = "";
 
-
     q("#bes")
         .innerHTML = "";
-
 
     q("#apiRow")
         .style.display =
         "none";
 
-
     q("#beRow")
         .style.display =
         "none";
 
+    q("#backendRow")
+        .style.display =
+        "none";
 
     const frontendFiles =
         await mds(
             current.frontend
         );
-
 
     if (
         !frontendFiles.length
@@ -1357,7 +1212,6 @@ async () => {
         q("#fes")
             .textContent =
             "FE 문서 없음";
-
 
         q("#viewer")
             .innerHTML =
@@ -1369,7 +1223,6 @@ async () => {
         return;
     }
 
-
     frontendFiles.forEach(
         handle => {
 
@@ -1378,16 +1231,13 @@ async () => {
                     "button"
                 );
 
-
             button.textContent =
                 feLabel(
                     handle.name
                 );
 
-
             button.title =
                 handle.name;
-
 
             button.onclick =
                 () =>
@@ -1397,14 +1247,12 @@ async () => {
                         button
                     );
 
-
             q("#fes")
                 .appendChild(
                     button
                 );
         }
     );
-
 
     q("#viewer")
         .innerHTML =
@@ -1429,7 +1277,6 @@ async function selectFE(
             handle.name
         );
 
-
     document
         .querySelectorAll(
             "#fes button"
@@ -1443,18 +1290,15 @@ async function selectFE(
                     )
         );
 
-
     button
         .classList
         .add(
             "active"
         );
 
-
     setMainActive(
         q("#feTab")
     );
-
 
     /*
        FE 문서 표시
@@ -1464,12 +1308,10 @@ async function selectFE(
         handle
     );
 
-
     const current =
         data.get(
             screenName
         );
-
 
     /*
        선택 FE의 API
@@ -1491,7 +1333,6 @@ async function selectFE(
                 )
         );
 
-
     /*
        선택 FE의 BE
     */
@@ -1512,11 +1353,6 @@ async function selectFE(
                 )
         );
 
-
-    /*
-       API / BE 생성
-    */
-
     fillChildren(
         "#apis",
         "#apiRow",
@@ -1524,13 +1360,33 @@ async function selectFE(
         "API"
     );
 
-
     fillChildren(
         "#bes",
         "#beRow",
         backendFiles,
         "BE"
     );
+
+    /*
+       API 또는 BE가 하나라도 있을 때만
+       부모 영역 표시
+    */
+
+    if (
+        apiFiles.length ||
+        backendFiles.length
+    ) {
+
+        q("#backendRow")
+            .style.display =
+            "flex";
+    }
+    else {
+
+        q("#backendRow")
+            .style.display =
+            "none";
+    }
 }
 
 
@@ -1548,15 +1404,8 @@ function fillChildren(
     const container =
         q(box);
 
-
     container.innerHTML =
         "";
-
-
-    /*
-       해당 FE에 문서가 없으면
-       영역 자체 숨김
-    */
 
     if (
         !items.length
@@ -1569,11 +1418,9 @@ function fillChildren(
         return;
     }
 
-
     q(row)
         .style.display =
         "flex";
-
 
     items.forEach(
         handle => {
@@ -1583,23 +1430,20 @@ function fillChildren(
                     "button"
                 );
 
-
             button.textContent =
                 childLabel(
                     handle.name,
                     type
                 );
 
-
             button.title =
                 handle.name;
-
 
             button.onclick =
 async () => {
 
     /*
-       API / BE 선택 표시
+       API / BE active 초기화
     */
 
     document
@@ -1615,33 +1459,28 @@ async () => {
                     )
         );
 
-
     button
         .classList
         .add(
             "active"
         );
 
-
     /*
-       FE 선택 상태는 유지
-       상단 UI도 유지
+       FE 탭 상태 유지
     */
 
     setMainActive(
         q("#feTab")
     );
 
-
     /*
-       아래 문서만 변경
+       아래 Viewer만 변경
     */
 
     await renderFile(
         handle
     );
 };
-
 
             container
                 .appendChild(
@@ -1665,20 +1504,9 @@ function renderMarkdown(
             markdown
         );
 
-
     q("#viewer")
         .innerHTML =
         html;
-
-
-    window.scrollTo({
-        top:
-            q("#viewer")
-                .offsetTop - 20,
-
-        behavior:
-            "auto"
-    });
 }
 
 
@@ -1696,12 +1524,10 @@ function markdownToHtml(
             "\n"
         );
 
-
     const lines =
         markdown.split(
             "\n"
         );
-
 
     let html = "";
 
@@ -1715,7 +1541,6 @@ function markdownToHtml(
 
     let listType = null;
 
-
     while (
         index <
         lines.length
@@ -1724,10 +1549,9 @@ function markdownToHtml(
         const line =
             lines[index];
 
-
-        /* =================================================
+        /* -----------------------------------------
            Code Block
-        ================================================= */
+        ----------------------------------------- */
 
         if (
             line.trim()
@@ -1738,7 +1562,6 @@ function markdownToHtml(
 
             closeList();
 
-
             if (
                 !inCode
             ) {
@@ -1746,13 +1569,11 @@ function markdownToHtml(
                 inCode =
                     true;
 
-
                 codeLanguage =
                     line
                         .trim()
                         .substring(3)
                         .trim();
-
 
                 codeBuffer =
                     [];
@@ -1786,25 +1607,20 @@ function markdownToHtml(
 
                     + "</code></pre>";
 
-
                 inCode =
                     false;
 
-
                 codeLanguage =
                     "";
-
 
                 codeBuffer =
                     [];
             }
 
-
             index++;
 
             continue;
         }
-
 
         if (
             inCode
@@ -1814,16 +1630,14 @@ function markdownToHtml(
                 line
             );
 
-
             index++;
 
             continue;
         }
 
-
-        /* =================================================
+        /* -----------------------------------------
            Table
-        ================================================= */
+        ----------------------------------------- */
 
         if (
             isTableHeader(
@@ -1834,29 +1648,24 @@ function markdownToHtml(
 
             closeList();
 
-
             const result =
                 parseTable(
                     lines,
                     index
                 );
 
-
             html +=
                 result.html;
-
 
             index =
                 result.nextIndex;
 
-
             continue;
         }
 
-
-        /* =================================================
+        /* -----------------------------------------
            Blank
-        ================================================= */
+        ----------------------------------------- */
 
         if (
             line.trim() ===
@@ -1870,10 +1679,9 @@ function markdownToHtml(
             continue;
         }
 
-
-        /* =================================================
+        /* -----------------------------------------
            Horizontal Rule
-        ================================================= */
+        ----------------------------------------- */
 
         if (
             /^(\s*)(---|\*\*\*|___)(\s*)$/
@@ -1892,16 +1700,14 @@ function markdownToHtml(
             continue;
         }
 
-
-        /* =================================================
+        /* -----------------------------------------
            Heading
-        ================================================= */
+        ----------------------------------------- */
 
         const headingMatch =
             line.match(
                 /^(#{1,6})\s+(.+)$/
             );
-
 
         if (
             headingMatch
@@ -1909,11 +1715,9 @@ function markdownToHtml(
 
             closeList();
 
-
             const level =
                 headingMatch[1]
                     .length;
-
 
             html +=
 
@@ -1929,16 +1733,14 @@ function markdownToHtml(
                 level +
                 ">";
 
-
             index++;
 
             continue;
         }
 
-
-        /* =================================================
+        /* -----------------------------------------
            Blockquote
-        ================================================= */
+        ----------------------------------------- */
 
         if (
             line
@@ -1950,10 +1752,8 @@ function markdownToHtml(
 
             closeList();
 
-
             const quoteLines =
                 [];
-
 
             while (
                 index <
@@ -1978,10 +1778,8 @@ function markdownToHtml(
                         )
                 );
 
-
                 index++;
             }
-
 
             html +=
 
@@ -2005,20 +1803,17 @@ function markdownToHtml(
 
                 + "</blockquote>";
 
-
             continue;
         }
 
-
-        /* =================================================
+        /* -----------------------------------------
            Unordered List
-        ================================================= */
+        ----------------------------------------- */
 
         const ulMatch =
             line.match(
                 /^\s*[-*+]\s+(.+)$/
             );
-
 
         if (
             ulMatch
@@ -2038,7 +1833,6 @@ function markdownToHtml(
                     "ul";
             }
 
-
             html +=
 
                 "<li>" +
@@ -2049,22 +1843,19 @@ function markdownToHtml(
 
                 + "</li>";
 
-
             index++;
 
             continue;
         }
 
-
-        /* =================================================
+        /* -----------------------------------------
            Ordered List
-        ================================================= */
+        ----------------------------------------- */
 
         const olMatch =
             line.match(
                 /^\s*\d+\.\s+(.+)$/
             );
-
 
         if (
             olMatch
@@ -2084,7 +1875,6 @@ function markdownToHtml(
                     "ol";
             }
 
-
             html +=
 
                 "<li>" +
@@ -2095,28 +1885,23 @@ function markdownToHtml(
 
                 + "</li>";
 
-
             index++;
 
             continue;
         }
 
-
-        /* =================================================
+        /* -----------------------------------------
            Paragraph
-        ================================================= */
+        ----------------------------------------- */
 
         closeList();
-
 
         const paragraphLines =
             [
                 line
             ];
 
-
         index++;
-
 
         while (
             index <
@@ -2125,7 +1910,6 @@ function markdownToHtml(
 
             const next =
                 lines[index];
-
 
             if (
                 next.trim() ===
@@ -2186,15 +1970,12 @@ function markdownToHtml(
                 break;
             }
 
-
             paragraphLines.push(
                 next
             );
 
-
             index++;
         }
-
 
         html +=
 
@@ -2215,7 +1996,6 @@ function markdownToHtml(
             + "</p>";
     }
 
-
     if (
         inCode
     ) {
@@ -2234,12 +2014,9 @@ function markdownToHtml(
             + "</code></pre>";
     }
 
-
     closeList();
 
-
     return html;
-
 
     function closeList() {
 
@@ -2252,7 +2029,6 @@ function markdownToHtml(
                 "</ul>";
         }
 
-
         if (
             listType ===
             "ol"
@@ -2262,7 +2038,6 @@ function markdownToHtml(
                 "</ol>";
         }
 
-
         listType =
             null;
     }
@@ -2270,7 +2045,7 @@ function markdownToHtml(
 
 
 /* =========================================================
-   Markdown Table Detection
+   Markdown Table
 ========================================================= */
 
 function isTableHeader(
@@ -2286,16 +2061,13 @@ function isTableHeader(
         return false;
     }
 
-
     const first =
         lines[index]
             .trim();
 
-
     const second =
         lines[index + 1]
             .trim();
-
 
     if (
         !first.includes(
@@ -2306,7 +2078,6 @@ function isTableHeader(
         return false;
     }
 
-
     if (
         !second.includes(
             "|"
@@ -2316,12 +2087,10 @@ function isTableHeader(
         return false;
     }
 
-
     const cells =
         splitTableRow(
             second
         );
-
 
     if (
         cells.length ===
@@ -2330,7 +2099,6 @@ function isTableHeader(
 
         return false;
     }
-
 
     return cells.every(
         cell =>
@@ -2342,10 +2110,6 @@ function isTableHeader(
     );
 }
 
-
-/* =========================================================
-   Parse Markdown Table
-========================================================= */
 
 function parseTable(
     lines,
@@ -2359,14 +2123,11 @@ function parseTable(
             ]
         );
 
-
     let index =
         startIndex + 2;
 
-
     const rows =
         [];
-
 
     while (
         index <
@@ -2376,7 +2137,6 @@ function parseTable(
         const line =
             lines[index]
                 .trim();
-
 
         if (
             line ===
@@ -2392,23 +2152,19 @@ function parseTable(
             break;
         }
 
-
         rows.push(
             splitTableRow(
                 line
             )
         );
 
-
         index++;
     }
-
 
     let html =
         "<table>" +
         "<thead>" +
         "<tr>";
-
 
     for (
         const header
@@ -2426,12 +2182,10 @@ function parseTable(
             + "</th>";
     }
 
-
     html +=
         "</tr>" +
         "</thead>" +
         "<tbody>";
-
 
     for (
         const row
@@ -2440,7 +2194,6 @@ function parseTable(
 
         html +=
             "<tr>";
-
 
         for (
             let column = 0;
@@ -2453,7 +2206,6 @@ function parseTable(
                 row[column] ??
                 "";
 
-
             html +=
 
                 "<td>" +
@@ -2465,16 +2217,13 @@ function parseTable(
                 + "</td>";
         }
 
-
         html +=
             "</tr>";
     }
 
-
     html +=
         "</tbody>" +
         "</table>";
-
 
     return {
         html:
@@ -2486,17 +2235,12 @@ function parseTable(
 }
 
 
-/* =========================================================
-   Split Table Row
-========================================================= */
-
 function splitTableRow(
     line
 ) {
 
     let value =
         line.trim();
-
 
     if (
         value.startsWith(
@@ -2510,7 +2254,6 @@ function splitTableRow(
             );
     }
 
-
     if (
         value.endsWith(
             "|"
@@ -2523,7 +2266,6 @@ function splitTableRow(
                 value.length - 1
             );
     }
-
 
     return value.split(
         "|"
@@ -2539,19 +2281,12 @@ function inlineMarkdown(
     text
 ) {
 
-    /*
-       HTML Escape 먼저 수행.
-    */
-
     let value =
         escapeHtml(
             text
         );
 
-
-    /*
-       Inline Code
-    */
+    /* Inline Code */
 
     value =
         value.replace(
@@ -2559,10 +2294,7 @@ function inlineMarkdown(
             "<code>$1</code>"
         );
 
-
-    /*
-       Bold
-    */
+    /* Bold */
 
     value =
         value.replace(
@@ -2570,17 +2302,13 @@ function inlineMarkdown(
             "<strong>$1</strong>"
         );
 
-
-    /*
-       Italic
-    */
+    /* Italic */
 
     value =
         value.replace(
             /(?<!\*)\*([^*]+)\*(?!\*)/g,
             "<em>$1</em>"
         );
-
 
     return value;
 }
