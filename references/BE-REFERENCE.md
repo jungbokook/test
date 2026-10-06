@@ -8,8 +8,8 @@
 > 실제 분석 Evidence가 아니다.
 >
 > 최종 Backend 분석 문서는 반드시 실제 Source,
-> MyBatis SQL, Oracle Metadata 및 확인된 실행 흐름을
-> 기준으로 작성한다.
+> MyBatis SQL 및 필요한 경우 확인한 Oracle Metadata,
+> 확인된 실행 흐름을 기준으로 작성한다.
 
 ---
 
@@ -83,6 +83,12 @@ DB / RFC / REST / 기타 외부 연동은
 
 실제 기능에 존재하지 않는 항목을
 억지로 생성하지 않는다.
+
+Oracle Metadata는 문서 구조상 DB / SQL 상세 이후에 위치하지만
+모든 DB 호출에서 반드시 조회해야 하는 필수 단계는 아니다.
+
+실제 분석에 필요한 Metadata를 확인한 경우에만
+해당 결과를 기록한다.
 
 ---
 
@@ -214,6 +220,12 @@ DB / RFC / REST / 기타 외부 연동은
 호출 수가 많은 경우에도
 임의의 일부만 선택하지 않는다.
 
+주요 Oracle Object는 실제 SQL Source에서 확인된
+Table / View를 기준으로 기록할 수 있다.
+
+Oracle MCP Metadata를 확인하지 않았다는 이유로
+SQL Source에서 확인된 Object를 미확인으로 처리하지 않는다.
+
 ---
 
 # 7. 전체 실행 Tree
@@ -290,6 +302,9 @@ Controller
 
 호출 순서를 보기 좋게 만들기 위해
 DB와 외부 연동을 별도 단계로 이동시키지 않는다.
+
+Oracle Metadata 확인은 실제 Business Logic의 실행 단계가 아니므로
+Execution Tree 중간에 삽입하지 않는다.
 
 ---
 
@@ -381,6 +396,11 @@ DB #3
 
 같은 Mapper가 반복 호출되어도
 실행 위치가 다르면 별도 호출로 표현한다.
+
+DB 호출 분석과 Oracle Metadata 조회를 동일한 것으로 취급하지 않는다.
+
+DB 호출은 Mapper / MyBatis / SQL Source를 기준으로 분석하고,
+Oracle Metadata는 필요한 경우 후반 검증 단계에서 확인한다.
 
 ---
 
@@ -486,6 +506,9 @@ SQL 구조와 조건을 설명한다.
 
 단, 중요한 계산식이나 업무 조건은 생략하지 않는다.
 
+Oracle Metadata를 조회하지 않았더라도
+MyBatis Source에서 확인된 SQL 구조와 조건은 그대로 분석한다.
+
 ---
 
 # 13. Dynamic SQL 상세
@@ -562,6 +585,11 @@ SQL 구조와 조건을 설명한다.
 Mapping을 Source에서 확인할 수 없는 단계는
 억지로 연결하지 않는다.
 
+여기서 Oracle은 SQL에서 참조되는 Oracle Object / Column을 의미할 수 있다.
+
+Data Type, Nullable, PK 등 실제 DB Metadata 정보는
+Oracle MCP에서 확인한 경우에만 Metadata 정보로 기록한다.
+
 ---
 
 # 15. SQL Result Mapping
@@ -595,8 +623,201 @@ Mapping을 Source에서 확인할 수 없는 단계는
 
 # 16. Oracle Metadata
 
-Oracle Metadata는 Column 단위 비교가 중요하므로
-가독성을 위해 이 영역에 한해 Markdown Table 사용을 허용한다.
+Oracle Metadata는 Backend Business Logic을 추적하기 위한
+필수 선행 단계가 아니다.
+
+Backend 분석에서는 먼저 실제 Source와 MyBatis SQL을 기준으로
+Controller부터 Response까지 전체 실행 흐름을 추적한다.
+
+기본 분석 순서:
+
+```text
+Backend Source 분석
+ ↓
+Mapper / MyBatis 연결
+ ↓
+SQL / Dynamic SQL 분석
+ ↓
+Parameter / Result Mapping 분석
+ ↓
+Caller Business Logic 복귀
+ ↓
+다음 DB / RFC / REST / Business Logic 추적
+ ↓
+Response까지 전체 Call Path 완료
+ ↓
+SQL에서 사용된 Oracle Object / Column 수집
+ ↓
+동일 Object / Column 중복 제거
+ ↓
+Metadata 확인 필요성 판단
+ ↓
+필요한 Metadata만 Oracle MCP 확인
+ ↓
+SQL Source ↔ Metadata 교차 검증
+```
+
+DB 호출을 발견할 때마다
+Oracle MCP Metadata를 즉시 조회하지 않는다.
+
+Oracle Metadata 확인 때문에
+Backend Call Path 추적이 반복적으로 중단되지 않도록 한다.
+
+### Metadata 확인 대상
+
+Oracle MCP는 다음 정보가 실제 분석에 필요한 경우 사용한다.
+
+```text
+Object 존재 여부 검증
+Table / View 구분 확인
+Column 존재 여부 검증
+Data Type 확인
+Nullable 확인
+Primary Key 확인
+SQL Source와 실제 DB 구조 불일치 검증
+Parameter / Result Mapping 검증
+```
+
+SQL/MyBatis Source만으로 충분히 확인되는 내용을
+단순 반복 검증하기 위해 Oracle MCP를 호출하지 않는다.
+
+예:
+
+```text
+MyBatis SQL
+
+TB_EQUIPMENT.PLANT_CODE
+
+사용이 명확히 확인됨
+ ↓
+SQL 사용 사실은 Source Evidence로 확인
+
+Data Type 또는 Nullable 확인이 실제 분석에 필요함
+ ↓
+해당 Object / Column Metadata만 Oracle MCP 확인
+```
+
+### Object / Column 수집 및 중복 제거
+
+현재 API의 SQL 분석 과정에서 실제 사용되는:
+
+```text
+Table
+View
+Column
+```
+
+을 수집한다.
+
+동일 Object가 여러 DB 호출에서 사용되더라도
+Metadata를 반복 조회하지 않는다.
+
+예:
+
+```text
+DB #1
+  TB_EQUIPMENT
+
+DB #2
+  TB_EQUIPMENT
+
+DB #3
+  TB_EQUIPMENT
+  TB_PLANT
+```
+
+Metadata 후보:
+
+```text
+TB_EQUIPMENT
+TB_PLANT
+```
+
+동일 Object는 현재 Backend 분석 Worker 내에서
+가능한 한 한 번만 확인한다.
+
+이미 확인한 Column Metadata 역시
+동일 분석 과정에서 반복 조회하지 않는다.
+
+### 광범위 Metadata 탐색 금지
+
+다음 방식으로 Metadata를 탐색하지 않는다.
+
+```text
+Schema 전체 Table 조회
+Schema 전체 View 조회
+Schema 전체 Column 조회
+현재 API와 관련 없는 Object 조회
+SQL에 등장하지 않는 Object의 선제적 조회
+모든 Object의 모든 Column 무조건 조회
+동일 Object 반복 조회
+동일 Column 반복 조회
+```
+
+현재 API의 실제 SQL과 Mapping에 필요한 범위만 확인한다.
+
+### Metadata와 SQL 분석의 독립성
+
+Oracle Metadata를 조회하지 않았다고 해서
+MyBatis SQL에서 확인된 사실을:
+
+```text
+확인되지 않음
+```
+
+으로 낮추지 않는다.
+
+예:
+
+```text
+MyBatis SQL
+
+SELECT E.EQUIPMENT_ID
+FROM TB_EQUIPMENT E
+```
+
+라면:
+
+```text
+SQL 사용 Object
+  TB_EQUIPMENT
+
+사용 Column
+  EQUIPMENT_ID
+```
+
+은 Source에서 확인된 사실이다.
+
+반면:
+
+```text
+EQUIPMENT_ID Data Type
+Nullable
+PK
+```
+
+등을 Oracle MCP에서 확인하지 않았다면
+Metadata 정보만 다음처럼 구분한다.
+
+```text
+Metadata
+  추가 확인하지 않음
+```
+
+또는 Metadata 확인이 필요했으나 확인하지 못한 경우:
+
+```text
+Metadata
+  확인되지 않음
+```
+
+으로 기록한다.
+
+### Oracle Metadata 출력
+
+Oracle Metadata를 실제 확인한 경우
+Column 단위 비교가 중요하므로
+이 영역에 한해 Markdown Table 사용을 허용한다.
 
 Oracle Object 자체의 기본 정보는
 독립 Block으로 표현한다.
@@ -610,14 +831,18 @@ Oracle Object 자체의 기본 정보는
 │   TABLE
 │
 │ 사용 위치
-│   DB #1 - 설비 기본정보 조회
+│   DB #1
+│   DB #3
+│
+│ Metadata 확인
+│   YES
 │
 │ Metadata Source
 │   Oracle MCP
 └──────────────────────────────────────────────
 ```
 
-### 사용 Column
+### 확인된 사용 Column
 
 | Column | Data Type | Nullable | PK | 사용 위치 / 용도 |
 |---|---|---|---|---|
@@ -628,7 +853,8 @@ Oracle Object 자체의 기본 정보는
 
 Oracle Metadata는 실제 Oracle MCP에서 확인된 정보만 기록한다.
 
-현재 API의 SQL에서 실제 사용되는 Column을 우선 표시한다.
+현재 API의 SQL에서 실제 사용되는 Column 중
+Metadata 검증이 필요한 Column을 우선 확인한다.
 
 다음과 같이 SQL에서 사용되는 Column의 역할을
 가능한 경우 함께 기록한다.
@@ -646,18 +872,39 @@ ORDER BY
 Result Mapping
 ```
 
-Column이 많더라도 현재 API의 SQL에서 실제 사용되는
-중요 Column을 임의로 누락하지 않는다.
+Metadata 확인이 필요하지 않은 Column까지
+단순히 전체 Column Table을 채우기 위해 조회하지 않는다.
 
-Oracle MCP에서 확인할 수 없는 값은 추측하지 않고:
+### Metadata를 추가 조회하지 않은 Object
+
+SQL에서 Object가 사용되지만
+추가 Metadata 검증이 필요하지 않았던 경우
+다음과 같이 구분할 수 있다.
 
 ```text
-확인되지 않음
+Oracle Object
+  TB_EQUIPMENT
+
+Source
+  MyBatis SQL
+
+Metadata
+  추가 조회하지 않음
+
+사유
+  현재 Business Logic 및 SQL 분석에
+  추가 Metadata 검증이 필요하지 않음
 ```
 
-으로 기록한다.
+이 경우 Object 자체가 미확인이라는 의미가 아니다.
 
-SQL Source와 Oracle Metadata가 서로 다른 경우
+Source에서 확인된 사실과
+Metadata에서 확인된 사실을 명확히 구분한다.
+
+### SQL Source와 Metadata 불일치
+
+Oracle Metadata를 확인했고
+Source SQL과 실제 Metadata가 서로 다른 경우
 차이를 숨기지 않고 별도로 명시한다.
 
 예:
@@ -677,23 +924,12 @@ Oracle Metadata
 추가 확인 필요
 ```
 
-Table / View가 여러 개이면
+Table / View가 여러 개이고 Metadata 확인이 필요한 경우
 각 Object별로 Metadata를 분리한다.
 
-예:
-
-```text
-Oracle Object #1
-  TB_EQUIPMENT
-
-Oracle Object #2
-  TB_PLANT
-
-Oracle Object #3
-  VW_EQUIPMENT_STATUS
-```
-
-각 Object 아래에 해당 Object의 Column Metadata Table을 작성한다.
+Oracle Metadata는 Business Logic을 생성하기 위한 근거가 아니라
+Source / MyBatis SQL 분석 결과를 필요한 경우 검증하는
+보조 Evidence로 사용한다.
 
 ---
 
@@ -1192,6 +1428,9 @@ Line Range:
 
 Line Range를 추측하지 않는다.
 
+Oracle Metadata는 실제 확인한 경우에만
+별도의 Metadata Evidence로 기록한다.
+
 ---
 
 # 28. 미확인 항목
@@ -1220,6 +1459,21 @@ Line Range를 추측하지 않는다.
 
 으로 표현할 수 있다.
 
+Oracle Metadata를 추가 조회하지 않은 것과
+Source에서 정보 자체를 확인하지 못한 것을 구분한다.
+
+```text
+Metadata 추가 조회하지 않음
+```
+
+은:
+
+```text
+확인되지 않음
+```
+
+과 동일한 의미가 아니다.
+
 ---
 
 # 29. 분석 경계
@@ -1237,7 +1491,7 @@ Line Range를 추측하지 않는다.
 │   Mapper
 │   MyBatis
 │   SQL
-│   Oracle Metadata
+│   필요한 경우 Oracle Metadata
 │   RFC
 │   REST / HTTP
 │   기타 실제 외부 연동
@@ -1251,6 +1505,7 @@ Line Range를 추측하지 않는다.
 │   관련 없는 Service
 │   관련 없는 Mapper / SQL
 │   관련 없는 Oracle Object
+│   Schema 전체 Metadata 탐색
 │   Project 전체 RFC
 │   Project 전체 외부 연동
 │   JAR 내부
@@ -1293,8 +1548,8 @@ Excel 한 셀에 직접 복사하는 것을 고려하여 작성한다.
 
 각 Block은 독립적으로 복사 가능해야 한다.
 
-Oracle Metadata는 Column 비교 가독성을 위해
-Markdown Table 사용을 허용한다.
+Oracle Metadata는 실제 확인한 경우
+Column 비교 가독성을 위해 Markdown Table 사용을 허용한다.
 
 ---
 
@@ -1330,7 +1585,7 @@ ASCII 실행 흐름의 가독성을 위해
 Markdown Table을 사용할 수 있다.
 
 ```text
-Oracle Metadata
+실제 확인한 Oracle Metadata
 ```
 
 Oracle Metadata는 Column별:
@@ -1343,15 +1598,7 @@ PK
 사용 위치 / 용도
 ```
 
-를 비교해야 하므로 Table 형식을 우선한다.
-
-예:
-
-| Column | Data Type | Nullable | PK | 사용 위치 / 용도 |
-|---|---|---|---|---|
-| EQUIPMENT_ID | VARCHAR2(...) | NO | YES | Result Mapping |
-| PLANT_CODE | VARCHAR2(...) | NO | NO | WHERE / JOIN |
-| USE_YN | VARCHAR2(...) | YES | NO | WHERE |
+를 비교해야 하므로 Table 형식을 사용할 수 있다.
 
 그 외 영역:
 
@@ -1410,9 +1657,11 @@ Request Parameter
 `대표 5개만 표시`처럼
 근거 없이 일부를 생략하지 않는다.
 
-Oracle Column의 경우
-현재 API에서 실제 사용하는 Column을
-Metadata Table에 누락 없이 표시하는 것을 우선한다.
+SQL Source에서 현재 API가 실제 사용하는 Column은
+SQL 분석에서 필요한 범위까지 누락하지 않는다.
+
+단, Oracle Metadata를 확인하기 위해
+해당 Object의 전체 Column을 무조건 조회하지 않는다.
 
 ---
 
@@ -1455,6 +1704,9 @@ DB #5 상세
 
 동일 Mapper / Statement가 반복 호출되어도
 실제 실행 위치가 다르면 호출 자체는 구분한다.
+
+동일 Oracle Object가 여러 DB 호출에서 반복 사용되더라도
+Metadata 조회까지 반복할 필요는 없다.
 
 ---
 
@@ -1546,6 +1798,9 @@ Response
 ```
 
 그 순서를 그대로 문서에 반영한다.
+
+Oracle Metadata 검증은 실제 Runtime 실행 단계가 아니므로
+Execution Tree에 Business Step처럼 삽입하지 않는다.
 
 ---
 
@@ -1639,10 +1894,11 @@ MyBatis SQL
   Dynamic SQL
   Parameter
   Result Mapping
+  SQL에서 사용되는 Object / Column
 
 Oracle MCP
-  Object 존재 여부
-  Column
+  필요한 경우 Object 존재 여부
+  필요한 경우 Column 존재 여부
   Data Type
   Nullable
   Primary Key
@@ -1653,6 +1909,20 @@ Business Logic을 추측하지 않는다.
 
 반대로 SQL Source에 Column이 존재한다고 해서
 Oracle Metadata를 확인한 것처럼 표현하지 않는다.
+
+Oracle Metadata 확인은
+Backend Call Path 추적보다 우선하지 않는다.
+
+먼저 실제 Source / MyBatis / SQL을 기준으로
+전체 실행 흐름을 Response까지 분석한다.
+
+그 과정에서 실제 사용된 Object / Column을 수집하고,
+전체 Call Path 추적 후 중복을 제거한다.
+
+그 후 추가 검증이 필요한 Metadata만 확인한다.
+
+Metadata를 조회하지 않은 사실과
+Source에서 확인되지 않은 사실을 동일하게 취급하지 않는다.
 
 ---
 
@@ -1667,7 +1937,7 @@ Oracle Metadata를 확인한 것처럼 표현하지 않는다.
 ASCII Tree 형식
 Excel 복사 구조
 Block 독립성
-Oracle Metadata Table 형식
+Oracle Metadata 표현 형식
 ```
 
 이 Reference는 다음을 결정하지 않는다.
@@ -1686,7 +1956,7 @@ Oracle Metadata Table 형식
 ```
 
 실제 값은 분석 대상 Source와
-확인된 Metadata에서 가져온다.
+필요한 경우 확인한 Metadata에서 가져온다.
 
 ---
 
@@ -1710,13 +1980,8 @@ plantCode
 최종 문서에 Sample 값을
 Evidence처럼 복사하지 않는다.
 
-실제 Source 또는 Metadata에서 확인되지 않은 경우:
-
-```text
-확인되지 않음
-```
-
-으로 기록한다.
+실제 Source 또는 실제 확인한 Metadata에서
+확인되지 않은 값을 추측하지 않는다.
 
 ---
 
@@ -1750,7 +2015,7 @@ MyBatis XML
  ↓
 SQL
  ↓
-Oracle Metadata
+필요한 경우 Oracle Metadata 검증
 ```
 
 외부 연동:
@@ -1768,6 +2033,8 @@ RFC Function / Endpoint
 Code Index 검색 결과만으로
 Business Logic을 확정하지 않는다.
 
+Oracle Metadata는 SQL Business Logic을 대신하는 Evidence가 아니다.
+
 ---
 
 # 43. 확인되지 않음 처리
@@ -1779,7 +2046,7 @@ Business Logic을 확정하지 않는다.
 Configuration 실제 값 확인 불가
 외부 Dependency 내부 구현
 Runtime에서만 보이고 Source Mapping 불가
-Oracle Metadata 확인 불가
+필요한 Oracle Metadata 확인 실패
 Line Range 확인 불가
 RFC Field 의미 확인 불가
 ```
@@ -1801,6 +2068,15 @@ Base URL
 사유
   현재 Project Source에서 실제 Configuration 값을 확인할 수 없음
 ```
+
+단순히 추가 Metadata 검증이 필요하지 않아
+Oracle MCP를 호출하지 않은 경우에는:
+
+```text
+Metadata 추가 조회하지 않음
+```
+
+으로 구분한다.
 
 ---
 
@@ -1870,6 +2146,9 @@ Message Publish
 
 실제 업무 데이터를 변경하지 않는다.
 
+Oracle MCP 역시 Metadata 확인을 위한
+Read-Only 방식으로만 사용한다.
+
 ---
 
 # 46. 최종 검증
@@ -1902,8 +2181,6 @@ Parameter Mapping 확인
  ↓
 Result Mapping 확인
  ↓
-Oracle Metadata 확인
- ↓
 RFC 확인
  ↓
 REST / 기타 외부 연동 확인
@@ -1920,11 +2197,26 @@ Transaction 확인
  ↓
 Response 생성 확인
  ↓
+전체 Call Path 완료 확인
+ ↓
+사용 Oracle Object / Column 수집
+ ↓
+동일 Object / Column 중복 제거
+ ↓
+Metadata 필요성 판단
+ ↓
+필요한 경우 Oracle Metadata 확인
+ ↓
+SQL ↔ Metadata 교차 검증
+ ↓
 Source Evidence 확인
 ```
 
 현재 API에 존재하지 않는 항목은
 억지로 만들어내지 않는다.
+
+Metadata 검증이 필요하지 않은 경우
+Oracle MCP를 호출하기 위해 분석 범위를 확장하지 않는다.
 
 ---
 
@@ -1955,9 +2247,18 @@ SQL Parameter Mapping
 
 SQL Result Mapping
 
-Oracle Metadata 교차 확인
+Oracle Metadata는 필요한 경우 교차 확인
 
-Oracle Metadata는 Table 형식 허용
+동일 Oracle Object / Column Metadata 반복 조회 금지
+
+Schema 전체 Metadata 탐색 금지
+
+Metadata 조회 여부와 관계없이
+MyBatis / SQL 상세 분석 유지
+
+Metadata 미조회와 Source 미확인을 구분
+
+Oracle Metadata는 실제 확인한 경우 Table 형식 허용
 
 RFC / REST / 기타 외부 연동 위치 보존
 
