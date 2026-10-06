@@ -118,7 +118,7 @@ button:disabled {
 }
 
 /* =========================================================
-   FE / API / BE Area
+   FE / API / BE
 ========================================================= */
 
 .sub {
@@ -198,7 +198,7 @@ button:disabled {
 }
 
 /* =========================================================
-   Scrollbar
+   Scrollbars
 ========================================================= */
 
 .fe-scroll::-webkit-scrollbar,
@@ -371,97 +371,35 @@ button:disabled {
 }
 
 /* =========================================================
-   Built-in Mermaid / Flowchart
+   Mermaid
 ========================================================= */
 
-.mermaid-container {
+.mermaid-wrap {
     width: 100%;
-    margin: 22px 0;
-    padding: 14px;
+    margin: 20px 0;
+    padding: 18px;
+    background: #ffffff;
     border: 1px solid #d8dee4;
     border-radius: 8px;
-    background: #fbfcfd;
-    overflow: auto;
+    overflow-x: auto;
+    overflow-y: hidden;
 }
 
-.mermaid-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 10px;
-    color: #57606a;
-    font-size: 12px;
+.mermaid {
+    width: max-content;
+    min-width: 100%;
+    text-align: center;
 }
 
-.mermaid-title {
-    font-weight: 700;
-}
-
-.mermaid-scroll {
-    width: 100%;
-    overflow: auto;
-}
-
-.mermaid-svg {
+.mermaid svg {
     display: block;
     margin: 0 auto;
-    min-width: 500px;
-}
-
-.mermaid-node {
-    fill: #ffffff;
-    stroke: #57606a;
-    stroke-width: 1.5;
-}
-
-.mermaid-condition {
-    fill: #fff8c5;
-    stroke: #9a6700;
-    stroke-width: 1.5;
-}
-
-.mermaid-rounded {
-    fill: #ddf4ff;
-    stroke: #0969da;
-    stroke-width: 1.5;
-}
-
-.mermaid-node-text {
-    font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        "Malgun Gothic",
-        sans-serif;
-    font-size: 13px;
-    fill: #24292f;
-}
-
-.mermaid-edge {
-    stroke: #57606a;
-    stroke-width: 1.5;
-    fill: none;
-}
-
-.mermaid-edge-label-bg {
-    fill: #ffffff;
-    stroke: #d0d7de;
-    stroke-width: 1;
-}
-
-.mermaid-edge-label {
-    font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        "Malgun Gothic",
-        sans-serif;
-    font-size: 11px;
-    fill: #57606a;
+    max-width: none !important;
+    height: auto;
 }
 
 .mermaid-error {
+    margin: 16px 0;
     padding: 14px;
     border: 1px solid #cf222e;
     border-radius: 6px;
@@ -475,6 +413,10 @@ button:disabled {
     text-align: center;
     color: #57606a;
 }
+
+/* =========================================================
+   Mobile
+========================================================= */
 
 @media (max-width: 800px) {
 
@@ -502,6 +444,8 @@ button:disabled {
 <header>
 
 <div class="controls">
+
+    <!-- 화면 + 폴더 + SCREEN + FE -->
 
     <div class="row top-row">
 
@@ -534,6 +478,8 @@ button:disabled {
         </button>
 
     </div>
+
+    <!-- FE / API / BE -->
 
     <div
         id="sub"
@@ -614,6 +560,17 @@ button:disabled {
 
 </main>
 
+
+<!-- =========================================================
+     LOCAL MERMAID
+
+     analysis-viewer.html과
+     mermaid.min.js를 같은 폴더에 둡니다.
+========================================================= -->
+
+<script src="./mermaid.min.js"></script>
+
+
 <script>
 
 /* =========================================================
@@ -634,6 +591,43 @@ let data =
 let screenName = "";
 
 let action = "";
+
+let mermaidSequence = 0;
+
+
+/* =========================================================
+   Mermaid Init
+========================================================= */
+
+if (
+    typeof mermaid !==
+    "undefined"
+) {
+
+    mermaid.initialize({
+
+        startOnLoad: false,
+
+        securityLevel: "loose",
+
+        theme: "default",
+
+        flowchart: {
+
+            htmlLabels: true,
+
+            useMaxWidth: false
+        }
+
+    });
+
+}
+else {
+
+    console.error(
+        "mermaid.min.js를 불러오지 못했습니다."
+    );
+}
 
 
 /* =========================================================
@@ -677,6 +671,7 @@ async function dir(
             .getDirectoryHandle(
                 name
             );
+
     }
     catch {
 
@@ -696,6 +691,7 @@ async function file(
             .getFileHandle(
                 name
             );
+
     }
     catch {
 
@@ -704,9 +700,7 @@ async function file(
 }
 
 
-async function mds(
-    handle
-) {
+async function mds(handle) {
 
     const result = [];
 
@@ -722,15 +716,20 @@ async function mds(
 
         if (
             item.kind === "file" &&
-            name.toLowerCase().endsWith(".md")
+            name
+                .toLowerCase()
+                .endsWith(".md")
         ) {
 
-            result.push(item);
+            result.push(
+                item
+            );
         }
     }
 
     return result.sort(
         (a, b) =>
+
             a.name.localeCompare(
                 b.name,
                 undefined,
@@ -778,10 +777,11 @@ function feLabel(name) {
     return (
         match[1] +
         " " +
-        match[2].replaceAll(
-            "-",
-            " "
-        )
+        match[2]
+            .replaceAll(
+                "-",
+                " "
+            )
     );
 }
 
@@ -796,12 +796,15 @@ function child(
         name.toUpperCase();
 
     return (
+
         upper.startsWith(
             "FE-" +
             actionId +
             "-"
         )
+
         &&
+
         upper.includes(
             "-" +
             type +
@@ -825,7 +828,9 @@ function childLabel(
         );
 
     const match =
-        name.match(regex);
+        name.match(
+            regex
+        );
 
     return match
         ? match[1].toUpperCase()
@@ -837,24 +842,32 @@ function childLabel(
 
 
 /* =========================================================
-   Active
+   Main Active
 ========================================================= */
 
-function setMainActive(button) {
+function setMainActive(
+    button
+) {
 
     q("#screenTab")
         .classList
-        .remove("active");
+        .remove(
+            "active"
+        );
 
     q("#feTab")
         .classList
-        .remove("active");
+        .remove(
+            "active"
+        );
 
     if (button) {
 
         button
             .classList
-            .add("active");
+            .add(
+                "active"
+            );
     }
 }
 
@@ -863,7 +876,9 @@ function setMainActive(button) {
    Render File
 ========================================================= */
 
-async function renderFile(handle) {
+async function renderFile(
+    handle
+) {
 
     if (!handle) {
 
@@ -878,20 +893,40 @@ async function renderFile(handle) {
         const markdown =
             await target.text();
 
-        renderMarkdown(markdown);
+        await renderMarkdown(
+            markdown
+        );
 
-        q("#status").innerHTML =
+        q("#status")
+            .innerHTML =
+
             "표시 문서: <b>" +
-            escapeHtml(handle.name) +
-            "</b>";
+
+            escapeHtml(
+                handle.name
+            )
+
+            + "</b>";
+
     }
     catch (error) {
 
-        q("#viewer").innerHTML =
+        console.error(
+            error
+        );
+
+        q("#viewer")
+            .innerHTML =
+
             '<div class="empty">' +
+
             '문서를 읽을 수 없습니다.<br>' +
-            escapeHtml(error.message) +
-            '</div>';
+
+            escapeHtml(
+                error.message
+            )
+
+            + '</div>';
     }
 }
 
@@ -974,6 +1009,7 @@ async function scan() {
 
         .sort(
             (a, b) =>
+
                 a.localeCompare(
                     b,
                     undefined,
@@ -996,7 +1032,9 @@ async function scan() {
             }
         );
 
-    q("#status").textContent =
+    q("#status")
+        .textContent =
+
         data.size +
         "개 화면을 찾았습니다.";
 }
@@ -1006,11 +1044,13 @@ async function scan() {
    Folder Picker
 ========================================================= */
 
-q("#pick").onclick =
+q("#pick")
+    .onclick =
 async () => {
 
     if (
-        !window.showDirectoryPicker
+        !window
+            .showDirectoryPicker
     ) {
 
         alert(
@@ -1024,9 +1064,10 @@ async () => {
     try {
 
         root =
-            await window.showDirectoryPicker({
-                mode: "read"
-            });
+            await window
+                .showDirectoryPicker({
+                    mode: "read"
+                });
 
         await scan();
 
@@ -1038,7 +1079,9 @@ async () => {
             "AbortError"
         ) {
 
-            console.error(error);
+            console.error(
+                error
+            );
         }
     }
 };
@@ -1048,7 +1091,8 @@ async () => {
    Screen Change
 ========================================================= */
 
-q("#screen").onchange =
+q("#screen")
+    .onchange =
 async event => {
 
     screenName =
@@ -1058,7 +1102,9 @@ async event => {
 
     q("#sub")
         .classList
-        .remove("show");
+        .remove(
+            "show"
+        );
 
     q("#backendRow")
         .style.display =
@@ -1088,7 +1134,9 @@ async event => {
 async function showScreen() {
 
     const current =
-        data.get(screenName);
+        data.get(
+            screenName
+        );
 
     if (!current) {
 
@@ -1097,7 +1145,9 @@ async function showScreen() {
 
     q("#sub")
         .classList
-        .remove("show");
+        .remove(
+            "show"
+        );
 
     q("#backendRow")
         .style.display =
@@ -1114,10 +1164,13 @@ async function showScreen() {
         await renderFile(
             current.screen
         );
+
     }
     else {
 
-        q("#viewer").innerHTML =
+        q("#viewer")
+            .innerHTML =
+
             '<div class="empty">' +
             'SCREEN 문서가 없습니다.' +
             '</div>';
@@ -1125,7 +1178,8 @@ async function showScreen() {
 }
 
 
-q("#screenTab").onclick =
+q("#screenTab")
+    .onclick =
     showScreen;
 
 
@@ -1133,11 +1187,14 @@ q("#screenTab").onclick =
    FE
 ========================================================= */
 
-q("#feTab").onclick =
+q("#feTab")
+    .onclick =
 async () => {
 
     const current =
-        data.get(screenName);
+        data.get(
+            screenName
+        );
 
     if (!current) {
 
@@ -1150,13 +1207,18 @@ async () => {
 
     q("#sub")
         .classList
-        .add("show");
+        .add(
+            "show"
+        );
 
-    q("#fes").innerHTML = "";
+    q("#fes")
+        .innerHTML = "";
 
-    q("#apis").innerHTML = "";
+    q("#apis")
+        .innerHTML = "";
 
-    q("#bes").innerHTML = "";
+    q("#bes")
+        .innerHTML = "";
 
     q("#apiRow")
         .style.display =
@@ -1179,10 +1241,13 @@ async () => {
         !frontendFiles.length
     ) {
 
-        q("#fes").textContent =
+        q("#fes")
+            .textContent =
             "FE 문서 없음";
 
-        q("#viewer").innerHTML =
+        q("#viewer")
+            .innerHTML =
+
             '<div class="empty">' +
             '이 화면에는 FE 문서가 없습니다.' +
             '</div>';
@@ -1208,6 +1273,7 @@ async () => {
 
             button.onclick =
                 () =>
+
                     selectFE(
                         handle,
                         button
@@ -1220,7 +1286,9 @@ async () => {
         }
     );
 
-    q("#viewer").innerHTML =
+    q("#viewer")
+        .innerHTML =
+
         '<div class="empty">' +
         'FE 기능을 선택하세요.' +
         '</div>';
@@ -1247,13 +1315,18 @@ async function selectFE(
         )
         .forEach(
             item =>
+
                 item.classList
-                    .remove("active")
+                    .remove(
+                        "active"
+                    )
         );
 
     button
         .classList
-        .add("active");
+        .add(
+            "active"
+        );
 
     setMainActive(
         q("#feTab")
@@ -1264,7 +1337,9 @@ async function selectFE(
     );
 
     const current =
-        data.get(screenName);
+        data.get(
+            screenName
+        );
 
     const apiFiles =
         (
@@ -1274,6 +1349,7 @@ async function selectFE(
         )
         .filter(
             item =>
+
                 child(
                     item.name,
                     action,
@@ -1289,6 +1365,7 @@ async function selectFE(
         )
         .filter(
             item =>
+
                 child(
                     item.name,
                     action,
@@ -1318,6 +1395,7 @@ async function selectFE(
         q("#backendRow")
             .style.display =
             "flex";
+
     }
     else {
 
@@ -1329,7 +1407,7 @@ async function selectFE(
 
 
 /* =========================================================
-   API / BE Buttons
+   API / BE
 ========================================================= */
 
 function fillChildren(
@@ -1386,13 +1464,18 @@ async () => {
         )
         .forEach(
             item =>
+
                 item.classList
-                    .remove("active")
+                    .remove(
+                        "active"
+                    )
         );
 
     button
         .classList
-        .add("active");
+        .add(
+            "active"
+        );
 
     setMainActive(
         q("#feTab")
@@ -1413,20 +1496,143 @@ async () => {
 
 
 /* =========================================================
-   Markdown Renderer
+   Markdown Render
 ========================================================= */
 
-function renderMarkdown(markdown) {
+async function renderMarkdown(
+    markdown
+) {
 
     const html =
         markdownToHtml(
             markdown
         );
 
-    q("#viewer").innerHTML =
+    q("#viewer")
+        .innerHTML =
         html;
 
-    renderBuiltInMermaid();
+    await renderMermaidBlocks();
+}
+
+
+/* =========================================================
+   Mermaid Render
+========================================================= */
+
+async function renderMermaidBlocks() {
+
+    const blocks =
+        document.querySelectorAll(
+            "#viewer .mermaid"
+        );
+
+    if (
+        blocks.length === 0
+    ) {
+
+        return;
+    }
+
+    if (
+        typeof mermaid ===
+        "undefined"
+    ) {
+
+        blocks.forEach(
+            block => {
+
+                const source =
+                    block.textContent;
+
+                block.parentElement.innerHTML =
+                    '<div class="mermaid-error">' +
+
+                    '<b>Mermaid를 불러오지 못했습니다.</b>\n\n' +
+
+                    'analysis-viewer.html과 mermaid.min.js가 같은 폴더에 있는지 확인하세요.\n\n' +
+
+                    escapeHtml(
+                        source
+                    ) +
+
+                    '</div>';
+            }
+        );
+
+        return;
+    }
+
+    for (
+        const block
+        of blocks
+    ) {
+
+        const source =
+            block.textContent;
+
+        mermaidSequence++;
+
+        const id =
+            "mermaid-svg-" +
+            mermaidSequence;
+
+        try {
+
+            /*
+               Mermaid 11 공식 render API
+            */
+
+            const result =
+                await mermaid.render(
+                    id,
+                    source
+                );
+
+            block.innerHTML =
+                result.svg;
+
+            /*
+               Mermaid가 bindFunctions를
+               반환하는 경우 적용
+            */
+
+            if (
+                result.bindFunctions
+            ) {
+
+                result.bindFunctions(
+                    block
+                );
+            }
+
+        }
+        catch (error) {
+
+            console.error(
+                "Mermaid Render Error:",
+                error
+            );
+
+            block.innerHTML =
+                '<div class="mermaid-error">' +
+
+                '<b>Mermaid Flowchart 오류</b>\n\n' +
+
+                escapeHtml(
+                    error.message ||
+                    String(error)
+                ) +
+
+                '\n\n--- Mermaid Source ---\n' +
+
+                escapeHtml(
+                    source
+                ) +
+
+                '</div>';
+        }
+    }
 }
 
 
@@ -1434,7 +1640,9 @@ function renderMarkdown(markdown) {
    Markdown → HTML
 ========================================================= */
 
-function markdownToHtml(markdown) {
+function markdownToHtml(
+    markdown
+) {
 
     markdown =
         markdown.replace(
@@ -1443,7 +1651,9 @@ function markdownToHtml(markdown) {
         );
 
     const lines =
-        markdown.split("\n");
+        markdown.split(
+            "\n"
+        );
 
     let html = "";
 
@@ -1457,11 +1667,10 @@ function markdownToHtml(markdown) {
 
     let listType = null;
 
-    let mermaidIndex = 0;
-
 
     while (
-        index < lines.length
+        index <
+        lines.length
     ) {
 
         const line =
@@ -1469,19 +1678,25 @@ function markdownToHtml(markdown) {
 
 
         /* =================================================
-           Code Block
+           Code Fence
         ================================================= */
 
         if (
-            line.trim()
-                .startsWith("```")
+            line
+                .trim()
+                .startsWith(
+                    "```"
+                )
         ) {
 
             closeList();
 
-            if (!inCode) {
+            if (
+                !inCode
+            ) {
 
-                inCode = true;
+                inCode =
+                    true;
 
                 codeLanguage =
                     line
@@ -1490,13 +1705,14 @@ function markdownToHtml(markdown) {
                         .trim()
                         .toLowerCase();
 
-                codeBuffer = [];
+                codeBuffer =
+                    [];
+
             }
             else {
 
                 /*
-                   Mermaid이면 일반 code block이 아니라
-                   전용 영역으로 만든다.
+                   Mermaid
                 */
 
                 if (
@@ -1504,47 +1720,30 @@ function markdownToHtml(markdown) {
                     "mermaid"
                 ) {
 
-                    mermaidIndex++;
-
                     html +=
-                        '<div class="mermaid-container">' +
+                        '<div class="mermaid-wrap">' +
 
-                            '<div class="mermaid-toolbar">' +
+                        '<div class="mermaid">' +
 
-                                '<span class="mermaid-title">' +
-                                    'Flowchart' +
-                                '</span>' +
+                        escapeHtml(
+                            codeBuffer.join(
+                                "\n"
+                            )
+                        ) +
 
-                                '<span>' +
-                                    '내장 Renderer' +
-                                '</span>' +
-
-                            '</div>' +
-
-                            '<div class="mermaid-scroll">' +
-
-                                '<div ' +
-                                    'class="builtin-mermaid" ' +
-                                    'data-mermaid-id="' +
-                                    mermaidIndex +
-                                    '"' +
-                                '>' +
-
-                                    '<pre class="mermaid-source" style="display:none">' +
-                                        escapeHtml(
-                                            codeBuffer.join("\n")
-                                        ) +
-                                    '</pre>' +
-
-                                '</div>' +
-
-                            '</div>' +
+                        '</div>' +
 
                         '</div>';
+
                 }
                 else {
 
+                    /*
+                       일반 Code Block
+                    */
+
                     html +=
+
                         "<pre><code" +
 
                         (
@@ -1562,17 +1761,22 @@ function markdownToHtml(markdown) {
                         + ">" +
 
                         escapeHtml(
-                            codeBuffer.join("\n")
+                            codeBuffer.join(
+                                "\n"
+                            )
                         )
 
                         + "</code></pre>";
                 }
 
-                inCode = false;
+                inCode =
+                    false;
 
-                codeLanguage = "";
+                codeLanguage =
+                    "";
 
-                codeBuffer = [];
+                codeBuffer =
+                    [];
             }
 
             index++;
@@ -1581,7 +1785,9 @@ function markdownToHtml(markdown) {
         }
 
 
-        if (inCode) {
+        if (
+            inCode
+        ) {
 
             codeBuffer.push(
                 line
@@ -1627,7 +1833,8 @@ function markdownToHtml(markdown) {
         ================================================= */
 
         if (
-            line.trim() === ""
+            line.trim() ===
+            ""
         ) {
 
             closeList();
@@ -1639,17 +1846,20 @@ function markdownToHtml(markdown) {
 
 
         /* =================================================
-           HR
+           Horizontal Rule
         ================================================= */
 
         if (
             /^(\s*)(---|\*\*\*|___)(\s*)$/
-                .test(line)
+                .test(
+                    line
+                )
         ) {
 
             closeList();
 
-            html += "<hr>";
+            html +=
+                "<hr>";
 
             index++;
 
@@ -1666,12 +1876,15 @@ function markdownToHtml(markdown) {
                 /^(#{1,6})\s+(.+)$/
             );
 
-        if (headingMatch) {
+        if (
+            headingMatch
+        ) {
 
             closeList();
 
             const level =
-                headingMatch[1].length;
+                headingMatch[1]
+                    .length;
 
             html +=
                 "<h" +
@@ -1699,7 +1912,9 @@ function markdownToHtml(markdown) {
         if (
             line
                 .trimStart()
-                .startsWith(">")
+                .startsWith(
+                    ">"
+                )
         ) {
 
             closeList();
@@ -1708,13 +1923,20 @@ function markdownToHtml(markdown) {
                 [];
 
             while (
-                index < lines.length &&
+                index <
+                    lines.length
+
+                &&
+
                 lines[index]
                     .trimStart()
-                    .startsWith(">")
+                    .startsWith(
+                        ">"
+                    )
             ) {
 
                 quoteLines.push(
+
                     lines[index]
                         .trimStart()
                         .replace(
@@ -1732,6 +1954,7 @@ function markdownToHtml(markdown) {
                 quoteLines
                     .map(
                         item =>
+
                             item.trim()
 
                                 ? inlineMarkdown(
@@ -1740,7 +1963,9 @@ function markdownToHtml(markdown) {
 
                                 : "<br>"
                     )
-                    .join("<br>") +
+                    .join(
+                        "<br>"
+                    ) +
 
                 "</blockquote>";
 
@@ -1757,17 +1982,22 @@ function markdownToHtml(markdown) {
                 /^\s*[-*+]\s+(.+)$/
             );
 
-        if (ulMatch) {
+        if (
+            ulMatch
+        ) {
 
             if (
-                listType !== "ul"
+                listType !==
+                "ul"
             ) {
 
                 closeList();
 
-                html += "<ul>";
+                html +=
+                    "<ul>";
 
-                listType = "ul";
+                listType =
+                    "ul";
             }
 
             html +=
@@ -1794,17 +2024,22 @@ function markdownToHtml(markdown) {
                 /^\s*\d+\.\s+(.+)$/
             );
 
-        if (olMatch) {
+        if (
+            olMatch
+        ) {
 
             if (
-                listType !== "ol"
+                listType !==
+                "ol"
             ) {
 
                 closeList();
 
-                html += "<ol>";
+                html +=
+                    "<ol>";
 
-                listType = "ol";
+                listType =
+                    "ol";
             }
 
             html +=
@@ -1829,39 +2064,69 @@ function markdownToHtml(markdown) {
         closeList();
 
         const paragraphLines =
-            [line];
+            [
+                line
+            ];
 
         index++;
 
         while (
-            index < lines.length
+            index <
+            lines.length
         ) {
 
             const next =
                 lines[index];
 
             if (
-                next.trim() === "" ||
+                next.trim() ===
+                    ""
+
+                ||
 
                 next
                     .trim()
-                    .startsWith("```") ||
+                    .startsWith(
+                        "```"
+                    )
+
+                ||
 
                 /^#{1,6}\s+/
-                    .test(next) ||
+                    .test(
+                        next
+                    )
+
+                ||
 
                 /^(\s*)(---|\*\*\*|___)(\s*)$/
-                    .test(next) ||
+                    .test(
+                        next
+                    )
+
+                ||
 
                 next
                     .trimStart()
-                    .startsWith(">") ||
+                    .startsWith(
+                        ">"
+                    )
+
+                ||
 
                 /^\s*[-*+]\s+/
-                    .test(next) ||
+                    .test(
+                        next
+                    )
+
+                ||
 
                 /^\s*\d+\.\s+/
-                    .test(next) ||
+                    .test(
+                        next
+                    )
+
+                ||
 
                 isTableHeader(
                     lines,
@@ -1889,22 +2154,56 @@ function markdownToHtml(markdown) {
                             item
                         )
                 )
-                .join("<br>") +
+                .join(
+                    "<br>"
+                ) +
 
             "</p>";
     }
 
 
-    if (inCode) {
+    /*
+       닫히지 않은 Code Block
+    */
 
-        html +=
-            "<pre><code>" +
+    if (
+        inCode
+    ) {
 
-            escapeHtml(
-                codeBuffer.join("\n")
-            ) +
+        if (
+            codeLanguage ===
+            "mermaid"
+        ) {
 
-            "</code></pre>";
+            html +=
+                '<div class="mermaid-wrap">' +
+
+                '<div class="mermaid">' +
+
+                escapeHtml(
+                    codeBuffer.join(
+                        "\n"
+                    )
+                ) +
+
+                '</div>' +
+
+                '</div>';
+
+        }
+        else {
+
+            html +=
+                "<pre><code>" +
+
+                escapeHtml(
+                    codeBuffer.join(
+                        "\n"
+                    )
+                ) +
+
+                "</code></pre>";
+        }
     }
 
 
@@ -1916,20 +2215,25 @@ function markdownToHtml(markdown) {
     function closeList() {
 
         if (
-            listType === "ul"
+            listType ===
+            "ul"
         ) {
 
-            html += "</ul>";
+            html +=
+                "</ul>";
         }
 
         if (
-            listType === "ol"
+            listType ===
+            "ol"
         ) {
 
-            html += "</ol>";
+            html +=
+                "</ol>";
         }
 
-        listType = null;
+        listType =
+            null;
     }
 }
 
@@ -1952,14 +2256,26 @@ function isTableHeader(
     }
 
     const first =
-        lines[index].trim();
+        lines[index]
+            .trim();
 
     const second =
-        lines[index + 1].trim();
+        lines[index + 1]
+            .trim();
 
     if (
-        !first.includes("|") ||
-        !second.includes("|")
+        !first.includes(
+            "|"
+        )
+    ) {
+
+        return false;
+    }
+
+    if (
+        !second.includes(
+            "|"
+        )
     ) {
 
         return false;
@@ -1971,7 +2287,8 @@ function isTableHeader(
         );
 
     if (
-        cells.length === 0
+        cells.length ===
+        0
     ) {
 
         return false;
@@ -1979,6 +2296,7 @@ function isTableHeader(
 
     return cells.every(
         cell =>
+
             /^:?-{3,}:?$/
                 .test(
                     cell.trim()
@@ -1994,24 +2312,35 @@ function parseTable(
 
     const headers =
         splitTableRow(
-            lines[startIndex]
+            lines[
+                startIndex
+            ]
         );
 
     let index =
         startIndex + 2;
 
-    const rows = [];
+    const rows =
+        [];
 
     while (
-        index < lines.length
+        index <
+        lines.length
     ) {
 
         const line =
-            lines[index].trim();
+            lines[index]
+                .trim();
 
         if (
-            line === "" ||
-            !line.includes("|")
+            line ===
+                ""
+
+            ||
+
+            !line.includes(
+                "|"
+            )
         ) {
 
             break;
@@ -2052,16 +2381,19 @@ function parseTable(
         of rows
     ) {
 
-        html += "<tr>";
+        html +=
+            "<tr>";
 
         for (
             let column = 0;
-            column < headers.length;
+            column <
+                headers.length;
             column++
         ) {
 
             const value =
-                row[column] ?? "";
+                row[column] ??
+                "";
 
             html +=
                 "<td>" +
@@ -2073,34 +2405,46 @@ function parseTable(
                 "</td>";
         }
 
-        html += "</tr>";
+        html +=
+            "</tr>";
     }
 
     html +=
         "</tbody></table>";
 
     return {
-        html: html,
-        nextIndex: index
+        html:
+            html,
+
+        nextIndex:
+            index
     };
 }
 
 
-function splitTableRow(line) {
+function splitTableRow(
+    line
+) {
 
     let value =
         line.trim();
 
     if (
-        value.startsWith("|")
+        value.startsWith(
+            "|"
+        )
     ) {
 
         value =
-            value.substring(1);
+            value.substring(
+                1
+            );
     }
 
     if (
-        value.endsWith("|")
+        value.endsWith(
+            "|"
+        )
     ) {
 
         value =
@@ -2110,7 +2454,9 @@ function splitTableRow(line) {
             );
     }
 
-    return value.split("|");
+    return value.split(
+        "|"
+    );
 }
 
 
@@ -2118,10 +2464,18 @@ function splitTableRow(line) {
    Inline Markdown
 ========================================================= */
 
-function inlineMarkdown(text) {
+function inlineMarkdown(
+    text
+) {
 
     let value =
-        escapeHtml(text);
+        escapeHtml(
+            text
+        );
+
+    /*
+       Inline Code
+    */
 
     value =
         value.replace(
@@ -2129,16 +2483,22 @@ function inlineMarkdown(text) {
             "<code>$1</code>"
         );
 
+
+    /*
+       Bold
+    */
+
     value =
         value.replace(
             /\*\*(.+?)\*\*/g,
             "<strong>$1</strong>"
         );
 
+
     /*
-       lookbehind를 사용하지 않는다.
-       회사 PC의 오래된 브라우저에서도
-       최대한 오류가 나지 않도록 단순 처리.
+       Italic
+
+       lookbehind를 사용하지 않음.
     */
 
     value =
@@ -2148,1551 +2508,6 @@ function inlineMarkdown(text) {
         );
 
     return value;
-}
-
-
-/* =========================================================
-   Built-in Mermaid Renderer
-========================================================= */
-
-function renderBuiltInMermaid() {
-
-    const elements =
-        document.querySelectorAll(
-            ".builtin-mermaid"
-        );
-
-    elements.forEach(
-        element => {
-
-            const sourceElement =
-                element.querySelector(
-                    ".mermaid-source"
-                );
-
-            if (!sourceElement) {
-
-                return;
-            }
-
-            const source =
-                sourceElement.textContent;
-
-            try {
-
-                const graph =
-                    parseMermaidFlowchart(
-                        source
-                    );
-
-                element.innerHTML =
-                    createFlowchartSvg(
-                        graph
-                    );
-            }
-            catch (error) {
-
-                console.error(
-                    "Flowchart 렌더링 오류",
-                    error
-                );
-
-                element.innerHTML =
-                    '<div class="mermaid-error">' +
-                    'Flowchart를 표시하지 못했습니다.\n\n' +
-                    escapeHtml(
-                        error.message
-                    ) +
-                    '</div>';
-            }
-        }
-    );
-}
-
-
-/* =========================================================
-   Mermaid Parser
-========================================================= */
-
-function parseMermaidFlowchart(source) {
-
-    const lines =
-        source
-            .replace(/\r\n/g, "\n")
-            .split("\n");
-
-    const graph = {
-        direction: "TD",
-        nodes: new Map(),
-        edges: []
-    };
-
-    let firstMeaningfulLine =
-        true;
-
-    for (
-        let i = 0;
-        i < lines.length;
-        i++
-    ) {
-
-        let line =
-            lines[i].trim();
-
-        if (
-            !line ||
-            line.startsWith("%%")
-        ) {
-
-            continue;
-        }
-
-        /*
-           flowchart TD
-           graph TD
-        */
-
-        if (
-            firstMeaningfulLine
-        ) {
-
-            const header =
-                line.match(
-                    /^(?:flowchart|graph)\s+(TD|TB|BT|LR|RL)\s*;?$/i
-                );
-
-            if (header) {
-
-                graph.direction =
-                    header[1]
-                        .toUpperCase();
-
-                firstMeaningfulLine =
-                    false;
-
-                continue;
-            }
-
-            firstMeaningfulLine =
-                false;
-        }
-
-        /*
-           subgraph / end는
-           현재 경량 renderer에서는
-           구조 계산에서 제외한다.
-        */
-
-        if (
-            /^subgraph\b/i.test(line) ||
-            /^end\s*;?$/i.test(line)
-        ) {
-
-            continue;
-        }
-
-        /*
-           Mermaid는 한 줄 끝에 ;를
-           사용할 수 있으므로 제거.
-        */
-
-        if (
-            line.endsWith(";")
-        ) {
-
-            line =
-                line.substring(
-                    0,
-                    line.length - 1
-                )
-                .trim();
-        }
-
-        /*
-           Edge가 있는 줄
-        */
-
-        if (
-            line.includes("-->") ||
-            line.includes("---")
-        ) {
-
-            parseMermaidEdgeLine(
-                line,
-                graph
-            );
-
-            continue;
-        }
-
-        /*
-           Node 단독 선언
-        */
-
-        const node =
-            parseMermaidNode(
-                line
-            );
-
-        if (node) {
-
-            addMermaidNode(
-                graph,
-                node
-            );
-        }
-    }
-
-    if (
-        graph.nodes.size === 0
-    ) {
-
-        throw new Error(
-            "표시할 Flowchart Node를 찾지 못했습니다."
-        );
-    }
-
-    return graph;
-}
-
-
-/* =========================================================
-   Edge Parser
-========================================================= */
-
-function parseMermaidEdgeLine(
-    line,
-    graph
-) {
-
-    /*
-       지원 예:
-
-       A --> B
-       A -->|YES| B
-       A --- B
-       A[FE] --> B{Validation}
-    */
-
-    let arrow = null;
-
-    let arrowIndex =
-        line.indexOf("-->");
-
-    if (
-        arrowIndex >= 0
-    ) {
-
-        arrow = "-->";
-    }
-    else {
-
-        arrowIndex =
-            line.indexOf("---");
-
-        if (
-            arrowIndex >= 0
-        ) {
-
-            arrow = "---";
-        }
-    }
-
-    if (
-        !arrow
-    ) {
-
-        return;
-    }
-
-    const leftText =
-        line
-            .substring(
-                0,
-                arrowIndex
-            )
-            .trim();
-
-    let rightText =
-        line
-            .substring(
-                arrowIndex +
-                arrow.length
-            )
-            .trim();
-
-    let label = "";
-
-    /*
-       -->|YES| B
-    */
-
-    if (
-        rightText.startsWith("|")
-    ) {
-
-        const secondBar =
-            rightText.indexOf(
-                "|",
-                1
-            );
-
-        if (
-            secondBar > 0
-        ) {
-
-            label =
-                rightText
-                    .substring(
-                        1,
-                        secondBar
-                    )
-                    .trim();
-
-            rightText =
-                rightText
-                    .substring(
-                        secondBar + 1
-                    )
-                    .trim();
-        }
-    }
-
-    const leftNode =
-        parseMermaidNode(
-            leftText
-        );
-
-    const rightNode =
-        parseMermaidNode(
-            rightText
-        );
-
-    if (
-        !leftNode ||
-        !rightNode
-    ) {
-
-        return;
-    }
-
-    addMermaidNode(
-        graph,
-        leftNode
-    );
-
-    addMermaidNode(
-        graph,
-        rightNode
-    );
-
-    graph.edges.push({
-        from:
-            leftNode.id,
-
-        to:
-            rightNode.id,
-
-        label:
-            label,
-
-        arrow:
-            arrow
-    });
-}
-
-
-/* =========================================================
-   Node Parser
-========================================================= */
-
-function parseMermaidNode(text) {
-
-    text =
-        text.trim();
-
-    if (!text) {
-
-        return null;
-    }
-
-    /*
-       ID{Condition}
-    */
-
-    let match =
-        text.match(
-            /^([A-Za-z0-9_.:-]+)\{(.+)\}$/
-        );
-
-    if (match) {
-
-        return {
-            id:
-                match[1],
-
-            label:
-                cleanMermaidLabel(
-                    match[2]
-                ),
-
-            shape:
-                "condition"
-        };
-    }
-
-    /*
-       ID([Rounded])
-    */
-
-    match =
-        text.match(
-            /^([A-Za-z0-9_.:-]+)$begin:math:text$\\\[\(\.\+\)\\\]$end:math:text$$/
-        );
-
-    if (match) {
-
-        return {
-            id:
-                match[1],
-
-            label:
-                cleanMermaidLabel(
-                    match[2]
-                ),
-
-            shape:
-                "rounded"
-        };
-    }
-
-    /*
-       ID(text)
-    */
-
-    match =
-        text.match(
-            /^([A-Za-z0-9_.:-]+)$begin:math:text$\(\.\+\)$end:math:text$$/
-        );
-
-    if (match) {
-
-        return {
-            id:
-                match[1],
-
-            label:
-                cleanMermaidLabel(
-                    match[2]
-                ),
-
-            shape:
-                "rounded"
-        };
-    }
-
-    /*
-       ID[text]
-    */
-
-    match =
-        text.match(
-            /^([A-Za-z0-9_.:-]+)$begin:math:display$\(\.\+\)$end:math:display$$/
-        );
-
-    if (match) {
-
-        return {
-            id:
-                match[1],
-
-            label:
-                cleanMermaidLabel(
-                    match[2]
-                ),
-
-            shape:
-                "rect"
-        };
-    }
-
-    /*
-       ID["text"]
-    */
-
-    match =
-        text.match(
-            /^([A-Za-z0-9_.:-]+)$begin:math:display$\"\(\.\+\)\"$end:math:display$$/
-        );
-
-    if (match) {
-
-        return {
-            id:
-                match[1],
-
-            label:
-                cleanMermaidLabel(
-                    match[2]
-                ),
-
-            shape:
-                "rect"
-        };
-    }
-
-    /*
-       ID
-    */
-
-    match =
-        text.match(
-            /^([A-Za-z0-9_.:-]+)$/
-        );
-
-    if (match) {
-
-        return {
-            id:
-                match[1],
-
-            label:
-                match[1],
-
-            shape:
-                "rect"
-        };
-    }
-
-    return null;
-}
-
-
-function cleanMermaidLabel(value) {
-
-    let result =
-        String(value)
-            .trim();
-
-    if (
-        result.startsWith('"') &&
-        result.endsWith('"')
-    ) {
-
-        result =
-            result.substring(
-                1,
-                result.length - 1
-            );
-    }
-
-    /*
-       Mermaid에서 흔히 쓰는 <br/>
-    */
-
-    result =
-        result.replace(
-            /<br\s*\/?>/gi,
-            "\n"
-        );
-
-    return result;
-}
-
-
-function addMermaidNode(
-    graph,
-    node
-) {
-
-    if (
-        graph.nodes.has(
-            node.id
-        )
-    ) {
-
-        const old =
-            graph.nodes.get(
-                node.id
-            );
-
-        /*
-           단순 ID로 먼저 등록됐다가
-           나중에 실제 label 선언이 나오면
-           실제 선언으로 교체.
-        */
-
-        if (
-            old.label === old.id &&
-            node.label !== node.id
-        ) {
-
-            graph.nodes.set(
-                node.id,
-                node
-            );
-        }
-
-        return;
-    }
-
-    graph.nodes.set(
-        node.id,
-        node
-    );
-}
-
-
-/* =========================================================
-   SVG Flowchart
-========================================================= */
-
-function createFlowchartSvg(
-    graph
-) {
-
-    const nodes =
-        Array.from(
-            graph.nodes.values()
-        );
-
-    const horizontal =
-        graph.direction === "LR" ||
-        graph.direction === "RL";
-
-    const reverse =
-        graph.direction === "BT" ||
-        graph.direction === "RL";
-
-    const nodeWidth =
-        220;
-
-    const nodeHeight =
-        68;
-
-    const gapX =
-        100;
-
-    const gapY =
-        80;
-
-    /*
-       간단한 Layer 계산
-    */
-
-    const levels =
-        calculateGraphLevels(
-            graph
-        );
-
-    let maxLevel = 0;
-
-    levels.forEach(
-        level => {
-
-            if (
-                level > maxLevel
-            ) {
-
-                maxLevel =
-                    level;
-            }
-        }
-    );
-
-    const levelGroups =
-        new Map();
-
-    nodes.forEach(
-        node => {
-
-            let level =
-                levels.get(
-                    node.id
-                ) || 0;
-
-            if (reverse) {
-
-                level =
-                    maxLevel -
-                    level;
-            }
-
-            if (
-                !levelGroups.has(
-                    level
-                )
-            ) {
-
-                levelGroups.set(
-                    level,
-                    []
-                );
-            }
-
-            levelGroups
-                .get(level)
-                .push(node);
-        }
-    );
-
-    const positions =
-        new Map();
-
-    let maxItems =
-        1;
-
-    levelGroups.forEach(
-        items => {
-
-            if (
-                items.length >
-                maxItems
-            ) {
-
-                maxItems =
-                    items.length;
-            }
-        }
-    );
-
-    const margin =
-        60;
-
-    let width;
-    let height;
-
-    if (horizontal) {
-
-        width =
-            margin * 2 +
-            (maxLevel + 1) *
-            nodeWidth +
-            maxLevel *
-            gapX;
-
-        height =
-            margin * 2 +
-            maxItems *
-            nodeHeight +
-            Math.max(
-                0,
-                maxItems - 1
-            ) *
-            gapY;
-    }
-    else {
-
-        width =
-            margin * 2 +
-            maxItems *
-            nodeWidth +
-            Math.max(
-                0,
-                maxItems - 1
-            ) *
-            gapX;
-
-        height =
-            margin * 2 +
-            (maxLevel + 1) *
-            nodeHeight +
-            maxLevel *
-            gapY;
-    }
-
-    /*
-       최소 크기
-    */
-
-    width =
-        Math.max(
-            width,
-            600
-        );
-
-    height =
-        Math.max(
-            height,
-            260
-        );
-
-
-    /*
-       Node 위치
-    */
-
-    levelGroups.forEach(
-        (items, level) => {
-
-            items.forEach(
-                (node, itemIndex) => {
-
-                    let x;
-                    let y;
-
-                    if (horizontal) {
-
-                        x =
-                            margin +
-                            level *
-                            (
-                                nodeWidth +
-                                gapX
-                            );
-
-                        const totalHeight =
-                            items.length *
-                            nodeHeight +
-                            Math.max(
-                                0,
-                                items.length - 1
-                            ) *
-                            gapY;
-
-                        const startY =
-                            (
-                                height -
-                                totalHeight
-                            ) / 2;
-
-                        y =
-                            startY +
-                            itemIndex *
-                            (
-                                nodeHeight +
-                                gapY
-                            );
-                    }
-                    else {
-
-                        y =
-                            margin +
-                            level *
-                            (
-                                nodeHeight +
-                                gapY
-                            );
-
-                        const totalWidth =
-                            items.length *
-                            nodeWidth +
-                            Math.max(
-                                0,
-                                items.length - 1
-                            ) *
-                            gapX;
-
-                        const startX =
-                            (
-                                width -
-                                totalWidth
-                            ) / 2;
-
-                        x =
-                            startX +
-                            itemIndex *
-                            (
-                                nodeWidth +
-                                gapX
-                            );
-                    }
-
-                    positions.set(
-                        node.id,
-                        {
-                            x: x,
-                            y: y,
-                            width:
-                                nodeWidth,
-                            height:
-                                nodeHeight
-                        }
-                    );
-                }
-            );
-        }
-    );
-
-
-    /*
-       SVG
-    */
-
-    let svg =
-        '<svg ' +
-        'class="mermaid-svg" ' +
-        'xmlns="http://www.w3.org/2000/svg" ' +
-        'width="' +
-        width +
-        '" ' +
-        'height="' +
-        height +
-        '" ' +
-        'viewBox="0 0 ' +
-        width +
-        ' ' +
-        height +
-        '">' +
-
-        '<defs>' +
-
-            '<marker ' +
-                'id="flow-arrow" ' +
-                'viewBox="0 0 10 10" ' +
-                'refX="9" ' +
-                'refY="5" ' +
-                'markerWidth="7" ' +
-                'markerHeight="7" ' +
-                'orient="auto-start-reverse">' +
-
-                '<path ' +
-                    'd="M 0 0 L 10 5 L 0 10 z" ' +
-                    'fill="#57606a">' +
-                '</path>' +
-
-            '</marker>' +
-
-        '</defs>';
-
-
-    /*
-       Edge 먼저 그림
-    */
-
-    graph.edges.forEach(
-        edge => {
-
-            const from =
-                positions.get(
-                    edge.from
-                );
-
-            const to =
-                positions.get(
-                    edge.to
-                );
-
-            if (
-                !from ||
-                !to
-            ) {
-
-                return;
-            }
-
-            const edgeData =
-                createEdgePath(
-                    from,
-                    to,
-                    horizontal
-                );
-
-            svg +=
-                '<path ' +
-                    'class="mermaid-edge" ' +
-                    'd="' +
-                    edgeData.path +
-                    '"' +
-
-                    (
-                        edge.arrow === "-->"
-                            ? ' marker-end="url(#flow-arrow)"'
-                            : ""
-                    ) +
-
-                '></path>';
-
-
-            if (
-                edge.label
-            ) {
-
-                const labelWidth =
-                    Math.max(
-                        42,
-                        edge.label.length *
-                        8 +
-                        16
-                    );
-
-                svg +=
-                    '<rect ' +
-                        'class="mermaid-edge-label-bg" ' +
-                        'x="' +
-                        (
-                            edgeData.labelX -
-                            labelWidth / 2
-                        ) +
-                        '" ' +
-                        'y="' +
-                        (
-                            edgeData.labelY -
-                            11
-                        ) +
-                        '" ' +
-                        'width="' +
-                        labelWidth +
-                        '" ' +
-                        'height="22" ' +
-                        'rx="4">' +
-                    '</rect>';
-
-                svg +=
-                    '<text ' +
-                        'class="mermaid-edge-label" ' +
-                        'x="' +
-                        edgeData.labelX +
-                        '" ' +
-                        'y="' +
-                        (
-                            edgeData.labelY +
-                            4
-                        ) +
-                        '" ' +
-                        'text-anchor="middle">' +
-
-                        escapeSvgText(
-                            edge.label
-                        ) +
-
-                    '</text>';
-            }
-        }
-    );
-
-
-    /*
-       Node
-    */
-
-    nodes.forEach(
-        node => {
-
-            const pos =
-                positions.get(
-                    node.id
-                );
-
-            if (!pos) {
-
-                return;
-            }
-
-            svg +=
-                createSvgNode(
-                    node,
-                    pos
-                );
-        }
-    );
-
-
-    svg +=
-        "</svg>";
-
-    return svg;
-}
-
-
-/* =========================================================
-   Graph Levels
-========================================================= */
-
-function calculateGraphLevels(
-    graph
-) {
-
-    const levels =
-        new Map();
-
-    const incoming =
-        new Map();
-
-    graph.nodes.forEach(
-        (node, id) => {
-
-            incoming.set(
-                id,
-                0
-            );
-
-            levels.set(
-                id,
-                0
-            );
-        }
-    );
-
-    graph.edges.forEach(
-        edge => {
-
-            incoming.set(
-                edge.to,
-                (
-                    incoming.get(
-                        edge.to
-                    ) || 0
-                ) + 1
-            );
-        }
-    );
-
-    const queue = [];
-
-    incoming.forEach(
-        (count, id) => {
-
-            if (
-                count === 0
-            ) {
-
-                queue.push(id);
-            }
-        }
-    );
-
-    /*
-       순환 구조 때문에 시작점이 없으면
-       첫 번째 Node부터 시작.
-    */
-
-    if (
-        queue.length === 0 &&
-        graph.nodes.size > 0
-    ) {
-
-        queue.push(
-            graph.nodes
-                .keys()
-                .next()
-                .value
-        );
-    }
-
-    const processed =
-        new Set();
-
-    let safety =
-        0;
-
-    while (
-        queue.length > 0 &&
-        safety < 10000
-    ) {
-
-        safety++;
-
-        const current =
-            queue.shift();
-
-        processed.add(
-            current
-        );
-
-        const currentLevel =
-            levels.get(
-                current
-            ) || 0;
-
-        graph.edges.forEach(
-            edge => {
-
-                if (
-                    edge.from !==
-                    current
-                ) {
-
-                    return;
-                }
-
-                const nextLevel =
-                    Math.max(
-                        levels.get(
-                            edge.to
-                        ) || 0,
-
-                        currentLevel + 1
-                    );
-
-                levels.set(
-                    edge.to,
-                    nextLevel
-                );
-
-                const count =
-                    (
-                        incoming.get(
-                            edge.to
-                        ) || 0
-                    ) - 1;
-
-                incoming.set(
-                    edge.to,
-                    count
-                );
-
-                if (
-                    count <= 0 &&
-                    !processed.has(
-                        edge.to
-                    )
-                ) {
-
-                    queue.push(
-                        edge.to
-                    );
-                }
-            }
-        );
-    }
-
-    /*
-       아직 처리되지 않은 순환 Node
-    */
-
-    graph.nodes.forEach(
-        (node, id) => {
-
-            if (
-                !levels.has(id)
-            ) {
-
-                levels.set(
-                    id,
-                    0
-                );
-            }
-        }
-    );
-
-    return levels;
-}
-
-
-/* =========================================================
-   Edge SVG
-========================================================= */
-
-function createEdgePath(
-    from,
-    to,
-    horizontal
-) {
-
-    let startX;
-    let startY;
-    let endX;
-    let endY;
-
-    if (horizontal) {
-
-        startX =
-            from.x +
-            from.width;
-
-        startY =
-            from.y +
-            from.height / 2;
-
-        endX =
-            to.x;
-
-        endY =
-            to.y +
-            to.height / 2;
-
-        const middleX =
-            (
-                startX +
-                endX
-            ) / 2;
-
-        return {
-            path:
-                "M " +
-                startX +
-                " " +
-                startY +
-
-                " C " +
-                middleX +
-                " " +
-                startY +
-
-                ", " +
-                middleX +
-                " " +
-                endY +
-
-                ", " +
-                endX +
-                " " +
-                endY,
-
-            labelX:
-                middleX,
-
-            labelY:
-                (
-                    startY +
-                    endY
-                ) / 2
-        };
-    }
-
-    startX =
-        from.x +
-        from.width / 2;
-
-    startY =
-        from.y +
-        from.height;
-
-    endX =
-        to.x +
-        to.width / 2;
-
-    endY =
-        to.y;
-
-    const middleY =
-        (
-            startY +
-            endY
-        ) / 2;
-
-    return {
-        path:
-            "M " +
-            startX +
-            " " +
-            startY +
-
-            " C " +
-            startX +
-            " " +
-            middleY +
-
-            ", " +
-            endX +
-            " " +
-            middleY +
-
-            ", " +
-            endX +
-            " " +
-            endY,
-
-        labelX:
-            (
-                startX +
-                endX
-            ) / 2,
-
-        labelY:
-            middleY
-    };
-}
-
-
-/* =========================================================
-   Node SVG
-========================================================= */
-
-function createSvgNode(
-    node,
-    pos
-) {
-
-    let svg = "";
-
-    const centerX =
-        pos.x +
-        pos.width / 2;
-
-    const centerY =
-        pos.y +
-        pos.height / 2;
-
-
-    if (
-        node.shape ===
-        "condition"
-    ) {
-
-        const top =
-            centerX +
-            "," +
-            pos.y;
-
-        const right =
-            (
-                pos.x +
-                pos.width
-            ) +
-            "," +
-            centerY;
-
-        const bottom =
-            centerX +
-            "," +
-            (
-                pos.y +
-                pos.height
-            );
-
-        const left =
-            pos.x +
-            "," +
-            centerY;
-
-        svg +=
-            '<polygon ' +
-                'class="mermaid-condition" ' +
-                'points="' +
-                top +
-                " " +
-                right +
-                " " +
-                bottom +
-                " " +
-                left +
-                '">' +
-            '</polygon>';
-    }
-    else {
-
-        const className =
-            node.shape ===
-            "rounded"
-
-                ? "mermaid-rounded"
-
-                : "mermaid-node";
-
-        svg +=
-            '<rect ' +
-                'class="' +
-                className +
-                '" ' +
-                'x="' +
-                pos.x +
-                '" ' +
-                'y="' +
-                pos.y +
-                '" ' +
-                'width="' +
-                pos.width +
-                '" ' +
-                'height="' +
-                pos.height +
-                '" ' +
-                'rx="' +
-                (
-                    node.shape ===
-                    "rounded"
-                        ? 28
-                        : 6
-                ) +
-                '">' +
-            '</rect>';
-    }
-
-
-    svg +=
-        createSvgMultilineText(
-            node.label,
-            centerX,
-            centerY
-        );
-
-    return svg;
-}
-
-
-/* =========================================================
-   Multiline Text
-========================================================= */
-
-function createSvgMultilineText(
-    text,
-    x,
-    y
-) {
-
-    const lines =
-        String(text)
-            .split("\n");
-
-    const lineHeight =
-        17;
-
-    const startY =
-        y -
-        (
-            (
-                lines.length - 1
-            ) *
-            lineHeight
-        ) / 2;
-
-    let svg =
-        '<text ' +
-            'class="mermaid-node-text" ' +
-            'text-anchor="middle">';
-
-    lines.forEach(
-        (line, index) => {
-
-            svg +=
-                '<tspan ' +
-                    'x="' +
-                    x +
-                    '" ' +
-                    'y="' +
-                    (
-                        startY +
-                        index *
-                        lineHeight
-                    ) +
-                    '" ' +
-                    'dominant-baseline="middle">' +
-
-                    escapeSvgText(
-                        line
-                    ) +
-
-                '</tspan>';
-        }
-    );
-
-    svg +=
-        "</text>";
-
-    return svg;
-}
-
-
-/* =========================================================
-   SVG Escape
-========================================================= */
-
-function escapeSvgText(
-    value
-) {
-
-    return String(value)
-
-        .replace(/&/g, "&amp;")
-
-        .replace(/</g, "&lt;")
-
-        .replace(/>/g, "&gt;")
-
-        .replace(/"/g, "&quot;")
-
-        .replace(/'/g, "&#039;");
 }
 
 </script>
