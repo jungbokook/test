@@ -30,7 +30,8 @@ header {
 .status {
     width: 90%;
     max-width: 90%;
-    margin: auto;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .controls {
@@ -67,6 +68,10 @@ button {
     cursor: pointer;
 }
 
+button:hover {
+    background: #f8fafc;
+}
+
 button.active {
     background: #1f2937;
     color: white;
@@ -99,23 +104,116 @@ button.active {
     overflow-x: auto;
 }
 
+.viewer h1 {
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 10px;
+}
+
+.viewer h2 {
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 7px;
+    margin-top: 32px;
+}
+
+.viewer h3 {
+    margin-top: 26px;
+}
+
+.viewer p {
+    line-height: 1.7;
+}
+
+.viewer ul,
+.viewer ol {
+    line-height: 1.7;
+}
+
+.viewer blockquote {
+    margin-left: 0;
+    padding: 8px 16px;
+    border-left: 4px solid #cbd5e1;
+    background: #f8fafc;
+}
+
 pre {
     background: #f6f8fa;
     padding: 14px;
     overflow: auto;
     border-radius: 8px;
+    line-height: 1.5;
+}
+
+code {
+    font-family: Consolas, "Courier New", monospace;
+}
+
+:not(pre) > code {
+    background: #f1f5f9;
+    padding: 2px 5px;
+    border-radius: 4px;
 }
 
 table {
     border-collapse: collapse;
     display: block;
     overflow-x: auto;
+    margin: 15px 0;
 }
 
 th,
 td {
     border: 1px solid #ddd;
     padding: 8px;
+    text-align: left;
+}
+
+th {
+    background: #f8fafc;
+}
+
+/* =========================================================
+   Flow Chart
+========================================================= */
+
+.flow-wrapper {
+    margin: 22px 0;
+    padding: 18px;
+    border: 1px solid #dbe2ea;
+    border-radius: 12px;
+    background: #fbfdff;
+    overflow-x: auto;
+}
+
+.flow-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 12px;
+}
+
+.flow-download {
+    padding: 7px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    background: white;
+    cursor: pointer;
+}
+
+.flow-download:hover {
+    background: #f1f5f9;
+}
+
+.flow-svg {
+    display: block;
+    margin: auto;
+    min-width: 700px;
+}
+
+.flow-error {
+    padding: 12px;
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    border-radius: 8px;
+    white-space: pre-wrap;
 }
 
 @media(max-width:700px) {
@@ -205,8 +303,6 @@ td {
     문서를 선택하면 여기에 표시됩니다.
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
 <script>
 
 const q = s => document.querySelector(s);
@@ -236,7 +332,6 @@ const esc = s =>
 
 
 async function dir(handle, name) {
-
     try {
         return await handle.getDirectoryHandle(name);
     }
@@ -247,7 +342,6 @@ async function dir(handle, name) {
 
 
 async function file(handle, name) {
-
     try {
         return await handle.getFileHandle(name);
     }
@@ -358,18 +452,1514 @@ function childLabel(name, type) {
 function active(button) {
 
     document
-        .querySelectorAll(
-            "button.active"
-        )
+        .querySelectorAll("button.active")
         .forEach(
             item =>
-                item.classList.remove(
-                    "active"
-                )
+                item.classList.remove("active")
         );
 
     if (button)
         button.classList.add("active");
+}
+
+
+/* =========================================================
+   간단 Markdown Renderer
+   외부 Library 사용 안 함
+========================================================= */
+
+function inlineMarkdown(text) {
+
+    let result = esc(text);
+
+    result = result.replace(
+        /`([^`]+)`/g,
+        "<code>$1</code>"
+    );
+
+    result = result.replace(
+        /\*\*([^*]+)\*\*/g,
+        "<strong>$1</strong>"
+    );
+
+    result = result.replace(
+        /\*([^*]+)\*/g,
+        "<em>$1</em>"
+    );
+
+    return result;
+}
+
+
+function renderTable(lines) {
+
+    if (lines.length < 2)
+        return null;
+
+    const separator =
+        lines[1]
+            .trim()
+            .replace(/^\||\|$/g, "")
+            .split("|")
+            .map(v => v.trim());
+
+    const isTable =
+        separator.every(
+            v => /^:?-{3,}:?$/.test(v)
+        );
+
+    if (!isTable)
+        return null;
+
+    const parseRow = line =>
+        line
+            .trim()
+            .replace(/^\||\|$/g, "")
+            .split("|")
+            .map(v => v.trim());
+
+    const header =
+        parseRow(lines[0]);
+
+    let html = "<table><thead><tr>";
+
+    header.forEach(cell => {
+        html +=
+            "<th>" +
+            inlineMarkdown(cell) +
+            "</th>";
+    });
+
+    html += "</tr></thead><tbody>";
+
+    for (let i = 2; i < lines.length; i++) {
+
+        if (!lines[i].includes("|"))
+            break;
+
+        const cells =
+            parseRow(lines[i]);
+
+        html += "<tr>";
+
+        cells.forEach(cell => {
+            html +=
+                "<td>" +
+                inlineMarkdown(cell) +
+                "</td>";
+        });
+
+        html += "</tr>";
+    }
+
+    html += "</tbody></table>";
+
+    return html;
+}
+
+
+function markdownToHtml(markdown) {
+
+    /*
+     * Code Block을 먼저 별도 Token으로 보관한다.
+     * flow block 역시 여기서 보관한다.
+     */
+
+    const blocks = [];
+
+    markdown =
+        markdown.replace(
+            /```([^\n]*)\n([\s\S]*?)```/g,
+            (_, lang, body) => {
+
+                const index =
+                    blocks.length;
+
+                blocks.push({
+                    lang: lang.trim().toLowerCase(),
+                    body
+                });
+
+                return (
+                    "\n@@BLOCK_" +
+                    index +
+                    "@@\n"
+                );
+            }
+        );
+
+
+    const lines =
+        markdown.replace(/\r/g, "")
+                .split("\n");
+
+    let html = "";
+    let i = 0;
+    let inUl = false;
+    let inOl = false;
+
+
+    function closeLists() {
+
+        if (inUl) {
+            html += "</ul>";
+            inUl = false;
+        }
+
+        if (inOl) {
+            html += "</ol>";
+            inOl = false;
+        }
+    }
+
+
+    while (i < lines.length) {
+
+        const line = lines[i];
+
+
+        /*
+         * Block Token
+         */
+
+        const blockMatch =
+            line.trim().match(
+                /^@@BLOCK_(\d+)@@$/
+            );
+
+        if (blockMatch) {
+
+            closeLists();
+
+            const block =
+                blocks[
+                    Number(blockMatch[1])
+                ];
+
+            if (block.lang === "flow") {
+
+                html +=
+                    '<div class="flow-source" ' +
+                    'data-flow="' +
+                    encodeURIComponent(
+                        block.body
+                    ) +
+                    '"></div>';
+            }
+            else {
+
+                html +=
+                    "<pre><code>" +
+                    esc(block.body) +
+                    "</code></pre>";
+            }
+
+            i++;
+            continue;
+        }
+
+
+        /*
+         * Heading
+         */
+
+        const heading =
+            line.match(
+                /^(#{1,6})\s+(.*)$/
+            );
+
+        if (heading) {
+
+            closeLists();
+
+            const level =
+                heading[1].length;
+
+            html +=
+                "<h" + level + ">" +
+                inlineMarkdown(
+                    heading[2]
+                ) +
+                "</h" + level + ">";
+
+            i++;
+            continue;
+        }
+
+
+        /*
+         * Horizontal Rule
+         */
+
+        if (/^\s*---+\s*$/.test(line)) {
+
+            closeLists();
+            html += "<hr>";
+            i++;
+            continue;
+        }
+
+
+        /*
+         * Table
+         */
+
+        if (
+            line.includes("|") &&
+            i + 1 < lines.length &&
+            lines[i + 1].includes("|")
+        ) {
+
+            let tableLines = [];
+            let j = i;
+
+            while (
+                j < lines.length &&
+                lines[j].includes("|") &&
+                lines[j].trim() !== ""
+            ) {
+                tableLines.push(
+                    lines[j]
+                );
+                j++;
+            }
+
+            const table =
+                renderTable(tableLines);
+
+            if (table) {
+
+                closeLists();
+                html += table;
+                i = j;
+                continue;
+            }
+        }
+
+
+        /*
+         * Unordered List
+         */
+
+        const ul =
+            line.match(
+                /^\s*[-*+]\s+(.*)$/
+            );
+
+        if (ul) {
+
+            if (inOl) {
+                html += "</ol>";
+                inOl = false;
+            }
+
+            if (!inUl) {
+                html += "<ul>";
+                inUl = true;
+            }
+
+            html +=
+                "<li>" +
+                inlineMarkdown(
+                    ul[1]
+                ) +
+                "</li>";
+
+            i++;
+            continue;
+        }
+
+
+        /*
+         * Ordered List
+         */
+
+        const ol =
+            line.match(
+                /^\s*\d+\.\s+(.*)$/
+            );
+
+        if (ol) {
+
+            if (inUl) {
+                html += "</ul>";
+                inUl = false;
+            }
+
+            if (!inOl) {
+                html += "<ol>";
+                inOl = true;
+            }
+
+            html +=
+                "<li>" +
+                inlineMarkdown(
+                    ol[1]
+                ) +
+                "</li>";
+
+            i++;
+            continue;
+        }
+
+
+        /*
+         * Blockquote
+         */
+
+        const quote =
+            line.match(
+                /^\s*>\s?(.*)$/
+            );
+
+        if (quote) {
+
+            closeLists();
+
+            html +=
+                "<blockquote>" +
+                inlineMarkdown(
+                    quote[1]
+                ) +
+                "</blockquote>";
+
+            i++;
+            continue;
+        }
+
+
+        /*
+         * Empty
+         */
+
+        if (line.trim() === "") {
+
+            closeLists();
+            i++;
+            continue;
+        }
+
+
+        /*
+         * Paragraph
+         */
+
+        closeLists();
+
+        html +=
+            "<p>" +
+            inlineMarkdown(line) +
+            "</p>";
+
+        i++;
+    }
+
+    closeLists();
+
+    return html;
+}
+
+
+/* =========================================================
+   Flow Parser
+
+   지원 문법:
+
+   [ID] 내용
+   [ID] 내용 -> [NEXT]
+   [ID] 내용 -> [NEXT] : 라벨
+   [ID] 내용 ? 성공 -> [A] | 실패 -> [B]
+
+   예:
+
+   [A] 검색 버튼 클릭 -> [B]
+   [B] Validation ? 성공 -> [C] | 실패 -> [X]
+   [C] Parameter 생성 -> [D]
+   [D] API 호출 -> [E]
+   [E] Response 처리 -> [F]
+   [F] 화면 갱신
+   [X] 메시지 표시 후 종료
+========================================================= */
+
+function parseFlow(source) {
+
+    const nodes = new Map();
+    const edges = [];
+
+    const lines =
+        source
+            .replace(/\r/g, "")
+            .split("\n")
+            .map(v => v.trim())
+            .filter(
+                v =>
+                    v &&
+                    !v.startsWith("#")
+            );
+
+
+    for (const line of lines) {
+
+        /*
+         * 조건 분기
+         *
+         * [B] Validation ? 성공 -> [C] | 실패 -> [X]
+         */
+
+        let match =
+            line.match(
+                /^$begin:math:display$\(\[\^$end:math:display$]+)\]\s*(.*?)\s*\?\s*(.+)$/
+            );
+
+        if (match) {
+
+            const id =
+                match[1].trim();
+
+            const label =
+                match[2].trim();
+
+            nodes.set(
+                id,
+                {
+                    id,
+                    label,
+                    type: "decision"
+                }
+            );
+
+            const branches =
+                match[3].split("|");
+
+            for (const branch of branches) {
+
+                const bm =
+                    branch.trim().match(
+                        /^(.*?)\s*->\s*$begin:math:display$\(\[\^$end:math:display$]+)\]$/
+                    );
+
+                if (!bm)
+                    continue;
+
+                edges.push({
+                    from: id,
+                    to: bm[2].trim(),
+                    label: bm[1].trim()
+                });
+            }
+
+            continue;
+        }
+
+
+        /*
+         * 일반 연결
+         *
+         * [A] 검색 버튼 -> [B]
+         */
+
+        match =
+            line.match(
+                /^$begin:math:display$\(\[\^$end:math:display$]+)\]\s*(.*?)\s*->\s*$begin:math:display$\(\[\^$end:math:display$]+)\](?:\s*:\s*(.*))?$/
+            );
+
+        if (match) {
+
+            const id =
+                match[1].trim();
+
+            nodes.set(
+                id,
+                {
+                    id,
+                    label:
+                        match[2].trim(),
+                    type: "normal"
+                }
+            );
+
+            edges.push({
+                from: id,
+                to: match[3].trim(),
+                label:
+                    match[4]
+                        ? match[4].trim()
+                        : ""
+            });
+
+            continue;
+        }
+
+
+        /*
+         * 연결 없는 Node
+         */
+
+        match =
+            line.match(
+                /^$begin:math:display$\(\[\^$end:math:display$]+)\]\s*(.*)$/
+            );
+
+        if (match) {
+
+            const id =
+                match[1].trim();
+
+            nodes.set(
+                id,
+                {
+                    id,
+                    label:
+                        match[2].trim(),
+                    type: "normal"
+                }
+            );
+        }
+    }
+
+
+    /*
+     * Edge 대상 Node가 아직 선언되지 않은 경우
+     */
+
+    for (const edge of edges) {
+
+        if (!nodes.has(edge.to)) {
+
+            nodes.set(
+                edge.to,
+                {
+                    id: edge.to,
+                    label: edge.to,
+                    type: "normal"
+                }
+            );
+        }
+    }
+
+
+    return {
+        nodes: [...nodes.values()],
+        edges
+    };
+}
+
+
+/* =========================================================
+   Flow Layout
+========================================================= */
+
+function buildFlowLayout(graph) {
+
+    const nodeMap =
+        new Map(
+            graph.nodes.map(
+                n => [n.id, n]
+            )
+        );
+
+    const outgoing =
+        new Map();
+
+    const incoming =
+        new Map();
+
+
+    graph.nodes.forEach(node => {
+
+        outgoing.set(
+            node.id,
+            []
+        );
+
+        incoming.set(
+            node.id,
+            []
+        );
+    });
+
+
+    graph.edges.forEach(edge => {
+
+        if (outgoing.has(edge.from))
+            outgoing
+                .get(edge.from)
+                .push(edge);
+
+        if (incoming.has(edge.to))
+            incoming
+                .get(edge.to)
+                .push(edge);
+    });
+
+
+    let roots =
+        graph.nodes
+            .filter(
+                node =>
+                    (
+                        incoming.get(node.id)
+                        || []
+                    ).length === 0
+            )
+            .map(node => node.id);
+
+
+    if (!roots.length && graph.nodes.length)
+        roots = [graph.nodes[0].id];
+
+
+    /*
+     * BFS로 Depth 계산
+     */
+
+    const depth =
+        new Map();
+
+    const queue = [];
+
+    roots.forEach(rootId => {
+        depth.set(rootId, 0);
+        queue.push(rootId);
+    });
+
+
+    while (queue.length) {
+
+        const id =
+            queue.shift();
+
+        const d =
+            depth.get(id);
+
+        for (
+            const edge
+            of outgoing.get(id) || []
+        ) {
+
+            const nextDepth =
+                d + 1;
+
+            if (
+                !depth.has(edge.to) ||
+                depth.get(edge.to) <
+                    nextDepth
+            ) {
+                depth.set(
+                    edge.to,
+                    nextDepth
+                );
+
+                /*
+                 * 순환 방지용 제한
+                 */
+
+                if (
+                    nextDepth <
+                    graph.nodes.length + 2
+                ) {
+                    queue.push(edge.to);
+                }
+            }
+        }
+    }
+
+
+    /*
+     * 연결되지 않은 Node
+     */
+
+    let fallbackDepth =
+        depth.size
+            ? Math.max(
+                ...depth.values()
+            ) + 1
+            : 0;
+
+    graph.nodes.forEach(node => {
+
+        if (!depth.has(node.id)) {
+            depth.set(
+                node.id,
+                fallbackDepth
+            );
+        }
+    });
+
+
+    const levels =
+        new Map();
+
+    graph.nodes.forEach(node => {
+
+        const d =
+            depth.get(node.id);
+
+        if (!levels.has(d))
+            levels.set(d, []);
+
+        levels.get(d).push(node);
+    });
+
+
+    const NODE_W = 220;
+    const NODE_H = 72;
+    const GAP_X = 90;
+    const GAP_Y = 95;
+    const PAD = 60;
+
+    let maxCount = 1;
+
+    levels.forEach(items => {
+        maxCount =
+            Math.max(
+                maxCount,
+                items.length
+            );
+    });
+
+    const width =
+        Math.max(
+            760,
+            PAD * 2 +
+            maxCount * NODE_W +
+            (maxCount - 1) * GAP_X
+        );
+
+    const maxDepth =
+        levels.size
+            ? Math.max(
+                ...levels.keys()
+            )
+            : 0;
+
+    const height =
+        PAD * 2 +
+        (maxDepth + 1) * NODE_H +
+        maxDepth * GAP_Y;
+
+
+    const positions =
+        new Map();
+
+
+    [...levels.entries()]
+        .sort(
+            (a, b) =>
+                a[0] - b[0]
+        )
+        .forEach(
+            ([level, items]) => {
+
+                const totalWidth =
+                    items.length *
+                        NODE_W +
+                    (
+                        items.length - 1
+                    ) *
+                        GAP_X;
+
+                let startX =
+                    (
+                        width -
+                        totalWidth
+                    ) / 2;
+
+                items.forEach(
+                    (node, index) => {
+
+                        positions.set(
+                            node.id,
+                            {
+                                x:
+                                    startX +
+                                    index *
+                                    (
+                                        NODE_W +
+                                        GAP_X
+                                    ),
+                                y:
+                                    PAD +
+                                    level *
+                                    (
+                                        NODE_H +
+                                        GAP_Y
+                                    ),
+                                w: NODE_W,
+                                h: NODE_H
+                            }
+                        );
+                    }
+                );
+            }
+        );
+
+
+    return {
+        width,
+        height,
+        positions,
+        nodeMap
+    };
+}
+
+
+/* =========================================================
+   SVG Flow Renderer
+========================================================= */
+
+function svgTextLines(text, maxLength = 24) {
+
+    const words =
+        String(text).split(/\s+/);
+
+    const lines = [];
+
+    let current = "";
+
+    for (const word of words) {
+
+        const test =
+            current
+                ? current + " " + word
+                : word;
+
+        if (
+            test.length > maxLength &&
+            current
+        ) {
+            lines.push(current);
+            current = word;
+        }
+        else {
+            current = test;
+        }
+    }
+
+    if (current)
+        lines.push(current);
+
+    return lines.slice(0, 3);
+}
+
+
+function createFlowSvg(source) {
+
+    const graph =
+        parseFlow(source);
+
+    if (!graph.nodes.length)
+        throw new Error(
+            "Flow Node를 찾을 수 없습니다."
+        );
+
+    const layout =
+        buildFlowLayout(graph);
+
+    const NS =
+        "http://www.w3.org/2000/svg";
+
+    const svg =
+        document.createElementNS(
+            NS,
+            "svg"
+        );
+
+    svg.setAttribute(
+        "xmlns",
+        NS
+    );
+
+    svg.setAttribute(
+        "width",
+        layout.width
+    );
+
+    svg.setAttribute(
+        "height",
+        layout.height
+    );
+
+    svg.setAttribute(
+        "viewBox",
+        "0 0 " +
+        layout.width +
+        " " +
+        layout.height
+    );
+
+    svg.classList.add(
+        "flow-svg"
+    );
+
+
+    /*
+     * Background
+     */
+
+    const bg =
+        document.createElementNS(
+            NS,
+            "rect"
+        );
+
+    bg.setAttribute("x", 0);
+    bg.setAttribute("y", 0);
+    bg.setAttribute(
+        "width",
+        layout.width
+    );
+    bg.setAttribute(
+        "height",
+        layout.height
+    );
+    bg.setAttribute(
+        "fill",
+        "#ffffff"
+    );
+
+    svg.appendChild(bg);
+
+
+    /*
+     * Arrow Marker
+     */
+
+    const defs =
+        document.createElementNS(
+            NS,
+            "defs"
+        );
+
+    const marker =
+        document.createElementNS(
+            NS,
+            "marker"
+        );
+
+    const markerId =
+        "arrow-" +
+        Math.random()
+            .toString(36)
+            .slice(2);
+
+    marker.setAttribute(
+        "id",
+        markerId
+    );
+
+    marker.setAttribute(
+        "viewBox",
+        "0 0 10 10"
+    );
+
+    marker.setAttribute(
+        "refX",
+        "9"
+    );
+
+    marker.setAttribute(
+        "refY",
+        "5"
+    );
+
+    marker.setAttribute(
+        "markerWidth",
+        "7"
+    );
+
+    marker.setAttribute(
+        "markerHeight",
+        "7"
+    );
+
+    marker.setAttribute(
+        "orient",
+        "auto-start-reverse"
+    );
+
+    const arrow =
+        document.createElementNS(
+            NS,
+            "path"
+        );
+
+    arrow.setAttribute(
+        "d",
+        "M 0 0 L 10 5 L 0 10 z"
+    );
+
+    arrow.setAttribute(
+        "fill",
+        "#64748b"
+    );
+
+    marker.appendChild(arrow);
+    defs.appendChild(marker);
+    svg.appendChild(defs);
+
+
+    /*
+     * Edge 먼저 그림
+     */
+
+    graph.edges.forEach(edge => {
+
+        const from =
+            layout.positions.get(
+                edge.from
+            );
+
+        const to =
+            layout.positions.get(
+                edge.to
+            );
+
+        if (!from || !to)
+            return;
+
+
+        const x1 =
+            from.x +
+            from.w / 2;
+
+        const y1 =
+            from.y +
+            from.h;
+
+        const x2 =
+            to.x +
+            to.w / 2;
+
+        const y2 =
+            to.y;
+
+
+        const midY =
+            y1 +
+            (y2 - y1) / 2;
+
+
+        const path =
+            document.createElementNS(
+                NS,
+                "path"
+            );
+
+        path.setAttribute(
+            "d",
+            "M " +
+            x1 + " " + y1 +
+            " L " +
+            x1 + " " + midY +
+            " L " +
+            x2 + " " + midY +
+            " L " +
+            x2 + " " + y2
+        );
+
+        path.setAttribute(
+            "fill",
+            "none"
+        );
+
+        path.setAttribute(
+            "stroke",
+            "#64748b"
+        );
+
+        path.setAttribute(
+            "stroke-width",
+            "2"
+        );
+
+        path.setAttribute(
+            "marker-end",
+            "url(#" +
+            markerId +
+            ")"
+        );
+
+        svg.appendChild(path);
+
+
+        if (edge.label) {
+
+            const text =
+                document.createElementNS(
+                    NS,
+                    "text"
+                );
+
+            text.setAttribute(
+                "x",
+                (
+                    x1 + x2
+                ) / 2
+            );
+
+            text.setAttribute(
+                "y",
+                midY - 7
+            );
+
+            text.setAttribute(
+                "text-anchor",
+                "middle"
+            );
+
+            text.setAttribute(
+                "font-size",
+                "13"
+            );
+
+            text.setAttribute(
+                "font-family",
+                'Arial, "Noto Sans KR", sans-serif'
+            );
+
+            text.setAttribute(
+                "fill",
+                "#475569"
+            );
+
+            text.textContent =
+                edge.label;
+
+            svg.appendChild(text);
+        }
+    });
+
+
+    /*
+     * Nodes
+     */
+
+    graph.nodes.forEach(node => {
+
+        const pos =
+            layout.positions.get(
+                node.id
+            );
+
+        if (!pos)
+            return;
+
+
+        const group =
+            document.createElementNS(
+                NS,
+                "g"
+            );
+
+
+        const rect =
+            document.createElementNS(
+                NS,
+                "rect"
+            );
+
+        rect.setAttribute(
+            "x",
+            pos.x
+        );
+
+        rect.setAttribute(
+            "y",
+            pos.y
+        );
+
+        rect.setAttribute(
+            "width",
+            pos.w
+        );
+
+        rect.setAttribute(
+            "height",
+            pos.h
+        );
+
+        rect.setAttribute(
+            "rx",
+            node.type === "decision"
+                ? "4"
+                : "10"
+        );
+
+        rect.setAttribute(
+            "fill",
+            node.type === "decision"
+                ? "#fff7ed"
+                : "#f8fafc"
+        );
+
+        rect.setAttribute(
+            "stroke",
+            node.type === "decision"
+                ? "#fb923c"
+                : "#94a3b8"
+        );
+
+        rect.setAttribute(
+            "stroke-width",
+            "2"
+        );
+
+        group.appendChild(rect);
+
+
+        const lines =
+            svgTextLines(
+                node.label || node.id
+            );
+
+
+        const lineHeight = 18;
+
+        const startY =
+            pos.y +
+            pos.h / 2 -
+            (
+                lines.length - 1
+            ) *
+            lineHeight / 2;
+
+
+        lines.forEach(
+            (line, index) => {
+
+                const text =
+                    document.createElementNS(
+                        NS,
+                        "text"
+                    );
+
+                text.setAttribute(
+                    "x",
+                    pos.x +
+                    pos.w / 2
+                );
+
+                text.setAttribute(
+                    "y",
+                    startY +
+                    index *
+                    lineHeight
+                );
+
+                text.setAttribute(
+                    "text-anchor",
+                    "middle"
+                );
+
+                text.setAttribute(
+                    "dominant-baseline",
+                    "middle"
+                );
+
+                text.setAttribute(
+                    "font-size",
+                    "14"
+                );
+
+                text.setAttribute(
+                    "font-family",
+                    'Arial, "Noto Sans KR", sans-serif'
+                );
+
+                text.setAttribute(
+                    "fill",
+                    "#1f2937"
+                );
+
+                text.textContent =
+                    line;
+
+                group.appendChild(text);
+            }
+        );
+
+
+        svg.appendChild(group);
+    });
+
+
+    return svg;
+}
+
+
+/* =========================================================
+   Flow SVG 저장
+========================================================= */
+
+function downloadSvg(svg, filename) {
+
+    const clone =
+        svg.cloneNode(true);
+
+    clone.setAttribute(
+        "xmlns",
+        "http://www.w3.org/2000/svg"
+    );
+
+    const serializer =
+        new XMLSerializer();
+
+    const content =
+        '<?xml version="1.0" encoding="UTF-8"?>\n' +
+        serializer.serializeToString(
+            clone
+        );
+
+    const blob =
+        new Blob(
+            [content],
+            {
+                type:
+                    "image/svg+xml;charset=utf-8"
+            }
+        );
+
+    const url =
+        URL.createObjectURL(blob);
+
+    const link =
+        document.createElement("a");
+
+    link.href = url;
+    link.download = filename;
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    link.remove();
+
+    setTimeout(
+        () =>
+            URL.revokeObjectURL(url),
+        1000
+    );
+}
+
+
+/* =========================================================
+   Flow Block 렌더링
+========================================================= */
+
+function renderFlows(documentName) {
+
+    const sources =
+        document.querySelectorAll(
+            ".flow-source"
+        );
+
+    sources.forEach(
+        (sourceElement, index) => {
+
+            const wrapper =
+                document.createElement(
+                    "div"
+                );
+
+            wrapper.className =
+                "flow-wrapper";
+
+
+            const toolbar =
+                document.createElement(
+                    "div"
+                );
+
+            toolbar.className =
+                "flow-toolbar";
+
+
+            try {
+
+                const source =
+                    decodeURIComponent(
+                        sourceElement.dataset.flow
+                    );
+
+                const svg =
+                    createFlowSvg(source);
+
+
+                const button =
+                    document.createElement(
+                        "button"
+                    );
+
+                button.className =
+                    "flow-download";
+
+                button.textContent =
+                    "SVG 저장";
+
+
+                button.onclick =
+                    () => {
+
+                        const base =
+                            String(
+                                documentName ||
+                                "flow"
+                            )
+                            .replace(
+                                /\.md$/i,
+                                ""
+                            );
+
+                        downloadSvg(
+                            svg,
+                            base +
+                            "-flow-" +
+                            (
+                                index + 1
+                            ) +
+                            ".svg"
+                        );
+                    };
+
+
+                toolbar.appendChild(
+                    button
+                );
+
+                wrapper.appendChild(
+                    toolbar
+                );
+
+                wrapper.appendChild(
+                    svg
+                );
+            }
+            catch (error) {
+
+                const errorBox =
+                    document.createElement(
+                        "div"
+                    );
+
+                errorBox.className =
+                    "flow-error";
+
+                errorBox.textContent =
+                    "Flow Chart 생성 실패\n\n" +
+                    error.message;
+
+                wrapper.appendChild(
+                    errorBox
+                );
+            }
+
+
+            sourceElement.replaceWith(
+                wrapper
+            );
+        }
+    );
 }
 
 
@@ -415,18 +2005,20 @@ async function render(
     }
 
 
-    if (window.marked) {
+    q("#viewer").innerHTML =
+        markdownToHtml(
+            markdown
+        );
 
-        q("#viewer").innerHTML =
-            marked.parse(markdown);
-    }
-    else {
 
-        q("#viewer").innerHTML =
-            "<pre>" +
-            esc(markdown) +
-            "</pre>";
-    }
+    /*
+     * Markdown 변환 후
+     * flow block을 실제 SVG로 변환
+     */
+
+    renderFlows(
+        handle.name
+    );
 
 
     q("#status").innerHTML =
@@ -779,11 +2371,6 @@ async function selectFE(
         );
 
 
-    /*
-     * 현재 FE Action에 속하는
-     * API만 검색
-     */
-
     const apiFiles =
         (
             await mds(
@@ -799,11 +2386,6 @@ async function selectFE(
                 )
         );
 
-
-    /*
-     * 현재 FE Action에 속하는
-     * BE만 검색
-     */
 
     const backendFiles =
         (
@@ -821,11 +2403,6 @@ async function selectFE(
         );
 
 
-    /*
-     * API가 없으면
-     * API 영역 숨김
-     */
-
     fill(
         "#apis",
         "#apiRow",
@@ -833,11 +2410,6 @@ async function selectFE(
         "API"
     );
 
-
-    /*
-     * BE가 없으면
-     * BE 영역 숨김
-     */
 
     fill(
         "#bes",
@@ -861,11 +2433,6 @@ function fill(
 
     q(box).innerHTML = "";
 
-
-    /*
-     * 문서가 없으면
-     * 영역 자체를 표시하지 않음
-     */
 
     if (!items.length) {
 
@@ -895,13 +2462,6 @@ function fill(
                     type
                 );
 
-
-            /*
-             * API / BE 선택 시
-             * 위 UI는 그대로 유지
-             *
-             * Viewer 문서만 변경
-             */
 
             button.onclick =
                 () =>
