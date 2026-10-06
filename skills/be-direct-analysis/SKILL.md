@@ -10,11 +10,61 @@ disable-model-invocation: true
 
 ## 1. 목적
 
-API 분석 문서를 먼저 생성하지 않고
-사용자가 입력한 Backend URL을 직접 시작점으로 하여
-Backend Business Logic을 분석한다.
+API 분석 문서 없이 Backend URL을 직접 입력받아
+해당 Backend API의 실제 실행 흐름을 분석한다.
 
-기본 실행:
+분석은 Layer 순서가 아니라
+실제 Source의 실행 순서를 기준으로 수행한다.
+
+예:
+
+```text
+Controller
+ ↓
+Service
+ ↓
+Validation
+ ↓
+DB #1
+ ↓
+조건
+ ├─ YES
+ │   ↓
+ │  내부 Service
+ │   ↓
+ │  RFC 호출
+ │   ↓
+ │  DB #2
+ │
+ └─ NO
+     ↓
+    예외 처리
+ ↓
+Response 생성
+ ↓
+Controller Response
+```
+
+다음과 같은 단순 Layer 나열은 금지한다.
+
+```text
+Controller
+ ↓
+Service
+ ↓
+Mapper
+ ↓
+DB
+```
+
+실제 Business Logic의 실행 순서와
+조건 분기, 반복 호출, DB/RFC/REST 호출 위치를 추적해야 한다.
+
+---
+
+# 2. 호출 방식
+
+사용자 직접 실행:
 
 ```text
 /be-direct-analysis <화면명> <HTTP Method|UNKNOWN> <Backend URL>
@@ -23,137 +73,84 @@ Backend Business Logic을 분석한다.
 예:
 
 ```text
-/be-direct-analysis equipment-search POST /api/equipment/search
-```
-
-HTTP Method를 모르는 경우:
-
-```text
-/be-direct-analysis equipment-search UNKNOWN /api/equipment/search
-```
-
-분석 흐름:
-
-```text
-HTTP Method + Backend URL
- ↓
-Controller Mapping 탐색
- ↓
-Controller Method 확정
- ↓
-Service / ServiceImpl
- ↓
-Business Logic
- ↓
-Mapper
- ↓
-MyBatis
- ↓
-SQL
- ↓
-Caller 복귀
- ↓
-RFC / REST / 기타 외부 연동
- ↓
-후속 Business Logic
- ↓
-Response
- ↓
-필요한 경우 Oracle Metadata 검증
- ↓
-BE 문서 생성
- ↓
-STOP
-```
-
-API Contract 문서를 생성하지 않는다.
-
----
-
-# 2. 적용 Rule
-
-이 Skill을 실행할 때 반드시 다음 Rule을 적용한다.
-
-```text
-.claude/rules/08-be-analysis-scope.md
-.claude/rules/09-be-call-tracing.md
-```
-
-최종 문서 작성 시 다음 Reference가 존재하면 사용한다.
-
-```text
-.claude/references/BE-REFERENCE.md
-```
-
-Reference는 표현 형식과 상세 수준을 위한 자료이며
-Evidence가 아니다.
-
----
-
-# 3. 입력
-
-입력:
-
-```text
-<화면명> <HTTP Method|UNKNOWN> <Backend URL>
-```
-
-예:
-
-```text
-/be-direct-analysis equipment-search POST /api/equipment/search
+/be-direct-analysis equipment POST /api/equipment/create
 ```
 
 또는:
 
 ```text
-/be-direct-analysis equipment-search UNKNOWN /api/equipment/search
+/be-direct-analysis equipment UNKNOWN /api/equipment/create
 ```
-
-입력 의미:
-
-```text
-화면명
-  BE 문서 저장 위치를 결정한다.
-
-HTTP Method
-  GET
-  POST
-  PUT
-  PATCH
-  DELETE
-  UNKNOWN
-
-Backend URL
-  분석을 시작할 Backend Endpoint
-```
-
-화면명은 Source 탐색 조건으로 사용하지 않는다.
-
-화면명은 기본적으로:
-
-```text
-docs/analysis/{화면명}/
-```
-
-아래에 결과를 저장하기 위한 식별자로 사용한다.
 
 ---
 
-# 4. API 문서 사용 금지
+# 3. Parallel Agent 호출 지원
 
-이 Skill은 API 분석 문서를 필요로 하지 않는다.
+이 Skill은 단독 실행뿐 아니라
+`be-direct-parallel` Agent의 Worker에서도 실행할 수 있다.
 
-다음 문서를 분석 시작점으로 요구하지 않는다.
+Agent에서 호출할 경우 다음 값을 추가로 전달받을 수 있다.
 
 ```text
-docs/analysis/{화면명}/api/*.md
+Screen Name
+FE Base Name
+BE ID
+HTTP Method
+Backend URL
+Output File
 ```
 
-기존 API 문서가 존재하더라도
-Controller를 결정하기 위한 필수 입력으로 사용하지 않는다.
+예:
 
-분석 시작점은 항상:
+```text
+Screen Name: equipment
+FE Base Name: FE-ACT-010-create
+BE ID: BE-001
+HTTP Method: POST
+Backend URL: /api/equipment/create
+Output File: docs/analysis/equipment/backend/FE-ACT-010-create-BE-001.md
+```
+
+Agent가 다음 값을 명시적으로 전달한 경우:
+
+```text
+BE ID
+Output File
+```
+
+Skill 내부에서 새 번호를 생성하거나
+파일명을 다시 계산하지 않는다.
+
+전달받은 값을 그대로 사용한다.
+
+---
+
+# 4. 필수 규칙
+
+반드시 다음 규칙을 따른다.
+
+1. 실제 Source를 최종 Evidence로 사용한다.
+2. Code Index MCP는 Source 탐색에 사용한다.
+3. 추측하지 않는다.
+4. 확인할 수 없는 내용은 `확인되지 않음`으로 기록한다.
+5. Layer 순서가 아닌 실제 실행 순서를 분석한다.
+6. Controller에서 시작하여 Response까지 추적한다.
+7. Service 내부 메서드 호출도 실제 순서대로 추적한다.
+8. DB 호출이 여러 번 발생하면 모두 기록한다.
+9. RFC 호출이 여러 번 발생하면 모두 기록한다.
+10. REST/외부 시스템 호출이 여러 번 발생하면 모두 기록한다.
+11. DB → RFC → DB와 같은 교차 흐름을 그대로 표현한다.
+12. 조건 분기를 생략하지 않는다.
+13. 예외 흐름을 생략하지 않는다.
+14. API 분석 문서를 생성하지 않는다.
+15. FE 분석 문서를 생성하지 않는다.
+16. Backend 분석 문서만 생성한다.
+
+---
+
+# 5. 분석 범위
+
+분석 시작점:
 
 ```text
 HTTP Method
@@ -161,52 +158,242 @@ HTTP Method
 Backend URL
 ```
 
-이다.
+분석 종료점:
 
-API 문서가 없다는 이유로 STOP 하지 않는다.
+```text
+Controller Response
+```
 
-API 문서를 새로 생성하지 않는다.
+전체 범위:
+
+```text
+Backend URL
+ ↓
+Controller Mapping
+ ↓
+Controller Method
+ ↓
+Service
+ ↓
+Business Logic
+ ↓
+Internal Service
+ ↓
+Mapper
+ ↓
+MyBatis XML
+ ↓
+SQL
+ ↓
+Oracle
+ ↓
+RFC
+ ↓
+REST
+ ↓
+기타 외부 연동
+ ↓
+Response 생성
+ ↓
+Controller Response
+```
+
+위 Layer가 항상 모두 존재하는 것은 아니다.
+
+실제 Source에 존재하는 흐름만 기록한다.
 
 ---
 
-# 5. Project Root
+# 6. 분석 금지 사항
 
-Code Index MCP에 설정된 현재 Project Root를 기준으로 분석한다.
+다음은 금지한다.
 
-Backend 프로젝트 우선 범위:
+```text
+Source 확인 없이 흐름 추정
+
+메서드 이름만 보고 Business Logic 추정
+
+URL 이름만 보고 기능 추정
+
+DTO 이름만 보고 데이터 의미 추정
+
+SQL 확인 없이 DB 동작 추정
+
+RFC 이름만 보고 SAP 동작 추정
+
+REST URL만 보고 외부 시스템 동작 추정
+```
+
+확인되지 않은 경우:
+
+```text
+확인되지 않음
+```
+
+으로 기록한다.
+
+---
+
+# 7. 프로젝트 탐색 원칙
+
+프로젝트 전체를 무차별 탐색하지 않는다.
+
+우선순위:
+
+```text
+1. Code Index MCP
+2. Backend URL 검색
+3. Controller Mapping 검색
+4. Controller Method 확인
+5. 호출 Symbol 추적
+6. 실제 Source 확인
+```
+
+Backend 프로젝트 우선순위:
 
 ```text
 gipms-api-*
 ```
 
-Backend URL과 Controller Mapping을 기준으로
-관련 Backend Project를 찾는다.
+필요한 프로젝트만 탐색한다.
 
-모든 `gipms-api-*` 프로젝트를
-처음부터 Deep Read 하지 않는다.
+---
 
-기본 탐색 순서:
+# 8. Shell 기반 재귀 탐색 제한
+
+프로젝트 Root 전체를 대상으로 하는
+광범위 Shell 재귀 탐색을 금지한다.
+
+금지 예:
+
+```bash
+find . -type f
+find . | xargs grep ...
+grep -r "keyword" .
+grep -R "keyword" .
+grep -rn "keyword" .
+```
+
+특히 다음은 사용하지 않는다.
 
 ```text
-Backend URL
- ↓
+xargs
+```
+
+탐색 순서:
+
+```text
 Code Index
  ↓
-Controller Mapping 후보
+후보 Source 특정
  ↓
-관련 Backend Project
+필요한 파일만 Read
  ↓
-Controller Source
+실제 Source 확인
 ```
 
 ---
 
-# 6. Controller 탐색
+# 9. 제외 경로
 
-입력된 Backend URL을 기준으로
+불필요한 영역은 분석 대상에서 제외한다.
+
+예:
+
+```text
+docs/**
+sample/**
+samples/**
+target/**
+build/**
+dist/**
+node_modules/**
+*.jar
+```
+
+JAR 내부 탐색을 시도하지 않는다.
+
+---
+
+# 10. HTTP Method 처리
+
+입력 Method가 명확한 경우:
+
+```text
+GET
+POST
+PUT
+PATCH
+DELETE
+```
+
+해당 Method와 URL을 함께 사용하여
 Controller Mapping을 찾는다.
 
+---
+
+# 11. Method UNKNOWN 처리
+
+입력:
+
+```text
+UNKNOWN /api/equipment/create
+```
+
+인 경우 실제 Controller Source에서 Method를 확인한다.
+
 확인 대상:
+
+```java
+@GetMapping
+@PostMapping
+@PutMapping
+@PatchMapping
+@DeleteMapping
+@RequestMapping(method = ...)
+```
+
+Method를 확인하면 문서에 기록한다.
+
+예:
+
+```text
+Input Method : UNKNOWN
+Resolved Method : POST
+```
+
+---
+
+# 12. 동일 URL 다중 Method
+
+동일 URL에 여러 HTTP Method가 존재하고
+입력 Method가 UNKNOWN인 경우 임의 선택하지 않는다.
+
+예:
+
+```text
+GET  /api/equipment
+POST /api/equipment
+```
+
+이 경우 분석을 중단하고 사용자에게 선택을 요청한다.
+
+```text
+STOP
+
+동일 Backend URL에 여러 HTTP Method가 존재합니다.
+
+GET  /api/equipment
+POST /api/equipment
+
+분석할 Method를 지정해 주세요.
+```
+
+---
+
+# 13. Controller 탐색
+
+다음을 모두 고려한다.
 
 ```text
 @RequestMapping
@@ -215,11 +402,10 @@ Controller Mapping을 찾는다.
 @PutMapping
 @PatchMapping
 @DeleteMapping
-기타 실제 Spring Mapping
 ```
 
 Class Level Mapping과
-Method Level Mapping을 함께 확인한다.
+Method Level Mapping을 조합한다.
 
 예:
 
@@ -230,607 +416,322 @@ Method Level Mapping을 함께 확인한다.
 +
 
 ```java
-@PostMapping("/search")
+@PostMapping("/create")
 ```
 
-이면 실제 Endpoint 후보:
+=
 
 ```text
-POST /api/equipment/search
+POST /api/equipment/create
 ```
-
-이다.
-
-URL 문자열 하나만 발견했다고
-Controller를 확정하지 않는다.
-
-실제 Controller Source에서 Mapping을 확인한다.
 
 ---
 
-# 7. HTTP Method 확인
+# 14. Controller 분석
 
-입력 HTTP Method가:
-
-```text
-GET
-POST
-PUT
-PATCH
-DELETE
-```
-
-중 하나라면 URL과 Method를 함께 사용하여
-Controller Method를 식별한다.
-
-예:
-
-```text
-입력
-
-POST
-/api/equipment/search
-```
-
-Controller:
-
-```text
-GET  /api/equipment/search
-POST /api/equipment/search
-```
-
-가 모두 존재한다면:
-
-```text
-POST
-```
-
-Mapping을 선택한다.
-
----
-
-# 8. HTTP Method UNKNOWN
-
-입력이:
-
-```text
-UNKNOWN
-```
-
-이면 Controller Source에서 HTTP Method를 확인한다.
-
-예:
-
-```text
-/be-direct-analysis equipment-search UNKNOWN /api/equipment/search
-```
-
-탐색 결과:
-
-```text
-@PostMapping("/search")
-```
-
-만 존재한다면:
+Controller에서 확인한다.
 
 ```text
 HTTP Method
-  POST
-```
-
-로 확정하고 분석을 계속한다.
-
----
-
-# 9. 동일 URL 다중 Method
-
-동일 Backend URL에 여러 HTTP Method가 존재할 수 있다.
-
-예:
-
-```text
-GET  /api/equipment
-POST /api/equipment
-DELETE /api/equipment
-```
-
-사용자 입력이:
-
-```text
-UNKNOWN /api/equipment
-```
-
-이고 Source만으로 하나를 선택할 근거가 없다면
-임의로 하나를 선택하지 않는다.
-
-다음과 같이 출력한다.
-
-```text
-Backend Direct Analysis 중단
-
-Backend URL
-  /api/equipment
-
-HTTP Method
-  UNKNOWN
-
-확인된 Mapping 후보
-  GET /api/equipment
-  POST /api/equipment
-  DELETE /api/equipment
-
-사유
-  동일 URL에 여러 HTTP Method가 존재하여
-  분석 대상을 하나로 확정할 수 없음
-```
-
-그리고 STOP 한다.
-
-사용자가 Method를 선택한 후 다시 실행한다.
-
----
-
-# 10. Controller 후보가 여러 개인 경우
-
-동일 Method + URL에 여러 Controller 후보가 발견되면
-다음 Evidence를 추가 확인한다.
-
-```text
-Class Level Mapping
-Method Level Mapping
-Spring Annotation
-Project
-Package
-Controller Source
-실제 Mapping 조합
-```
-
-하나의 Controller를 확정할 수 있다면 계속 진행한다.
-
-확정할 수 없다면
-후보를 사용자에게 보여주고 STOP 한다.
-
-추측해서 하나를 선택하지 않는다.
-
----
-
-# 11. Controller를 찾을 수 없는 경우
-
-입력 URL에 대응하는 Controller를
-현재 Project Source에서 찾을 수 없다면
-다음과 같이 출력한다.
-
-```text
-Backend Direct Analysis 중단
-
-HTTP Method
-  {입력 Method}
-
-Backend URL
-  {입력 URL}
-
-Controller
-  확인되지 않음
-
-사유
-  현재 Project Source에서
-  해당 Backend Mapping을 확인할 수 없음
-```
-
-그리고 STOP 한다.
-
-유사한 URL의 Controller를 임의로 선택하지 않는다.
-
----
-
-# 12. Controller 확정
-
-Controller가 확인되면 다음 정보를 기록한다.
-
-```text
-HTTP Method
-Backend URL
-Backend Project
+URL
 Controller Class
 Controller Method
-Controller Source Path
-Line Range
+Request Parameter
+Path Variable
+Request Body
+Request DTO
+Validation
+Service 호출
+Response 생성
+Exception 처리
 ```
 
-예:
+Evidence:
 
 ```text
-HTTP Method
-  POST
-
-Backend URL
-  /api/equipment/search
-
-Backend Project
-  gipms-api-equipment
-
-Controller
-  EquipmentController
-
-Method
-  search()
-
-Source
-  gipms-api-equipment/src/main/java/.../
-  EquipmentController.java
-
+Project Root 기준 상대경로
+파일명
 Line Range
-  40-65
 ```
 
-Line Range를 확인할 수 없으면:
-
-```text
-Line Range
-  확인되지 않음
-```
-
-으로 기록한다.
+절대경로는 기록하지 않는다.
 
 ---
 
-# 13. Controller부터 BE 분석 시작
+# 15. Service 분석
 
-Controller가 확정되면
-기존 Backend 분석 규칙에 따라 실제 Source를 추적한다.
+Controller에서 호출되는 Service부터 추적한다.
+
+분석 대상:
 
 ```text
-Controller
- ↓
-Controller Method
- ↓
 Service
- ↓
 ServiceImpl
- ↓
-Business Logic
+내부 Method
+다른 Service
+Helper
+Validator
+Utility
+Domain Logic
 ```
 
-Controller에서 여러 Service / Method를 호출하면
-실제 실행 순서를 유지한다.
+중요:
 
-대표 Service 하나만 선택하지 않는다.
+```text
+Service → Mapper
+```
 
----
+만 기록하지 않는다.
 
-# 14. Service 구현체 확인
-
-Service가 Interface인 경우
-실제 구현체를 확인한다.
+실제 실행 순서를 추적한다.
 
 예:
 
 ```text
-EquipmentService
+Service.create()
  ↓
-EquipmentServiceImpl
+validate()
+ ↓
+checkDuplicate()
+ ↓
+Mapper.selectCount()
+ ↓
+if duplicate
+ ├─ YES → Exception
+ └─ NO
+      ↓
+     makeParameter()
+      ↓
+     Mapper.insert()
+      ↓
+     callSap()
+      ↓
+     Mapper.updateStatus()
 ```
-
-확인 기준:
-
-```text
-implements
-Spring Bean
-Injection
-Qualifier
-Reference
-실제 호출 Source
-```
-
-구현체가 여러 개이고
-실제 구현체를 확정할 수 없다면:
-
-```text
-실제 구현체
-  확인되지 않음
-```
-
-으로 기록한다.
-
-임의로 구현체를 선택하지 않는다.
 
 ---
 
-# 15. Business Logic 분석
+# 16. 조건 분기
 
-Service / ServiceImpl에서는
-실제 Method Body 실행 순서대로 분석한다.
+조건은 반드시 기록한다.
+
+예:
+
+```text
+status == "A"
+```
+
+문서:
+
+```text
+조건: status == "A"
+
+├─ YES
+│   ↓
+│  RFC 호출
+│
+└─ NO
+    ↓
+   RFC 호출 생략
+```
+
+조건에 사용되는 값의 출처도 가능한 경우 기록한다.
+
+예:
+
+```text
+Source State:
+request.status
+```
+
+또는:
+
+```text
+Source State:
+DB #1 조회 결과.status
+```
+
+---
+
+# 17. 내부 Backend 왕복
+
+Backend 내부에서 여러 Service/Component를
+오가는 경우 모두 추적한다.
+
+예:
+
+```text
+Controller
+ ↓
+Service A
+ ↓
+Service B
+ ↓
+Mapper #1
+ ↓
+Service A
+ ↓
+RFC
+ ↓
+Service C
+ ↓
+Mapper #2
+ ↓
+Service A
+ ↓
+Response
+```
+
+이를 단순히:
+
+```text
+Controller → Service → DB → Response
+```
+
+로 축약하지 않는다.
+
+---
+
+# 18. MyBatis 분석
+
+Mapper 호출을 발견하면
+실제 MyBatis XML까지 추적한다.
 
 확인 대상:
 
 ```text
-입력값 처리
-Validation
-조건
-분기
-반복
-데이터 변환
-계산
-상태 변경
-내부 Method
-다른 Service
-공통 Service
-Mapper
-DB
-RFC
-REST
-SOAP
-Message
-File
-Exception
-Transaction
-Response
+Mapper Interface
+Mapper Method
+Namespace
+Statement ID
+MyBatis XML
+SQL
+Parameter
+Result Mapping
 ```
-
-Layer별로 다시 정렬하지 않는다.
-
----
-
-# 16. 실제 실행 순서 유지
-
-예를 들어 Source가:
-
-```text
-Service
- ↓
-Validation
- ↓
-DB SELECT
- ↓
-조건
- ↓
-RFC
- ↓
-RFC 결과 처리
- ↓
-DB UPDATE
- ↓
-REST
- ↓
-DB INSERT
- ↓
-Response
-```
-
-순서라면 최종 문서도 동일한 순서를 유지한다.
-
-다음처럼 재배열하지 않는다.
-
-```text
-모든 DB
- ↓
-모든 RFC
- ↓
-모든 REST
-```
-
----
-
-# 17. 하위 호출 후 Caller 복귀
-
-하위 Method 또는 Service를 분석한 뒤
-반드시 Caller의 다음 실행 위치로 복귀한다.
 
 예:
 
 ```text
-Service A
- │
- ├─ Service B
- │    │
- │    ├─ DB #1
- │    └─ return
- │
- ├─ Service B 결과 처리
- │
- ├─ RFC #1
- │
- ├─ RFC 결과 처리
- │
- └─ Response
+EquipmentMapper.selectEquipment
+ ↓
+namespace
+ ↓
+selectEquipment
+ ↓
+SELECT ...
 ```
-
-하위 호출을 분석했다고
-현재 API 분석을 종료하지 않는다.
-
----
-
-# 18. Mapper / MyBatis 분석
-
-Mapper 호출이 발견되면:
-
-```text
-Service
- ↓
-Mapper Interface
- ↓
-Mapper Method
- ↓
-MyBatis namespace
- ↓
-Statement ID
- ↓
-Mapper XML 또는 Annotation
- ↓
-Dynamic SQL
- ↓
-실제 SQL
-```
-
-까지 연결한다.
-
-Statement는 반드시:
-
-```text
-namespace + Statement ID
-```
-
-를 기준으로 식별한다.
-
-Method명이나 Statement ID만으로
-SQL을 추측하지 않는다.
 
 ---
 
 # 19. SQL 분석
 
-실제 SQL에서 가능한 경우 다음을 확인한다.
+SQL은 가능한 경우 실제 SQL 기준으로 기록한다.
+
+확인 대상:
 
 ```text
-SQL Type
-Table / View
-Column
-JOIN
-WHERE
-Subquery
-Dynamic SQL
-Parameter Mapping
-Result Mapping
-INSERT 값
-UPDATE 값
-DELETE 조건
-MERGE 조건
-```
-
-Method 이름보다 실제 SQL을 우선한다.
-
-예:
-
-```text
-deleteEquipment()
-```
-
-가 호출되더라도 SQL이:
-
-```sql
-UPDATE TB_EQUIPMENT
-SET STATUS = 'D'
-```
-
-라면 실제 DB 동작은:
-
-```text
-UPDATE 기반 상태 변경
-```
-
-으로 분석한다.
-
----
-
-# 20. Oracle Metadata 최적화
-
-Oracle Metadata는
-DB 호출을 발견할 때마다 조회하지 않는다.
-
-우선 전체 Backend Call Path를 추적한다.
-
-```text
-Source
- ↓
-Mapper
- ↓
-MyBatis
- ↓
-SQL
- ↓
-사용 Object / Column 기록
- ↓
-Caller 복귀
- ↓
-다음 Business Logic
-```
-
-Controller부터 Response까지 추적이 끝나면:
-
-```text
-사용 Oracle Object / Column 수집
- ↓
-중복 제거
- ↓
-Metadata 필요성 판단
- ↓
-필요한 Metadata만 Oracle MCP 확인
-```
-
-Metadata 확인 대상 예:
-
-```text
-Object 존재 여부
-Table / View 구분
-Column 존재 여부
-Data Type
-Nullable
-Primary Key
-SQL ↔ DB 구조 불일치
-Parameter / Result Mapping 검증
-```
-
-다음은 수행하지 않는다.
-
-```text
-Schema 전체 Metadata 조회
-관련 없는 Table 조회
-관련 없는 View 조회
-모든 Column 무조건 조회
-동일 Object 반복 조회
-동일 Column 반복 조회
-```
-
-Metadata가 필요하지 않으면
-Oracle MCP 호출 없이 BE 분석을 완료할 수 있다.
-
----
-
-# 21. Oracle 안전 규칙
-
-Oracle MCP는 Read-Only로 사용한다.
-
-실행 금지:
-
-```text
+SELECT
 INSERT
 UPDATE
 DELETE
 MERGE
-CREATE
-ALTER
-DROP
-TRUNCATE
-기타 DML
-기타 DDL
+Procedure
+Function
+Sequence
+Table
+View
+Column
+Join
+WHERE 조건
+ORDER BY
+동적 SQL
 ```
 
-Source에서 DML SQL이 발견되더라도
-실제 DB에는 실행하지 않는다.
+MyBatis 동적 SQL:
 
-SQL Source를 읽고 동작만 분석한다.
+```xml
+<if>
+<choose>
+<when>
+<otherwise>
+<foreach>
+```
+
+도 실제 조건 흐름에 반영한다.
 
 ---
 
-# 22. RFC / 외부 연동
+# 20. DB 호출 번호
 
-Business Logic 중 발견되는 외부 연동은
-실제 위치에서 분석한다.
+DB 호출은 실제 실행 순서 기준으로 번호를 부여한다.
 
 예:
 
 ```text
-SAP RFC
-REST / HTTP
-SOAP
-다른 Backend API
-Gateway
-Message
-File
-기타 외부 시스템
+DB #1
+DB #2
+DB #3
 ```
 
-RFC가 중간에 있다면:
+예:
+
+```text
+Service
+ ↓
+DB #1 - 중복 확인
+ ↓
+조건
+ ↓
+DB #2 - 데이터 INSERT
+ ↓
+RFC #1
+ ↓
+DB #3 - 결과 상태 UPDATE
+```
+
+---
+
+# 21. RFC 분석
+
+RFC 호출을 발견하면 실제 Source 기준으로 분석한다.
+
+확인 대상:
+
+```text
+호출 위치
+호출 조건
+RFC Function
+Input Mapping
+Output Mapping
+Return Code
+Return Message
+Exception
+후속 처리
+```
+
+SAP 내부 동작은 Source 또는 연결된 Evidence에서
+확인할 수 없는 경우 추정하지 않는다.
+
+```text
+SAP 내부 처리: 확인되지 않음
+```
+
+---
+
+# 22. RFC 호출 번호
+
+RFC 호출은 실행 순서 기준으로 번호를 부여한다.
+
+```text
+RFC #1
+RFC #2
+RFC #3
+```
+
+DB와 RFC 번호는 서로 독립적이다.
+
+예:
 
 ```text
 DB #1
@@ -838,225 +739,234 @@ DB #1
 RFC #1
  ↓
 DB #2
+ ↓
+RFC #2
+ ↓
+DB #3
 ```
-
-순서를 유지한다.
-
-RFC를 문서 마지막으로 이동시키지 않는다.
 
 ---
 
-# 23. 다중 외부 연동
+# 23. REST / 외부 연동
 
-외부 연동이 여러 번 발생하면
-각 호출을 구분한다.
+다음 호출도 추적한다.
+
+```text
+RestTemplate
+WebClient
+HTTP Client
+Feign
+외부 SDK
+사내 공통 Client
+기타 External Interface
+```
+
+확인 대상:
+
+```text
+호출 위치
+호출 조건
+Method
+URL
+Request Mapping
+Response Mapping
+Timeout
+Exception
+후속 처리
+```
+
+확인 가능한 범위까지만 기록한다.
+
+---
+
+# 24. 외부 호출 번호
+
+필요한 경우 호출 유형별 번호를 사용한다.
+
+예:
+
+```text
+REST #1
+REST #2
+
+RFC #1
+RFC #2
+
+DB #1
+DB #2
+```
+
+실행 트리에서는 실제 순서대로 섞어서 표현한다.
+
+---
+
+# 25. Oracle Metadata 조회 원칙
+
+Oracle MCP는 Source 분석을 대체하지 않는다.
+
+Oracle Metadata는
+MyBatis/SQL 분석 후 필요한 대상만 확인한다.
+
+순서:
+
+```text
+Controller
+ ↓
+Service
+ ↓
+Mapper
+ ↓
+MyBatis
+ ↓
+SQL 분석 완료
+ ↓
+Oracle 대상 수집
+ ↓
+중복 제거
+ ↓
+필요한 Metadata만 조회
+```
+
+---
+
+# 26. Oracle Metadata 조회 대상
+
+SQL에서 실제 사용된 대상만 수집한다.
+
+예:
+
+```text
+TABLE
+VIEW
+COLUMN
+PROCEDURE
+FUNCTION
+SEQUENCE
+```
+
+예:
+
+```text
+TB_EQUIPMENT
+TB_EQUIPMENT_STATUS
+FN_GET_STATUS
+SEQ_EQUIPMENT
+```
+
+---
+
+# 27. Oracle Metadata 중복 제거
+
+같은 Worker 내부에서 동일 Object를
+반복 조회하지 않는다.
+
+예:
+
+```text
+DB #1 → TB_EQUIPMENT
+DB #2 → TB_EQUIPMENT
+DB #3 → TB_EQUIPMENT
+```
+
+Oracle Metadata 조회:
+
+```text
+TB_EQUIPMENT → 1회
+```
+
+DB 호출마다 Metadata를 다시 조회하지 않는다.
+
+---
+
+# 28. Oracle Metadata 금지 사항
+
+금지:
+
+```text
+Schema 전체 조회
+전체 Table 탐색
+전체 Column 탐색
+DB 호출마다 Metadata 조회
+같은 Object 반복 조회
+Source 분석 전에 Oracle 탐색
+```
+
+Oracle MCP가 느리거나 조회되지 않는 경우:
+
+```text
+Oracle Metadata: 확인되지 않음
+```
+
+으로 기록하고 분석을 계속한다.
+
+핵심 실행 흐름 자체를 확인할 수 없는 경우에만
+분석 불가 상태를 명확하게 기록한다.
+
+---
+
+# 29. 예외 처리
+
+다음을 확인한다.
+
+```text
+try/catch
+throw
+Custom Exception
+Validation Exception
+DB Exception
+RFC Exception
+REST Exception
+Global Exception Handler
+Error Response
+```
+
+실제 실행 흐름에서
+어디에서 예외가 발생하고
+어디에서 처리되는지 연결한다.
 
 예:
 
 ```text
 RFC #1
-REST #1
-RFC #2
-REST #2
-```
-
-같은 RFC Function이나 Endpoint가
-반복 호출되더라도 실행 위치가 다르면 구분한다.
-
----
-
-# 24. 조건 / 반복 / Exception
-
-실제 Source의:
-
-```text
-if
-else
-switch
-반복문
-try
+ ↓
+Exception
+ ↓
 catch
-throw
+ ↓
+DB #3 상태 UPDATE
+ ↓
+throw BusinessException
+ ↓
+GlobalExceptionHandler
+ ↓
+Error Response
 ```
-
-구조를 Business Logic에 영향을 주는 범위에서 보존한다.
-
-예:
-
-```text
-sapUseYn == "Y"
- │
- ├─ YES
- │   ↓
- │  RFC #1
- │
- └─ NO
-     ↓
-    RFC 미호출
-```
-
-실행되지 않는 Branch라고 해서
-Source에 존재하는 Business Logic을 삭제하지 않는다.
 
 ---
 
-# 25. Transaction
+# 30. Response 분석
 
-실제 Source에서:
+최종 Response까지 추적한다.
+
+확인 대상:
 
 ```text
-@Transactional
+Response DTO
+Response Entity
+Status
+Result Code
+Result Message
+Data
+Error Response
 ```
 
-또는 명시적인 Transaction 설정이 확인되면 기록한다.
-
-Rollback 범위는
-실제 Source에서 확인되는 범위만 설명한다.
-
-일반적인 Spring 동작만으로
-확인되지 않은 Rollback을 단정하지 않는다.
+Service 반환값이 Controller에서 어떻게 변환되는지도 기록한다.
 
 ---
 
-# 26. Response까지 추적
+# 31. BE ID
 
-분석은 DB 또는 외부 연동에서 끝나지 않는다.
-
-가능한 경우:
-
-```text
-DB / RFC / REST 결과
- ↓
-Business Logic
- ↓
-데이터 변환
- ↓
-Response Object
- ↓
-Controller Return
-```
-
-까지 추적한다.
-
-최종 Response 생성이
-현재 API 분석의 끝이다.
-
----
-
-# 27. Source Evidence
-
-주요 단계에는 가능한 경우 다음을 기록한다.
-
-```text
-Source Path
-Class
-Method
-Line Range
-```
-
-DB:
-
-```text
-Mapper Interface
-Mapper Method
-Mapper XML
-Namespace
-Statement ID
-Line Range
-SQL
-```
-
-외부 연동:
-
-```text
-Source Path
-Class
-Method
-Adapter / Client
-RFC Function / Endpoint
-Line Range
-```
-
-Oracle:
-
-```text
-실제 Metadata를 확인한 경우에만
-Object
-Column
-Data Type
-Nullable
-PK
-```
-
-Source Path는 반드시
-Project Root 기준 상대경로를 사용한다.
-
----
-
-# 28. Shell 기반 전체 검색 제한
-
-Backend Source 탐색에서 `xargs`를 사용하지 않는다.
-
-Project Root 전체 대상의 다음 검색을 사용하지 않는다.
-
-```text
-find ... | xargs ...
-grep ... | xargs ...
-grep -r ...
-grep -R ...
-grep -rn ...
-```
-
-탐색 순서:
-
-```text
-Code Index
- ↓
-관련 Project 확인
- ↓
-Symbol / Reference 확인
- ↓
-관련 Source 범위 축소
- ↓
-필요 Source Read
- ↓
-실제 Source 확인
-```
-
-정확한 문자열 검색이 필요한 경우에도
-관련 Source 범위를 먼저 좁힌 후 보조적으로 사용한다.
-
----
-
-# 29. JAR / 외부 Dependency 제한
-
-다음으로 자동 확장하지 않는다.
-
-```text
-*.jar
-JAR 내부
-Decompiled Source
-.m2/
-.gradle/
-Maven Repository
-Gradle Cache
-Project Root 외부 Source
-```
-
-Project Root 아래 실제 Source Project로 존재하는
-공통 모듈은 현재 Call Path와 연결되는 경우 분석할 수 있다.
-
----
-
-# 30. BE ID
-
-Direct Analysis에서는
-API ID를 전제로 하지 않는다.
-
-BE ID는 현재 화면의 기존 Direct BE 문서를 기준으로
-사용 가능한 다음 번호를 결정한다.
-
-형식:
+BE ID 형식:
 
 ```text
 BE-001
@@ -1065,246 +975,338 @@ BE-003
 ...
 ```
 
-단, Orchestrator 또는 호출자가
-BE ID를 명시적으로 전달한 경우
-전달받은 BE ID를 그대로 사용한다.
+Parallel Agent에서 BE ID가 전달된 경우
+전달받은 ID를 그대로 사용한다.
 
-전달받은 BE ID를 재배정하지 않는다.
+단독 실행에서 BE ID가 전달되지 않은 경우
+해당 FE Base Name에 이미 존재하는 BE 문서와 충돌하지 않는
+다음 번호를 사용한다.
+
+단, FE Base Name을 확인할 수 없는 경우
+임의로 FE Action 이름을 생성하지 않는다.
 
 ---
 
-# 31. 출력 파일명
+# 32. 출력 파일명 규칙
 
-기본 출력 파일명:
+표준 Backend 문서 파일명:
 
 ```text
-BE-{nnn}-{기능명}.md
+{FE Base Name}-{BE ID}.md
 ```
 
 예:
 
 ```text
-BE-001-equipment-search.md
+FE Base Name = FE-ACT-010-create
+BE ID       = BE-001
 ```
 
-저장 위치:
+결과:
 
 ```text
-docs/analysis/{화면명}/backend/
+FE-ACT-010-create-BE-001.md
+```
+
+전체 경로:
+
+```text
+docs/analysis/{화면명}/backend/{FE Base Name}-{BE ID}.md
 ```
 
 예:
 
 ```text
-docs/analysis/equipment-search/backend/
-BE-001-equipment-search.md
+docs/analysis/equipment/backend/FE-ACT-010-create-BE-001.md
 ```
 
-기능명은 실제 Controller / Backend 기능을 기준으로
-간결하게 결정한다.
+다음과 같은 파일명은 사용하지 않는다.
 
-확인되지 않은 업무 의미를
-파일명에 추측해서 넣지 않는다.
+```text
+BE-001.md
+BE-001-create.md
+FE-ACT-010-BE-001.md
+```
 
 ---
 
-# 32. Output File 지정
+# 33. FE Base Name 결정
 
-Orchestrator 또는 호출자가
-Output File을 명시적으로 전달한 경우
-전달받은 파일명을 그대로 사용한다.
+Parallel Agent가 호출한 경우:
+
+```text
+FE Base Name
+```
+
+을 반드시 전달받는다.
+
+전달받은 값을 그대로 사용한다.
+
+예:
+
+```text
+FE-ACT-010-create
+```
+
+단독 실행에서 FE Base Name이 명확하지 않은 경우
+Backend URL로부터 FE Action 이름을 추정하지 않는다.
+
+필요한 경우 사용자에게 FE Base Name을 요청한다.
+
+---
+
+# 34. Output File 우선 규칙
+
+Parallel Agent 또는 상위 Orchestrator가
+다음 값을 전달한 경우:
+
+```text
+Output File
+```
+
+해당 경로를 최우선으로 사용한다.
 
 예:
 
 ```text
 Output File:
-FE-ACT-010-create-BE-001.md
+docs/analysis/equipment/backend/FE-ACT-010-create-BE-001.md
 ```
 
-저장:
+Skill은 다음을 수행하지 않는다.
 
 ```text
-docs/analysis/{화면명}/backend/
-FE-ACT-010-create-BE-001.md
-```
-
-이 경우 Skill이 파일명을 다시 생성하지 않는다.
-
----
-
-# 33. 기존 파일 보호
-
-저장 대상 파일이 이미 존재하면
-사용자 요청 없이 자동 덮어쓰기하지 않는다.
-
-기존 파일 존재를 알리고 STOP 한다.
-
----
-
-# 34. BE Reference 적용
-
-다음 파일이 존재하면:
-
-```text
-.claude/references/BE-REFERENCE.md
-```
-
-최종 문서의:
-
-```text
-구조
-표현 방식
-상세 수준
-ASCII Execution Tree
-Excel 단일 셀 복사 구조
-Oracle Metadata 표현
-```
-
-에 적용한다.
-
-Reference 내용은 Evidence가 아니다.
-
-Reference의 Sample Class / SQL / Table / RFC / URL 등을
-실제 결과에 복사하지 않는다.
-
----
-
-# 35. 최종 검증
-
-문서 저장 전에 다음을 확인한다.
-
-```text
-[ ] API 문서 없이 Backend URL에서 직접 시작했는가
-
-[ ] HTTP Method + URL을 실제 Controller Mapping과 확인했는가
-
-[ ] UNKNOWN인 경우 Source에서 Method를 확정했는가
-
-[ ] 동일 URL 다중 Method가 모호하면 STOP 했는가
-
-[ ] Controller를 실제 Source에서 확인했는가
-
-[ ] Controller부터 Response까지 추적했는가
-
-[ ] Service / ServiceImpl을 실제 Source로 확인했는가
-
-[ ] 내부 Method / 다른 Service 호출을 필요한 범위까지 추적했는가
-
-[ ] 하위 호출 후 Caller로 복귀했는가
-
-[ ] Mapper → namespace + Statement ID → MyBatis를 연결했는가
-
-[ ] 실제 SQL을 확인했는가
-
-[ ] Dynamic SQL을 보존했는가
-
-[ ] Parameter Mapping을 확인했는가
-
-[ ] Result Mapping을 가능한 범위에서 확인했는가
-
-[ ] DB마다 Oracle Metadata를 즉시 조회하지 않았는가
-
-[ ] 전체 Call Path를 먼저 완료했는가
-
-[ ] Oracle Object / Column을 수집하고 중복 제거했는가
-
-[ ] 필요한 Metadata만 Oracle MCP로 확인했는가
-
-[ ] 동일 Metadata를 반복 조회하지 않았는가
-
-[ ] Schema 전체 Metadata를 탐색하지 않았는가
-
-[ ] RFC / REST / 기타 외부 연동을 실제 위치에 배치했는가
-
-[ ] 외부 연동 후 Caller로 복귀했는가
-
-[ ] 조건 / 분기 / 반복을 보존했는가
-
-[ ] Exception을 실제 Source 기준으로 확인했는가
-
-[ ] Transaction을 추측하지 않았는가
-
-[ ] 최종 Response까지 추적했는가
-
-[ ] Source Path가 Project Root 기준 상대경로인가
-
-[ ] Line Range를 추측하지 않았는가
-
-[ ] JAR / 외부 Dependency 내부로 확장하지 않았는가
-
-[ ] xargs / Project Root 전체 재귀 Shell 검색을 사용하지 않았는가
-
-[ ] 기존 파일을 임의로 덮어쓰지 않았는가
+파일명 재생성
+BE ID 재할당
+FE Base Name 변경
+Output File 변경
 ```
 
 ---
 
-# 36. 최종 결과
+# 35. 기존 파일 보호
 
-성공 시:
+Output File이 이미 존재하는 경우
+임의로 덮어쓰지 않는다.
 
 ```text
-Backend Direct Analysis 완료
+STOP
 
-STATUS:
-PASS
-
-화면명:
-{화면명}
-
-HTTP METHOD:
-{확정 Method}
-
-BACKEND URL:
-{Backend URL}
-
-CONTROLLER:
-{Controller}
-
-BE ID:
-{BE ID}
-
-BE DOCUMENT:
-docs/analysis/{화면명}/backend/{파일명}
+Output File already exists:
+docs/analysis/equipment/backend/FE-ACT-010-create-BE-001.md
 ```
 
-상세 Backend 분석 내용은
-생성된 Markdown 문서에 저장한다.
-
-터미널/Claude 응답에 전체 BE 문서를
-다시 출력하지 않는다.
+사용자가 명시적으로 덮어쓰기를 요청한 경우에만
+기존 파일을 갱신한다.
 
 ---
 
-# 37. STOP
+# 36. 문서 기본 구조
 
-현재 Backend URL의:
+생성 문서는 최소 다음 구조를 가진다.
+
+```markdown
+# Backend Analysis
+
+## 1. 분석 대상
+
+## 2. Controller Mapping
+
+## 3. 전체 실행 흐름
+
+## 4. Controller
+
+## 5. Business Logic
+
+## 6. 조건 분기
+
+## 7. DB / MyBatis / SQL
+
+## 8. Oracle Metadata
+
+## 9. RFC / 외부 연동
+
+## 10. Response
+
+## 11. 예외 처리
+
+## 12. Evidence
+
+## 13. 전체 흐름도
+```
+
+실제 Source에 없는 영역은 임의로 만들지 않는다.
+
+필요한 경우:
 
 ```text
-Controller
-Service / ServiceImpl
+해당 없음
+```
+
+또는:
+
+```text
+확인되지 않음
+```
+
+으로 기록한다.
+
+---
+
+# 37. 전체 실행 흐름 작성 규칙
+
+가장 중요한 결과는
+실제 실행 순서를 보여주는 전체 실행 트리이다.
+
+예:
+
+```text
+POST /api/equipment/create
+ ↓
+EquipmentController.create()
+ ↓
+EquipmentService.create()
+ ↓
+validateRequest()
+ ↓
+DB #1
+ EquipmentMapper.selectDuplicate()
+ ↓
+중복 존재?
+ ├─ YES
+ │   ↓
+ │  BusinessException
+ │   ↓
+ │  Error Response
+ │
+ └─ NO
+     ↓
+    DB #2
+     EquipmentMapper.insert()
+     ↓
+    RFC #1
+     Z_EQUIPMENT_CREATE
+     ↓
+    RFC 성공?
+     ├─ YES
+     │   ↓
+     │  DB #3
+     │   상태 UPDATE
+     │   ↓
+     │  Success Response
+     │
+     └─ NO
+         ↓
+        DB #4
+         오류 상태 UPDATE
+         ↓
+        BusinessException
+         ↓
+        Error Response
+```
+
+---
+
+# 38. Evidence 규칙
+
+Evidence는 반드시 실제 Source 기준으로 기록한다.
+
+형식:
+
+```text
+프로젝트 상대경로
+파일명
+Line Range
+Symbol
+```
+
+예:
+
+```text
+gipms-api-equipment/src/main/java/.../EquipmentController.java
+Lines 42-58
+EquipmentController.create()
+```
+
+절대경로는 기록하지 않는다.
+
+REFERENCE 문서는 Evidence가 아니다.
+
+---
+
+# 39. 분석 완료 조건
+
+다음이 확인되어야 완료로 판단한다.
+
+```text
+Controller Mapping 확인
+Controller Method 확인
+실제 Service 흐름 확인
+조건 분기 확인
+Mapper/MyBatis 확인
+SQL 확인
+DB 호출 순서 확인
+RFC/REST/외부 호출 확인
+Response 확인
+예외 처리 확인
+Evidence 기록
+전체 실행 트리 작성
+```
+
+해당 요소가 Source에 존재하지 않는 경우에는
+존재하지 않음을 명확히 기록한다.
+
+---
+
+# 40. STOP 조건
+
+다음 경우 임의 진행하지 않는다.
+
+```text
+Controller를 찾을 수 없음
+
+UNKNOWN Method인데 동일 URL에 여러 Method 존재
+
+Backend URL이 여러 Controller에 모호하게 Mapping됨
+
+필수 Source 접근 불가
+
+FE Base Name이 필요한데 전달되지 않음
+
+Output File이 이미 존재하고 덮어쓰기 지시 없음
+```
+
+STOP 시 이유와
+사용자가 선택하거나 제공해야 할 값을 명확하게 출력한다.
+
+---
+
+# 41. 최종 원칙
+
+이 Skill의 핵심은 다음이다.
+
+```text
+Backend URL
+ ↓
+Controller 찾기
+ ↓
+실제 Source 실행 경로 추적
+ ↓
 Business Logic
-Internal Method
-Other Service
-Mapper
-MyBatis
-SQL
-필요한 Oracle Metadata
-RFC / REST / 기타 외부 연동
-Exception
-Transaction
-Response
-Source Evidence
+ ↓
+DB / RFC / REST / External 호출을
+실제 발생 순서대로 연결
+ ↓
+SQL 기반 Oracle 대상 수집
+ ↓
+중복 제거 후 필요한 Metadata만 확인
+ ↓
+Response까지 연결
+ ↓
+Evidence 포함 문서 생성
 ```
 
-분석과 문서 생성이 완료되면 STOP 한다.
+API 문서가 없어도 분석할 수 있어야 한다.
 
-API 문서를 생성하지 않는다.
-
-다음 Backend URL을 자동 분석하지 않는다.
-
-다른 API를 자동 분석하지 않는다.
-
-다른 화면으로 확장하지 않는다.
-
-현재 Backend URL의 실제 Call Path와 연결된 범위까지만 분석한다.
+하지만 API 문서가 없다는 이유로
+Source에서 확인되지 않은 내용을 추측해서는 안 된다.
