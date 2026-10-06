@@ -1,6 +1,6 @@
 ---
 name: be-analysis
-description: 선택한 Backend API를 기준으로 실제 실행 순서에 따라 Controller, Service, MyBatis/Oracle, RFC 및 기타 외부 연동을 추적하여 Backend Business Logic을 분석한다.
+description: 선택한 Backend API를 기준으로 실제 실행 순서에 따라 Controller, Service, MyBatis/SQL, 필요한 Oracle Metadata, RFC 및 기타 외부 연동을 추적하여 Backend Business Logic을 분석한다.
 argument-hint: "<화면명> <API ID>"
 user-invocable: true
 disable-model-invocation: true
@@ -50,6 +50,9 @@ Response
 DB / RFC / REST / 기타 외부 연동은
 실제 호출 위치에 배치한다.
 
+Oracle Metadata 확인은 실제 실행 단계가 아니므로
+Business Logic 중간 단계로 삽입하지 않는다.
+
 
 ## 2. 적용 Rule
 
@@ -61,6 +64,7 @@ DB / RFC / REST / 기타 외부 연동은
 ```
 
 두 Rule의 분석 범위, 호출 추적, Source Evidence,
+Oracle Metadata 최적화,
 안전 규칙 및 STOP 조건을 준수한다.
 
 
@@ -323,6 +327,9 @@ Grep 또는 파일 검색을 보조적으로 사용할 수 있다.
 
 관련 없는 프로젝트 전체를 무차별적으로 검색하지 않는다.
 
+`xargs` 또는 Project Root 전체 대상
+Shell 기반 재귀 검색은 사용하지 않는다.
+
 
 ## 10. Controller 분석
 
@@ -444,6 +451,9 @@ Service A
 하위 Service / DB / RFC / REST 분석이 끝났다는 이유로
 전체 Backend 분석을 종료하지 않는다.
 
+Oracle Metadata 확인을 위해
+Caller 복귀를 지연하지 않는다.
+
 
 ## 15. Mapper / MyBatis 추적
 
@@ -476,6 +486,11 @@ namespace + Statement ID
 ```
 
 를 기준으로 정확하게 연결한다.
+
+SQL에서 사용된 Table / View / Column은
+후반 Oracle Metadata 검증을 위해 기록할 수 있다.
+
+이 단계에서 Oracle MCP를 즉시 호출할 필요는 없다.
 
 
 ## 16. Dynamic SQL 분석
@@ -527,6 +542,9 @@ PLANT_CODE
 
 Source에서 확인되지 않는 Mapping은 추측하지 않는다.
 
+Oracle Metadata를 조회하지 않아도
+SQL Source에서 확인 가능한 Parameter Mapping은 분석한다.
+
 
 ## 18. SQL Result Mapping
 
@@ -551,22 +569,129 @@ Business Logic
 `resultType`, `resultMap`, `association`, `collection` 등이
 실제로 사용되는 경우 해당 구조를 확인한다.
 
+Metadata 조회 여부와 관계없이
+MyBatis Result Mapping 분석을 수행한다.
+
 
 ## 19. Oracle MCP
 
-Oracle MCP는 필요한 DB Metadata 확인에 사용한다.
+Oracle MCP는 필요한 DB Metadata 확인에만 사용한다.
+
+Oracle Metadata는 Backend Business Logic을 추적하기 위한
+필수 선행 단계가 아니다.
+
+DB 호출마다 Oracle MCP를 즉시 호출하지 않는다.
+
+우선 다음 순서로 Backend 실행 흐름을 분석한다.
+
+```text
+Controller
+ ↓
+Service / 내부 호출
+ ↓
+Mapper
+ ↓
+MyBatis
+ ↓
+SQL / Dynamic SQL
+ ↓
+Parameter / Result Mapping
+ ↓
+사용 Oracle Object / Column 기록
+ ↓
+Caller 복귀
+ ↓
+다음 Business Logic
+ ↓
+RFC / REST / 다음 DB
+ ↓
+Response
+```
+
+현재 API의 전체 Call Path를 Response까지 추적한 후
+Oracle Metadata 검증 단계를 수행한다.
+
+```text
+사용 Oracle Object / Column 수집
+ ↓
+동일 Object / Column 중복 제거
+ ↓
+Metadata 확인 필요성 판단
+ ↓
+필요한 Object / Column만 Oracle MCP 확인
+ ↓
+SQL Source ↔ Metadata 교차 검증
+```
 
 확인 가능 대상:
 
 ```text
-Table
-View
-Column
+Object 존재 여부
+Table / View
+Column 존재 여부
 Data Type
 Nullable
 Primary Key
-Object 존재 여부
 ```
+
+Metadata 확인이 필요한 대표적인 경우:
+
+```text
+Object 존재 여부를 검증해야 하는 경우
+Column 존재 여부를 검증해야 하는 경우
+Data Type이 실제 분석에 필요한 경우
+Nullable이 Business Logic 이해에 필요한 경우
+Primary Key 확인이 SQL 의미 이해에 필요한 경우
+SQL Source와 실제 DB 구조 불일치가 의심되는 경우
+Parameter / Result Mapping 검증이 필요한 경우
+```
+
+SQL Source만으로 충분히 확인되는 내용을
+반복 검증하기 위해 Oracle MCP를 호출하지 않는다.
+
+동일 Object가 여러 DB 호출에서 사용되더라도
+현재 Worker 내에서 동일 Object Metadata를 반복 조회하지 않는다.
+
+이미 확인한 Column Metadata 역시 반복 조회하지 않는다.
+
+다음 방식으로 Oracle Metadata를 탐색하지 않는다.
+
+```text
+Schema 전체 Table 조회
+Schema 전체 View 조회
+Schema 전체 Column 조회
+현재 API와 관련 없는 Object 조회
+모든 Object의 모든 Column 무조건 조회
+동일 Object 반복 조회
+동일 Column 반복 조회
+```
+
+Oracle Metadata를 추가 조회하지 않았다고 해서
+Source / MyBatis / SQL에서 확인된 정보를
+`확인되지 않음`으로 변경하지 않는다.
+
+예:
+
+```text
+MyBatis SQL에서 확인
+
+FROM TB_EQUIPMENT
+WHERE PLANT_CODE = #{plantCode}
+```
+
+이라면 다음은 Source에서 확인된 사실이다.
+
+```text
+Object
+  TB_EQUIPMENT
+
+Column
+  PLANT_CODE
+```
+
+반면 Data Type / Nullable / PK를
+Oracle MCP에서 확인하지 않았다면
+해당 Metadata만 추가 확인하지 않은 것으로 구분한다.
 
 Oracle MCP는 Read-Only로 사용한다.
 
@@ -583,7 +708,7 @@ DROP
 TRUNCATE
 ```
 
-SQL Source와 Oracle Metadata가 다르면
+SQL Source와 실제 확인한 Oracle Metadata가 다르면
 차이를 숨기지 않는다.
 
 
@@ -603,6 +728,10 @@ DB #4 - INSERT
 
 같은 Mapper Statement가 여러 위치에서 호출되더라도
 Execution Tree에서는 각각의 호출 위치를 보존한다.
+
+DB 호출의 구분과 Oracle Metadata 조회 횟수는 별개이다.
+
+동일 Object Metadata는 중복 조회하지 않는다.
 
 
 ## 21. 외부 연동 탐지
@@ -805,6 +934,9 @@ Controller Return
 
 현재 API의 최종 Response 생성까지 확인한다.
 
+Oracle Metadata 검증보다
+Response까지 전체 Call Path 추적을 우선한다.
+
 
 ## 31. Source Evidence
 
@@ -827,7 +959,7 @@ Namespace
 Statement ID
 Line Range
 SQL
-Oracle Metadata
+필요한 경우 실제 확인한 Oracle Metadata
 ```
 
 외부 연동:
@@ -850,6 +982,17 @@ Line Range
 으로 기록한다.
 
 Line Range를 추측하지 않는다.
+
+Oracle Metadata를 추가 조회하지 않은 경우
+필요하면:
+
+```text
+Metadata 추가 조회하지 않음
+```
+
+으로 구분한다.
+
+이는 SQL Source 자체가 미확인이라는 의미가 아니다.
 
 
 ## 32. JAR / 외부 Dependency 제한
@@ -885,12 +1028,15 @@ Business Logic은 실제 Source를 기준으로 확정한다.
  ↓
 Mapper / MyBatis XML / SQL
  ↓
-Oracle Metadata
+필요한 경우 확인한 Oracle Metadata
  ↓
 Runtime Evidence
  ↓
 Code Index 탐색 결과
 ```
+
+Oracle Metadata는 Source / MyBatis SQL을 대신하여
+Business Logic을 결정하는 Evidence가 아니다.
 
 Code Index 검색 결과나 Method 이름만으로
 Business Logic을 확정하지 않는다.
@@ -941,6 +1087,9 @@ Controller Return
 ```
 
 중간 호출에서 분석이 끊기지 않았는지 확인한다.
+
+전체 Call Path 검증이 끝난 후
+필요한 Oracle Metadata를 후반 검증한다.
 
 
 ## 35. BE ID 결정
@@ -1165,7 +1314,8 @@ Sample Value
 
 등을 실제 분석 결과로 복사하지 않는다.
 
-현재 Source에서 확인된 정보만 사용한다.
+현재 Source와 필요한 경우 확인한 Metadata에서
+확인된 정보만 사용한다.
 
 
 ## 39. BE Reference가 없는 경우
@@ -1197,6 +1347,9 @@ Message Publish
 ```
 
 분석을 위해 실제 업무 데이터를 변경하지 않는다.
+
+Oracle MCP 역시 Metadata 확인을 위한
+Read-Only 용도로만 사용한다.
 
 
 ## 41. 최종 검증
@@ -1231,7 +1384,33 @@ Backend 분석 문서를 저장하기 전에
 
 [ ] SQL Parameter Mapping을 추측하지 않았는가
 
-[ ] 필요한 Oracle Metadata를 Read-Only로 확인했는가
+[ ] SQL Result Mapping을 가능한 범위에서 확인했는가
+
+[ ] DB 호출을 발견할 때마다
+    Oracle Metadata를 즉시 조회하지 않았는가
+
+[ ] Response까지 전체 Call Path를 먼저 추적했는가
+
+[ ] SQL에서 실제 사용된 Oracle Object / Column을 수집했는가
+
+[ ] 동일 Oracle Object / Column을 중복 제거했는가
+
+[ ] Metadata가 실제로 필요한 항목만 선별했는가
+
+[ ] 필요한 경우에만 Oracle Metadata를
+    Read-Only로 확인했는가
+
+[ ] 동일 Object / Column Metadata를
+    현재 Worker에서 반복 조회하지 않았는가
+
+[ ] Schema 전체 Metadata를 탐색하지 않았는가
+
+[ ] Metadata를 조회하지 않았다는 이유로
+    Source / MyBatis / SQL에서 확인된 사실을
+    미확인으로 변경하지 않았는가
+
+[ ] SQL Source와 실제 확인한 Metadata가 다르면
+    차이를 기록했는가
 
 [ ] DB 호출이 여러 번 존재하는 경우
     실제 실행 위치를 각각 보존했는가
@@ -1259,6 +1438,9 @@ Backend 분석 문서를 저장하기 전에
 
 [ ] JAR / Decompiled Class / Project Root 외부 Source를
     자동 탐색하지 않았는가
+
+[ ] xargs 또는 Project Root 전체 대상
+    Shell 재귀 검색을 사용하지 않았는가
 
 [ ] Orchestrator / Worker에서 BE ID를 전달한 경우
     전달받은 BE ID를 그대로 사용했는가
@@ -1311,7 +1493,8 @@ Backend 분석의 상세 결과는
 Controller
 Business Logic
 내부 호출
-DB / MyBatis / Oracle
+DB / MyBatis / SQL
+필요한 경우 Oracle Metadata
 RFC / 외부 연동
 Exception
 Response
@@ -1319,6 +1502,9 @@ Source Evidence
 ```
 
 분석과 문서 생성이 완료되면 STOP 한다.
+
+Oracle Metadata가 필요하지 않은 경우
+Oracle MCP 호출 없이 Backend 분석을 완료할 수 있다.
 
 자동으로 다음 API를 분석하지 않는다.
 
