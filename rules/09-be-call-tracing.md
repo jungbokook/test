@@ -1,6 +1,6 @@
 ---
 name: be-call-tracing
-description: Backend API의 Controller부터 Service, 내부 호출, MyBatis/SQL, Oracle, RFC 및 기타 외부 연동까지 실제 Source Evidence와 실행 순서를 기준으로 추적하는 규칙을 정의한다.
+description: Backend API의 Controller부터 Service, 내부 호출, MyBatis/SQL, 필요한 Oracle Metadata, RFC 및 기타 외부 연동까지 실제 Source Evidence와 실행 순서를 기준으로 추적하는 규칙을 정의한다.
 ---
 
 # Backend Call Tracing
@@ -32,8 +32,6 @@ Mapper
 MyBatis XML
     ↓
 SQL
-    ↓
-Oracle
 
 그리고 실행 흐름 중간의
 
@@ -45,6 +43,9 @@ Message
 File
 기타 외부 연동
 ```
+
+Oracle Metadata는 실제 Business Logic 실행 단계가 아니라
+필요한 경우 SQL Source를 검증하는 보조 Evidence이다.
 
 실제 Source에 존재하는 중간 단계를 임의로 생략하지 않는다.
 
@@ -648,33 +649,109 @@ SQL 결과와 이후 Business Logic의 연결에 필요한 범위까지 확인�
 
 ## 20. Oracle Metadata 교차 확인
 
-SQL에서 실제 Oracle Object가 사용되면
-필요한 경우 Oracle MCP로 Metadata를 확인한다.
+Oracle Metadata는 Backend Call Path 추적의
+필수 선행 단계가 아니다.
+
+SQL에서 Oracle Object가 발견될 때마다
+Oracle MCP를 즉시 호출하지 않는다.
+
+먼저 현재 API의 실제 실행 흐름을 계속 추적한다.
+
+```text
+Mapper
+ ↓
+MyBatis
+ ↓
+SQL
+ ↓
+사용 Object / Column 기록
+ ↓
+Caller 복귀
+ ↓
+다음 Business Logic
+```
+
+이 흐름을 반복하여
+Controller부터 Response까지 Call Path를 완료한다.
+
+그 후:
+
+```text
+사용 Oracle Object / Column 수집
+ ↓
+동일 Object / Column 중복 제거
+ ↓
+Metadata 확인 필요성 판단
+ ↓
+필요한 Metadata만 Oracle MCP 확인
+ ↓
+SQL ↔ Metadata 교차 검증
+```
+
+순서로 처리한다.
+
+Metadata 확인이 필요한 예:
+
+```text
+Object 존재 여부 검증
+Table / View 구분 확인
+Column 존재 여부 검증
+Data Type 확인
+Nullable 확인
+Primary Key 확인
+SQL Source와 DB 구조 불일치 의심
+Parameter / Result Mapping 검증
+```
 
 예:
 
 ```text
 SQL
 TB_EQUIPMENT.PLANT_CODE
+
         ↓
-Oracle Metadata
+
+Source에서 확인
+Object:
 TB_EQUIPMENT
- └─ PLANT_CODE VARCHAR2(...)
+
+Column:
+PLANT_CODE
+
+        ↓
+
+Data Type 검증 필요
+
+        ↓
+
+Oracle Metadata
+TB_EQUIPMENT.PLANT_CODE
+VARCHAR2(...)
 ```
 
-확인 가능한 항목:
+동일 Object가 여러 SQL에서 반복 사용되더라도
+현재 Worker 내에서 동일 Metadata를 반복 조회하지 않는다.
+
+이미 확인한 Column Metadata 역시 반복 조회하지 않는다.
+
+다음 방식의 광범위 Metadata 조회를 수행하지 않는다.
 
 ```text
-Table / View
-Column
-Data Type
-Nullable
-Primary Key
-Object 존재 여부
+Schema 전체 Table 조회
+Schema 전체 View 조회
+Schema 전체 Column 조회
+관련 없는 Object 조회
+모든 Object의 전체 Column 조회
+동일 Object 반복 조회
+동일 Column 반복 조회
 ```
 
 Oracle MCP 결과가 Source SQL과 다르면
 차이를 숨기지 않고 기록한다.
+
+Oracle Metadata를 추가 조회하지 않았다고 해서
+Source / MyBatis / SQL에서 확인된 정보를
+`확인되지 않음`으로 낮추지 않는다.
 
 DB Metadata 확인만 수행하며
 DML / DDL은 실행하지 않는다.
@@ -684,6 +761,9 @@ DML / DDL은 실행하지 않는다.
 
 Mapper / SQL 분석 후
 반드시 해당 Mapper를 호출한 Business Logic으로 돌아간다.
+
+Oracle Metadata 확인을 위해
+Caller 복귀를 지연하지 않는다.
 
 예:
 
@@ -704,6 +784,9 @@ Service
 ```
 
 SQL을 확인했다고 Backend 분석을 종료하지 않는다.
+
+Oracle Metadata 확인 역시
+Backend 실행 흐름 추적을 종료하는 지점이 아니다.
 
 
 ## 22. RFC 호출 지점 탐색
@@ -986,6 +1069,9 @@ DB #4 - INSERT
 같은 Mapper Statement가 여러 위치에서 호출되면
 실행 위치가 다른 호출은 Execution Tree에서 구분한다.
 
+단, 동일 DB 호출에서 사용하는 Oracle Object가 중복된다는 이유로
+동일 Metadata를 반복 조회하지 않는다.
+
 
 ## 33. 조건부 호출 표현
 
@@ -1165,6 +1251,17 @@ RFC Function 또는 Endpoint
 Line Range
 ```
 
+Oracle Metadata:
+
+```text
+실제 Oracle MCP로 확인한 경우에만
+Object
+Column
+Data Type
+Nullable
+Primary Key
+```
+
 Line Range를 확인할 수 없는 경우:
 
 ```text
@@ -1302,6 +1399,9 @@ Response
 
 중간 호출에서 분석이 끊기지 않았는지 확인한다.
 
+Oracle Metadata 검증보다
+전체 Call Path 완료를 우선한다.
+
 
 ## 43. 호출 관계 축약 금지
 
@@ -1356,19 +1456,30 @@ Service → DB
 
 ## 44. 분석 결과의 기준
 
-호출 관계의 신뢰도 우선순위는 다음과 같다.
+호출 관계와 Business Logic의 신뢰도 우선순위는 다음과 같다.
 
 ```text
 실제 Source
         ↓
 실제 Mapper / MyBatis XML / SQL
         ↓
-Oracle Metadata
+필요한 경우 확인한 Oracle Metadata
         ↓
 Runtime Evidence
         ↓
 Code Index 탐색 결과
 ```
+
+Oracle Metadata는 Source / MyBatis SQL보다
+우선하는 Business Logic Evidence가 아니다.
+
+Metadata 확인을 위해
+전체 Backend Call Path 분석을 중단하거나 지연하지 않는다.
+
+먼저 Source / MyBatis / SQL을 기준으로
+Response까지 실행 흐름을 추적한다.
+
+그 후 필요한 Metadata만 선택적으로 확인한다.
 
 Code Index는 탐색 도구이지
 Business Logic 자체의 Evidence를 대신하지 않는다.
@@ -1394,7 +1505,7 @@ Message Publish
 저장 / 수정 / 삭제 API 실행
 ```
 
-Backend Source와 Metadata를
+Backend Source와 필요한 Metadata를
 Read-Only 방식으로 분석한다.
 
 
@@ -1412,6 +1523,7 @@ Backend Business Logic 추적이 완료되면 STOP 한다.
 관련 없는 Mapper
 관련 없는 SQL
 관련 없는 Table
+Schema 전체 Metadata
 프로젝트 전체 RFC
 프로젝트 전체 외부 API
 프로젝트 전체 Business Logic
@@ -1474,3 +1586,52 @@ grep -rn "insertApprovemap" <Project Root>
 
 최종 호출 관계와 Business Logic은
 반드시 실제 Source File을 확인하여 확정한다.
+
+
+## 48. Oracle Metadata 조회 최적화
+
+Oracle Metadata 조회는 다음 원칙을 따른다.
+
+```text
+1. DB 호출마다 즉시 Metadata를 조회하지 않는다.
+
+2. Mapper / MyBatis / SQL을 먼저 분석한다.
+
+3. SQL에서 사용된 Object / Column을 기록한다.
+
+4. DB 분석 후 Caller로 즉시 복귀한다.
+
+5. 현재 API의 Business Logic을 Response까지 계속 추적한다.
+
+6. 전체 Call Path 완료 후
+   사용된 Oracle Object / Column을 모은다.
+
+7. 동일 Object / Column을 중복 제거한다.
+
+8. Metadata가 실제 분석에 필요한지 판단한다.
+
+9. 필요한 Object / Column만 Oracle MCP로 확인한다.
+
+10. 이미 확인한 Metadata는 동일 Worker에서 반복 조회하지 않는다.
+```
+
+다음 작업은 수행하지 않는다.
+
+```text
+Schema 전체 Metadata 조회
+관련 없는 Table / View 조회
+모든 Object의 전체 Column 조회
+동일 Object 반복 조회
+동일 Column 반복 조회
+Metadata 확인을 위한 Project 범위 확대
+```
+
+Metadata가 필요하지 않은 경우
+Oracle MCP 호출 없이 Backend 분석을 완료할 수 있다.
+
+Metadata를 조회하지 않았다는 이유로
+Source / MyBatis / SQL에서 확인된 사실을
+`확인되지 않음`으로 변경하지 않는다.
+
+Oracle Metadata는
+필요한 DB 구조를 검증하는 보조 Evidence로 사용한다.
