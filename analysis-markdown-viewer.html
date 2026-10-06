@@ -1,9 +1,10 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Analysis Markdown Viewer</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>GIPMS Analysis Viewer</title>
 
 <style>
 * {
@@ -12,50 +13,77 @@
 
 body {
     margin: 0;
-    background: #f5f7fa;
-    font-family: Arial, "Noto Sans KR", sans-serif;
-    color: #1f2937;
+    background: #f5f6f8;
+    color: #24292f;
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Malgun Gothic",
+        sans-serif;
 }
+
+/* =========================================================
+   Header
+========================================================= */
 
 header {
     position: sticky;
     top: 0;
-    background: white;
-    border-bottom: 1px solid #ddd;
     z-index: 10;
-}
-
-.controls,
-.viewer,
-.status {
-    width: 90%;
-    max-width: 90%;
-    margin-left: auto;
-    margin-right: auto;
+    background: #ffffff;
+    border-bottom: 1px solid #d8dee4;
 }
 
 .controls {
-    padding: 18px 0;
+    width: 90%;
+    max-width: 90%;
+    margin: auto;
+    padding: 10px 0;
 }
 
 .row {
     display: flex;
-    gap: 10px;
     align-items: center;
-    flex-wrap: wrap;
-    margin: 8px 0;
+    gap: 8px;
+    margin: 6px 0;
 }
 
 label {
-    font-weight: bold;
     min-width: 55px;
+    font-weight: 600;
 }
+
+/* =========================================================
+   Top Row
+========================================================= */
+
+.top-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 2px;
+}
+
+.top-row select {
+    flex: 0 1 300px;
+    min-width: 180px;
+}
+
+.top-row button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+/* =========================================================
+   Select / Button
+========================================================= */
 
 select,
 button {
-    padding: 9px 13px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
+    padding: 8px 12px;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
     background: white;
     font: inherit;
 }
@@ -68,155 +96,388 @@ button {
     cursor: pointer;
 }
 
-button:hover {
-    background: #f8fafc;
+button:hover:not(:disabled) {
+    border-color: #0969da;
 }
 
 button.active {
-    background: #1f2937;
-    color: white;
+    background: #ddf4ff;
+    border-color: #54aeff;
+    color: #0969da;
+    font-weight: 600;
 }
+
+button:disabled {
+    color: #afb8c1;
+    cursor: default;
+}
+
+.main-tab {
+    min-width: 80px;
+    font-weight: 600;
+}
+
+/* =========================================================
+   FE / API / BE Area
+========================================================= */
 
 .sub {
     display: none;
-    border-top: 1px solid #eee;
-    margin-top: 12px;
-    padding-top: 8px;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid #d8dee4;
 }
 
 .sub.show {
     display: block;
 }
 
-.status {
-    margin-top: 18px;
-    color: #64748b;
+/* =========================================================
+   FE Horizontal Scroll
+========================================================= */
+
+.fe-row {
+    flex-wrap: nowrap;
+    width: 100%;
 }
+
+.fe-scroll {
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 6px;
+}
+
+#fes {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 7px;
+    width: max-content;
+}
+
+#fes button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+/* =========================================================
+   API + BE Same Row
+========================================================= */
+
+.backend-row {
+    align-items: center;
+    gap: 28px;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 6px;
+}
+
+.backend-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+.backend-group label {
+    min-width: auto;
+    font-weight: 700;
+}
+
+.backend-buttons {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 7px;
+}
+
+.backend-buttons button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+/* =========================================================
+   Scrollbar
+========================================================= */
+
+.fe-scroll::-webkit-scrollbar,
+.backend-row::-webkit-scrollbar,
+.top-row::-webkit-scrollbar {
+    height: 6px;
+}
+
+.fe-scroll::-webkit-scrollbar-track,
+.backend-row::-webkit-scrollbar-track,
+.top-row::-webkit-scrollbar-track {
+    background: #f1f3f5;
+    border-radius: 5px;
+}
+
+.fe-scroll::-webkit-scrollbar-thumb,
+.backend-row::-webkit-scrollbar-thumb,
+.top-row::-webkit-scrollbar-thumb {
+    background: #afb8c1;
+    border-radius: 5px;
+}
+
+/* =========================================================
+   Status
+========================================================= */
+
+.status {
+    width: 90%;
+    max-width: 90%;
+    margin: 10px auto 0;
+    color: #57606a;
+    font-size: 12px;
+}
+
+/* =========================================================
+   Viewer
+========================================================= */
 
 .viewer {
-    margin-top: 18px;
-    margin-bottom: 50px;
+    width: 90%;
+    max-width: 90%;
+    margin: 12px auto 50px;
     min-height: 500px;
-    padding: 30px;
+    padding: 32px 40px;
     background: white;
-    border: 1px solid #ddd;
-    border-radius: 12px;
+    border: 1px solid #d8dee4;
+    border-radius: 8px;
     overflow-x: auto;
+    line-height: 1.7;
 }
 
+/* =========================================================
+   Markdown
+========================================================= */
+
 .viewer h1 {
-    border-bottom: 2px solid #e5e7eb;
+    font-size: 28px;
+    margin-top: 34px;
     padding-bottom: 10px;
+    border-bottom: 1px solid #d8dee4;
+}
+
+.viewer h1:first-child {
+    margin-top: 0;
 }
 
 .viewer h2 {
-    border-bottom: 1px solid #e5e7eb;
+    font-size: 22px;
+    margin-top: 30px;
     padding-bottom: 7px;
-    margin-top: 32px;
+    border-bottom: 1px solid #d8dee4;
 }
 
 .viewer h3 {
-    margin-top: 26px;
+    font-size: 18px;
+    margin-top: 24px;
+}
+
+.viewer h4 {
+    font-size: 16px;
+    margin-top: 20px;
 }
 
 .viewer p {
-    line-height: 1.7;
+    margin: 10px 0;
 }
 
 .viewer ul,
 .viewer ol {
-    line-height: 1.7;
+    padding-left: 28px;
+}
+
+.viewer li {
+    margin: 4px 0;
 }
 
 .viewer blockquote {
-    margin-left: 0;
-    padding: 8px 16px;
-    border-left: 4px solid #cbd5e1;
-    background: #f8fafc;
-}
-
-pre {
+    margin: 16px 0;
+    padding: 4px 16px;
+    color: #57606a;
+    border-left: 4px solid #d0d7de;
     background: #f6f8fa;
-    padding: 14px;
-    overflow: auto;
-    border-radius: 8px;
-    line-height: 1.5;
-}
-
-code {
-    font-family: Consolas, "Courier New", monospace;
-}
-
-:not(pre) > code {
-    background: #f1f5f9;
-    padding: 2px 5px;
-    border-radius: 4px;
-}
-
-table {
-    border-collapse: collapse;
-    display: block;
-    overflow-x: auto;
-    margin: 15px 0;
-}
-
-th,
-td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
-}
-
-th {
-    background: #f8fafc;
 }
 
 /* =========================================================
-   Flow Chart
+   Code
 ========================================================= */
 
-.flow-wrapper {
-    margin: 22px 0;
-    padding: 18px;
-    border: 1px solid #dbe2ea;
-    border-radius: 12px;
-    background: #fbfdff;
+.viewer pre {
+    background: #f6f8fa;
+    border: 1px solid #d8dee4;
+    border-radius: 6px;
+    padding: 16px;
     overflow-x: auto;
+    line-height: 1.5;
+    font-family:
+        Consolas,
+        "Courier New",
+        monospace;
+    font-size: 13px;
+    white-space: pre;
 }
 
-.flow-toolbar {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 12px;
+.viewer code {
+    font-family:
+        Consolas,
+        "Courier New",
+        monospace;
 }
 
-.flow-download {
-    padding: 7px 12px;
-    border: 1px solid #cbd5e1;
-    border-radius: 7px;
-    background: white;
-    cursor: pointer;
+.viewer :not(pre) > code {
+    background: #eff1f3;
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-size: 90%;
 }
 
-.flow-download:hover {
-    background: #f1f5f9;
+/* =========================================================
+   Table
+========================================================= */
+
+.viewer table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 24px;
+    font-size: 13px;
 }
 
-.flow-svg {
-    display: block;
-    margin: auto;
-    min-width: 700px;
+.viewer th,
+.viewer td {
+    border: 1px solid #d0d7de;
+    padding: 8px 10px;
+    text-align: left;
+    vertical-align: top;
 }
 
-.flow-error {
-    padding: 12px;
-    border: 1px solid #fecaca;
-    background: #fef2f2;
+.viewer th {
+    background: #f6f8fa;
+    font-weight: 700;
+}
+
+.viewer tr:nth-child(even) td {
+    background: #fbfcfd;
+}
+
+.viewer hr {
+    border: 0;
+    border-top: 1px solid #d8dee4;
+    margin: 24px 0;
+}
+
+/* =========================================================
+   Built-in Mermaid / Flowchart
+========================================================= */
+
+.mermaid-container {
+    width: 100%;
+    margin: 22px 0;
+    padding: 14px;
+    border: 1px solid #d8dee4;
     border-radius: 8px;
+    background: #fbfcfd;
+    overflow: auto;
+}
+
+.mermaid-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+    color: #57606a;
+    font-size: 12px;
+}
+
+.mermaid-title {
+    font-weight: 700;
+}
+
+.mermaid-scroll {
+    width: 100%;
+    overflow: auto;
+}
+
+.mermaid-svg {
+    display: block;
+    margin: 0 auto;
+    min-width: 500px;
+}
+
+.mermaid-node {
+    fill: #ffffff;
+    stroke: #57606a;
+    stroke-width: 1.5;
+}
+
+.mermaid-condition {
+    fill: #fff8c5;
+    stroke: #9a6700;
+    stroke-width: 1.5;
+}
+
+.mermaid-rounded {
+    fill: #ddf4ff;
+    stroke: #0969da;
+    stroke-width: 1.5;
+}
+
+.mermaid-node-text {
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Malgun Gothic",
+        sans-serif;
+    font-size: 13px;
+    fill: #24292f;
+}
+
+.mermaid-edge {
+    stroke: #57606a;
+    stroke-width: 1.5;
+    fill: none;
+}
+
+.mermaid-edge-label-bg {
+    fill: #ffffff;
+    stroke: #d0d7de;
+    stroke-width: 1;
+}
+
+.mermaid-edge-label {
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Malgun Gothic",
+        sans-serif;
+    font-size: 11px;
+    fill: #57606a;
+}
+
+.mermaid-error {
+    padding: 14px;
+    border: 1px solid #cf222e;
+    border-radius: 6px;
+    background: #ffebe9;
+    color: #82071e;
     white-space: pre-wrap;
 }
 
-@media(max-width:700px) {
+.empty {
+    padding: 60px 20px;
+    text-align: center;
+    color: #57606a;
+}
+
+@media (max-width: 800px) {
+
     .controls,
     .viewer,
     .status {
@@ -225,145 +486,245 @@ th {
     }
 
     .viewer {
-        padding: 18px;
+        padding: 22px 18px;
     }
 
-    select {
-        width: 100%;
-        min-width: 0;
+    .top-row select {
+        min-width: 160px;
     }
 }
+
 </style>
 </head>
 
 <body>
 
 <header>
+
 <div class="controls">
 
-    <div class="row">
+    <div class="row top-row">
+
         <label>화면명</label>
 
         <select id="screen">
-            <option value="">화면 선택</option>
+            <option value="">
+                화면 선택
+            </option>
         </select>
 
         <button id="pick">
             docs/analysis 선택
         </button>
-    </div>
 
-    <div class="row">
-        <button id="screenTab" disabled>
+        <button
+            id="screenTab"
+            class="main-tab"
+            disabled
+        >
             SCREEN
         </button>
 
-        <button id="feTab" disabled>
+        <button
+            id="feTab"
+            class="main-tab"
+            disabled
+        >
             FE
         </button>
+
     </div>
 
-    <div id="sub" class="sub">
+    <div
+        id="sub"
+        class="sub"
+    >
 
-        <div class="row">
+        <div class="row fe-row">
+
             <label>FE</label>
-            <div id="fes"></div>
+
+            <div class="fe-scroll">
+                <div id="fes"></div>
+            </div>
+
         </div>
 
         <div
-            id="apiRow"
-            class="row"
+            id="backendRow"
+            class="backend-row"
             style="display:none"
         >
-            <label>API</label>
-            <div id="apis"></div>
-        </div>
 
-        <div
-            id="beRow"
-            class="row"
-            style="display:none"
-        >
-            <label>BE</label>
-            <div id="bes"></div>
+            <div
+                id="apiRow"
+                class="backend-group"
+                style="display:none"
+            >
+
+                <label>API</label>
+
+                <div
+                    id="apis"
+                    class="backend-buttons"
+                ></div>
+
+            </div>
+
+            <div
+                id="beRow"
+                class="backend-group"
+                style="display:none"
+            >
+
+                <label>BE</label>
+
+                <div
+                    id="bes"
+                    class="backend-buttons"
+                ></div>
+
+            </div>
+
         </div>
 
     </div>
 
 </div>
+
 </header>
 
-<div id="status" class="status">
+<div
+    id="status"
+    class="status"
+>
     Chrome/Edge에서
     <b>docs/analysis 선택</b>
     버튼으로 분석 폴더를 선택하세요.
 </div>
 
-<main id="viewer" class="viewer">
-    문서를 선택하면 여기에 표시됩니다.
+<main
+    id="viewer"
+    class="viewer"
+>
+
+    <div class="empty">
+        문서를 선택하면 여기에 표시됩니다.
+    </div>
+
 </main>
 
 <script>
 
-const q = s => document.querySelector(s);
+/* =========================================================
+   State
+========================================================= */
+
+const q =
+    selector =>
+        document.querySelector(
+            selector
+        );
 
 let root = null;
-let data = new Map();
+
+let data =
+    new Map();
 
 let screenName = "";
+
 let action = "";
 
 
 /* =========================================================
-   공통
+   Escape
 ========================================================= */
 
-const esc = s =>
-    String(s).replace(
-        /[&<>"']/g,
-        c => ({
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&#39;"
-        }[c])
-    );
+function escapeHtml(value) {
+
+    return String(value)
+
+        .replace(/&/g, "&amp;")
+
+        .replace(/</g, "&lt;")
+
+        .replace(/>/g, "&gt;")
+
+        .replace(/"/g, "&quot;")
+
+        .replace(/'/g, "&#039;");
+}
 
 
-async function dir(handle, name) {
+function escapeAttribute(value) {
+
+    return escapeHtml(value);
+}
+
+
+/* =========================================================
+   Directory
+========================================================= */
+
+async function dir(
+    handle,
+    name
+) {
+
     try {
-        return await handle.getDirectoryHandle(name);
+
+        return await handle
+            .getDirectoryHandle(
+                name
+            );
     }
     catch {
+
         return null;
     }
 }
 
 
-async function file(handle, name) {
+async function file(
+    handle,
+    name
+) {
+
     try {
-        return await handle.getFileHandle(name);
+
+        return await handle
+            .getFileHandle(
+                name
+            );
     }
     catch {
+
         return null;
     }
 }
 
 
-async function mds(handle) {
+async function mds(
+    handle
+) {
 
-    let result = [];
+    const result = [];
 
-    if (!handle)
+    if (!handle) {
+
         return result;
+    }
 
-    for await (const [name, item] of handle.entries()) {
+    for await (
+        const [name, item]
+        of handle.entries()
+    ) {
 
         if (
             item.kind === "file" &&
             name.toLowerCase().endsWith(".md")
         ) {
+
             result.push(item);
         }
     }
@@ -373,20 +734,25 @@ async function mds(handle) {
             a.name.localeCompare(
                 b.name,
                 undefined,
-                { numeric: true }
+                {
+                    numeric: true,
+                    sensitivity: "base"
+                }
             )
     );
 }
 
 
 /* =========================================================
-   파일명 분석
+   Filename
 ========================================================= */
 
 function act(name) {
 
     const match =
-        name.match(/^FE-(ACT-\d+)/i);
+        name.match(
+            /^FE-(ACT-\d+)/i
+        );
 
     return match
         ? match[1].toUpperCase()
@@ -401,38 +767,60 @@ function feLabel(name) {
             /^FE-(ACT-\d+)-(.+)\.md$/i
         );
 
-    if (!match)
-        return name.replace(/\.md$/i, "");
+    if (!match) {
+
+        return name.replace(
+            /\.md$/i,
+            ""
+        );
+    }
 
     return (
         match[1] +
         " " +
-        match[2].replaceAll("-", " ")
+        match[2].replaceAll(
+            "-",
+            " "
+        )
     );
 }
 
 
-function child(name, actionId, type) {
+function child(
+    name,
+    actionId,
+    type
+) {
 
     const upper =
         name.toUpperCase();
 
     return (
         upper.startsWith(
-            "FE-" + actionId + "-"
-        ) &&
+            "FE-" +
+            actionId +
+            "-"
+        )
+        &&
         upper.includes(
-            "-" + type + "-"
+            "-" +
+            type +
+            "-"
         )
     );
 }
 
 
-function childLabel(name, type) {
+function childLabel(
+    name,
+    type
+) {
 
     const regex =
         new RegExp(
-            "-(" + type + "-\\d+)\\.md$",
+            "-(" +
+            type +
+            "-\\d+)\\.md$",
             "i"
         );
 
@@ -441,1610 +829,93 @@ function childLabel(name, type) {
 
     return match
         ? match[1].toUpperCase()
-        : name.replace(/\.md$/i, "");
+        : name.replace(
+            /\.md$/i,
+            ""
+        );
 }
 
 
 /* =========================================================
-   버튼 상태
+   Active
 ========================================================= */
 
-function active(button) {
+function setMainActive(button) {
 
-    document
-        .querySelectorAll("button.active")
-        .forEach(
-            item =>
-                item.classList.remove("active")
-        );
+    q("#screenTab")
+        .classList
+        .remove("active");
 
-    if (button)
-        button.classList.add("active");
-}
+    q("#feTab")
+        .classList
+        .remove("active");
 
+    if (button) {
 
-/* =========================================================
-   간단 Markdown Renderer
-   외부 Library 사용 안 함
-========================================================= */
-
-function inlineMarkdown(text) {
-
-    let result = esc(text);
-
-    result = result.replace(
-        /`([^`]+)`/g,
-        "<code>$1</code>"
-    );
-
-    result = result.replace(
-        /\*\*([^*]+)\*\*/g,
-        "<strong>$1</strong>"
-    );
-
-    result = result.replace(
-        /\*([^*]+)\*/g,
-        "<em>$1</em>"
-    );
-
-    return result;
-}
-
-
-function renderTable(lines) {
-
-    if (lines.length < 2)
-        return null;
-
-    const separator =
-        lines[1]
-            .trim()
-            .replace(/^\||\|$/g, "")
-            .split("|")
-            .map(v => v.trim());
-
-    const isTable =
-        separator.every(
-            v => /^:?-{3,}:?$/.test(v)
-        );
-
-    if (!isTable)
-        return null;
-
-    const parseRow = line =>
-        line
-            .trim()
-            .replace(/^\||\|$/g, "")
-            .split("|")
-            .map(v => v.trim());
-
-    const header =
-        parseRow(lines[0]);
-
-    let html = "<table><thead><tr>";
-
-    header.forEach(cell => {
-        html +=
-            "<th>" +
-            inlineMarkdown(cell) +
-            "</th>";
-    });
-
-    html += "</tr></thead><tbody>";
-
-    for (let i = 2; i < lines.length; i++) {
-
-        if (!lines[i].includes("|"))
-            break;
-
-        const cells =
-            parseRow(lines[i]);
-
-        html += "<tr>";
-
-        cells.forEach(cell => {
-            html +=
-                "<td>" +
-                inlineMarkdown(cell) +
-                "</td>";
-        });
-
-        html += "</tr>";
+        button
+            .classList
+            .add("active");
     }
-
-    html += "</tbody></table>";
-
-    return html;
-}
-
-
-function markdownToHtml(markdown) {
-
-    /*
-     * Code Block을 먼저 별도 Token으로 보관한다.
-     * flow block 역시 여기서 보관한다.
-     */
-
-    const blocks = [];
-
-    markdown =
-        markdown.replace(
-            /```([^\n]*)\n([\s\S]*?)```/g,
-            (_, lang, body) => {
-
-                const index =
-                    blocks.length;
-
-                blocks.push({
-                    lang: lang.trim().toLowerCase(),
-                    body
-                });
-
-                return (
-                    "\n@@BLOCK_" +
-                    index +
-                    "@@\n"
-                );
-            }
-        );
-
-
-    const lines =
-        markdown.replace(/\r/g, "")
-                .split("\n");
-
-    let html = "";
-    let i = 0;
-    let inUl = false;
-    let inOl = false;
-
-
-    function closeLists() {
-
-        if (inUl) {
-            html += "</ul>";
-            inUl = false;
-        }
-
-        if (inOl) {
-            html += "</ol>";
-            inOl = false;
-        }
-    }
-
-
-    while (i < lines.length) {
-
-        const line = lines[i];
-
-
-        /*
-         * Block Token
-         */
-
-        const blockMatch =
-            line.trim().match(
-                /^@@BLOCK_(\d+)@@$/
-            );
-
-        if (blockMatch) {
-
-            closeLists();
-
-            const block =
-                blocks[
-                    Number(blockMatch[1])
-                ];
-
-            if (block.lang === "flow") {
-
-                html +=
-                    '<div class="flow-source" ' +
-                    'data-flow="' +
-                    encodeURIComponent(
-                        block.body
-                    ) +
-                    '"></div>';
-            }
-            else {
-
-                html +=
-                    "<pre><code>" +
-                    esc(block.body) +
-                    "</code></pre>";
-            }
-
-            i++;
-            continue;
-        }
-
-
-        /*
-         * Heading
-         */
-
-        const heading =
-            line.match(
-                /^(#{1,6})\s+(.*)$/
-            );
-
-        if (heading) {
-
-            closeLists();
-
-            const level =
-                heading[1].length;
-
-            html +=
-                "<h" + level + ">" +
-                inlineMarkdown(
-                    heading[2]
-                ) +
-                "</h" + level + ">";
-
-            i++;
-            continue;
-        }
-
-
-        /*
-         * Horizontal Rule
-         */
-
-        if (/^\s*---+\s*$/.test(line)) {
-
-            closeLists();
-            html += "<hr>";
-            i++;
-            continue;
-        }
-
-
-        /*
-         * Table
-         */
-
-        if (
-            line.includes("|") &&
-            i + 1 < lines.length &&
-            lines[i + 1].includes("|")
-        ) {
-
-            let tableLines = [];
-            let j = i;
-
-            while (
-                j < lines.length &&
-                lines[j].includes("|") &&
-                lines[j].trim() !== ""
-            ) {
-                tableLines.push(
-                    lines[j]
-                );
-                j++;
-            }
-
-            const table =
-                renderTable(tableLines);
-
-            if (table) {
-
-                closeLists();
-                html += table;
-                i = j;
-                continue;
-            }
-        }
-
-
-        /*
-         * Unordered List
-         */
-
-        const ul =
-            line.match(
-                /^\s*[-*+]\s+(.*)$/
-            );
-
-        if (ul) {
-
-            if (inOl) {
-                html += "</ol>";
-                inOl = false;
-            }
-
-            if (!inUl) {
-                html += "<ul>";
-                inUl = true;
-            }
-
-            html +=
-                "<li>" +
-                inlineMarkdown(
-                    ul[1]
-                ) +
-                "</li>";
-
-            i++;
-            continue;
-        }
-
-
-        /*
-         * Ordered List
-         */
-
-        const ol =
-            line.match(
-                /^\s*\d+\.\s+(.*)$/
-            );
-
-        if (ol) {
-
-            if (inUl) {
-                html += "</ul>";
-                inUl = false;
-            }
-
-            if (!inOl) {
-                html += "<ol>";
-                inOl = true;
-            }
-
-            html +=
-                "<li>" +
-                inlineMarkdown(
-                    ol[1]
-                ) +
-                "</li>";
-
-            i++;
-            continue;
-        }
-
-
-        /*
-         * Blockquote
-         */
-
-        const quote =
-            line.match(
-                /^\s*>\s?(.*)$/
-            );
-
-        if (quote) {
-
-            closeLists();
-
-            html +=
-                "<blockquote>" +
-                inlineMarkdown(
-                    quote[1]
-                ) +
-                "</blockquote>";
-
-            i++;
-            continue;
-        }
-
-
-        /*
-         * Empty
-         */
-
-        if (line.trim() === "") {
-
-            closeLists();
-            i++;
-            continue;
-        }
-
-
-        /*
-         * Paragraph
-         */
-
-        closeLists();
-
-        html +=
-            "<p>" +
-            inlineMarkdown(line) +
-            "</p>";
-
-        i++;
-    }
-
-    closeLists();
-
-    return html;
 }
 
 
 /* =========================================================
-   Flow Parser
-
-   지원 문법:
-
-   [ID] 내용
-   [ID] 내용 -> [NEXT]
-   [ID] 내용 -> [NEXT] : 라벨
-   [ID] 내용 ? 성공 -> [A] | 실패 -> [B]
-
-   예:
-
-   [A] 검색 버튼 클릭 -> [B]
-   [B] Validation ? 성공 -> [C] | 실패 -> [X]
-   [C] Parameter 생성 -> [D]
-   [D] API 호출 -> [E]
-   [E] Response 처리 -> [F]
-   [F] 화면 갱신
-   [X] 메시지 표시 후 종료
+   Render File
 ========================================================= */
 
-function parseFlow(source) {
+async function renderFile(handle) {
 
-    const nodes = new Map();
-    const edges = [];
+    if (!handle) {
 
-    const lines =
-        source
-            .replace(/\r/g, "")
-            .split("\n")
-            .map(v => v.trim())
-            .filter(
-                v =>
-                    v &&
-                    !v.startsWith("#")
-            );
-
-
-    for (const line of lines) {
-
-        /*
-         * 조건 분기
-         *
-         * [B] Validation ? 성공 -> [C] | 실패 -> [X]
-         */
-
-        let match =
-            line.match(
-                /^$begin:math:display$\(\[\^$end:math:display$]+)\]\s*(.*?)\s*\?\s*(.+)$/
-            );
-
-        if (match) {
-
-            const id =
-                match[1].trim();
-
-            const label =
-                match[2].trim();
-
-            nodes.set(
-                id,
-                {
-                    id,
-                    label,
-                    type: "decision"
-                }
-            );
-
-            const branches =
-                match[3].split("|");
-
-            for (const branch of branches) {
-
-                const bm =
-                    branch.trim().match(
-                        /^(.*?)\s*->\s*$begin:math:display$\(\[\^$end:math:display$]+)\]$/
-                    );
-
-                if (!bm)
-                    continue;
-
-                edges.push({
-                    from: id,
-                    to: bm[2].trim(),
-                    label: bm[1].trim()
-                });
-            }
-
-            continue;
-        }
-
-
-        /*
-         * 일반 연결
-         *
-         * [A] 검색 버튼 -> [B]
-         */
-
-        match =
-            line.match(
-                /^$begin:math:display$\(\[\^$end:math:display$]+)\]\s*(.*?)\s*->\s*$begin:math:display$\(\[\^$end:math:display$]+)\](?:\s*:\s*(.*))?$/
-            );
-
-        if (match) {
-
-            const id =
-                match[1].trim();
-
-            nodes.set(
-                id,
-                {
-                    id,
-                    label:
-                        match[2].trim(),
-                    type: "normal"
-                }
-            );
-
-            edges.push({
-                from: id,
-                to: match[3].trim(),
-                label:
-                    match[4]
-                        ? match[4].trim()
-                        : ""
-            });
-
-            continue;
-        }
-
-
-        /*
-         * 연결 없는 Node
-         */
-
-        match =
-            line.match(
-                /^$begin:math:display$\(\[\^$end:math:display$]+)\]\s*(.*)$/
-            );
-
-        if (match) {
-
-            const id =
-                match[1].trim();
-
-            nodes.set(
-                id,
-                {
-                    id,
-                    label:
-                        match[2].trim(),
-                    type: "normal"
-                }
-            );
-        }
-    }
-
-
-    /*
-     * Edge 대상 Node가 아직 선언되지 않은 경우
-     */
-
-    for (const edge of edges) {
-
-        if (!nodes.has(edge.to)) {
-
-            nodes.set(
-                edge.to,
-                {
-                    id: edge.to,
-                    label: edge.to,
-                    type: "normal"
-                }
-            );
-        }
-    }
-
-
-    return {
-        nodes: [...nodes.values()],
-        edges
-    };
-}
-
-
-/* =========================================================
-   Flow Layout
-========================================================= */
-
-function buildFlowLayout(graph) {
-
-    const nodeMap =
-        new Map(
-            graph.nodes.map(
-                n => [n.id, n]
-            )
-        );
-
-    const outgoing =
-        new Map();
-
-    const incoming =
-        new Map();
-
-
-    graph.nodes.forEach(node => {
-
-        outgoing.set(
-            node.id,
-            []
-        );
-
-        incoming.set(
-            node.id,
-            []
-        );
-    });
-
-
-    graph.edges.forEach(edge => {
-
-        if (outgoing.has(edge.from))
-            outgoing
-                .get(edge.from)
-                .push(edge);
-
-        if (incoming.has(edge.to))
-            incoming
-                .get(edge.to)
-                .push(edge);
-    });
-
-
-    let roots =
-        graph.nodes
-            .filter(
-                node =>
-                    (
-                        incoming.get(node.id)
-                        || []
-                    ).length === 0
-            )
-            .map(node => node.id);
-
-
-    if (!roots.length && graph.nodes.length)
-        roots = [graph.nodes[0].id];
-
-
-    /*
-     * BFS로 Depth 계산
-     */
-
-    const depth =
-        new Map();
-
-    const queue = [];
-
-    roots.forEach(rootId => {
-        depth.set(rootId, 0);
-        queue.push(rootId);
-    });
-
-
-    while (queue.length) {
-
-        const id =
-            queue.shift();
-
-        const d =
-            depth.get(id);
-
-        for (
-            const edge
-            of outgoing.get(id) || []
-        ) {
-
-            const nextDepth =
-                d + 1;
-
-            if (
-                !depth.has(edge.to) ||
-                depth.get(edge.to) <
-                    nextDepth
-            ) {
-                depth.set(
-                    edge.to,
-                    nextDepth
-                );
-
-                /*
-                 * 순환 방지용 제한
-                 */
-
-                if (
-                    nextDepth <
-                    graph.nodes.length + 2
-                ) {
-                    queue.push(edge.to);
-                }
-            }
-        }
-    }
-
-
-    /*
-     * 연결되지 않은 Node
-     */
-
-    let fallbackDepth =
-        depth.size
-            ? Math.max(
-                ...depth.values()
-            ) + 1
-            : 0;
-
-    graph.nodes.forEach(node => {
-
-        if (!depth.has(node.id)) {
-            depth.set(
-                node.id,
-                fallbackDepth
-            );
-        }
-    });
-
-
-    const levels =
-        new Map();
-
-    graph.nodes.forEach(node => {
-
-        const d =
-            depth.get(node.id);
-
-        if (!levels.has(d))
-            levels.set(d, []);
-
-        levels.get(d).push(node);
-    });
-
-
-    const NODE_W = 220;
-    const NODE_H = 72;
-    const GAP_X = 90;
-    const GAP_Y = 95;
-    const PAD = 60;
-
-    let maxCount = 1;
-
-    levels.forEach(items => {
-        maxCount =
-            Math.max(
-                maxCount,
-                items.length
-            );
-    });
-
-    const width =
-        Math.max(
-            760,
-            PAD * 2 +
-            maxCount * NODE_W +
-            (maxCount - 1) * GAP_X
-        );
-
-    const maxDepth =
-        levels.size
-            ? Math.max(
-                ...levels.keys()
-            )
-            : 0;
-
-    const height =
-        PAD * 2 +
-        (maxDepth + 1) * NODE_H +
-        maxDepth * GAP_Y;
-
-
-    const positions =
-        new Map();
-
-
-    [...levels.entries()]
-        .sort(
-            (a, b) =>
-                a[0] - b[0]
-        )
-        .forEach(
-            ([level, items]) => {
-
-                const totalWidth =
-                    items.length *
-                        NODE_W +
-                    (
-                        items.length - 1
-                    ) *
-                        GAP_X;
-
-                let startX =
-                    (
-                        width -
-                        totalWidth
-                    ) / 2;
-
-                items.forEach(
-                    (node, index) => {
-
-                        positions.set(
-                            node.id,
-                            {
-                                x:
-                                    startX +
-                                    index *
-                                    (
-                                        NODE_W +
-                                        GAP_X
-                                    ),
-                                y:
-                                    PAD +
-                                    level *
-                                    (
-                                        NODE_H +
-                                        GAP_Y
-                                    ),
-                                w: NODE_W,
-                                h: NODE_H
-                            }
-                        );
-                    }
-                );
-            }
-        );
-
-
-    return {
-        width,
-        height,
-        positions,
-        nodeMap
-    };
-}
-
-
-/* =========================================================
-   SVG Flow Renderer
-========================================================= */
-
-function svgTextLines(text, maxLength = 24) {
-
-    const words =
-        String(text).split(/\s+/);
-
-    const lines = [];
-
-    let current = "";
-
-    for (const word of words) {
-
-        const test =
-            current
-                ? current + " " + word
-                : word;
-
-        if (
-            test.length > maxLength &&
-            current
-        ) {
-            lines.push(current);
-            current = word;
-        }
-        else {
-            current = test;
-        }
-    }
-
-    if (current)
-        lines.push(current);
-
-    return lines.slice(0, 3);
-}
-
-
-function createFlowSvg(source) {
-
-    const graph =
-        parseFlow(source);
-
-    if (!graph.nodes.length)
-        throw new Error(
-            "Flow Node를 찾을 수 없습니다."
-        );
-
-    const layout =
-        buildFlowLayout(graph);
-
-    const NS =
-        "http://www.w3.org/2000/svg";
-
-    const svg =
-        document.createElementNS(
-            NS,
-            "svg"
-        );
-
-    svg.setAttribute(
-        "xmlns",
-        NS
-    );
-
-    svg.setAttribute(
-        "width",
-        layout.width
-    );
-
-    svg.setAttribute(
-        "height",
-        layout.height
-    );
-
-    svg.setAttribute(
-        "viewBox",
-        "0 0 " +
-        layout.width +
-        " " +
-        layout.height
-    );
-
-    svg.classList.add(
-        "flow-svg"
-    );
-
-
-    /*
-     * Background
-     */
-
-    const bg =
-        document.createElementNS(
-            NS,
-            "rect"
-        );
-
-    bg.setAttribute("x", 0);
-    bg.setAttribute("y", 0);
-    bg.setAttribute(
-        "width",
-        layout.width
-    );
-    bg.setAttribute(
-        "height",
-        layout.height
-    );
-    bg.setAttribute(
-        "fill",
-        "#ffffff"
-    );
-
-    svg.appendChild(bg);
-
-
-    /*
-     * Arrow Marker
-     */
-
-    const defs =
-        document.createElementNS(
-            NS,
-            "defs"
-        );
-
-    const marker =
-        document.createElementNS(
-            NS,
-            "marker"
-        );
-
-    const markerId =
-        "arrow-" +
-        Math.random()
-            .toString(36)
-            .slice(2);
-
-    marker.setAttribute(
-        "id",
-        markerId
-    );
-
-    marker.setAttribute(
-        "viewBox",
-        "0 0 10 10"
-    );
-
-    marker.setAttribute(
-        "refX",
-        "9"
-    );
-
-    marker.setAttribute(
-        "refY",
-        "5"
-    );
-
-    marker.setAttribute(
-        "markerWidth",
-        "7"
-    );
-
-    marker.setAttribute(
-        "markerHeight",
-        "7"
-    );
-
-    marker.setAttribute(
-        "orient",
-        "auto-start-reverse"
-    );
-
-    const arrow =
-        document.createElementNS(
-            NS,
-            "path"
-        );
-
-    arrow.setAttribute(
-        "d",
-        "M 0 0 L 10 5 L 0 10 z"
-    );
-
-    arrow.setAttribute(
-        "fill",
-        "#64748b"
-    );
-
-    marker.appendChild(arrow);
-    defs.appendChild(marker);
-    svg.appendChild(defs);
-
-
-    /*
-     * Edge 먼저 그림
-     */
-
-    graph.edges.forEach(edge => {
-
-        const from =
-            layout.positions.get(
-                edge.from
-            );
-
-        const to =
-            layout.positions.get(
-                edge.to
-            );
-
-        if (!from || !to)
-            return;
-
-
-        const x1 =
-            from.x +
-            from.w / 2;
-
-        const y1 =
-            from.y +
-            from.h;
-
-        const x2 =
-            to.x +
-            to.w / 2;
-
-        const y2 =
-            to.y;
-
-
-        const midY =
-            y1 +
-            (y2 - y1) / 2;
-
-
-        const path =
-            document.createElementNS(
-                NS,
-                "path"
-            );
-
-        path.setAttribute(
-            "d",
-            "M " +
-            x1 + " " + y1 +
-            " L " +
-            x1 + " " + midY +
-            " L " +
-            x2 + " " + midY +
-            " L " +
-            x2 + " " + y2
-        );
-
-        path.setAttribute(
-            "fill",
-            "none"
-        );
-
-        path.setAttribute(
-            "stroke",
-            "#64748b"
-        );
-
-        path.setAttribute(
-            "stroke-width",
-            "2"
-        );
-
-        path.setAttribute(
-            "marker-end",
-            "url(#" +
-            markerId +
-            ")"
-        );
-
-        svg.appendChild(path);
-
-
-        if (edge.label) {
-
-            const text =
-                document.createElementNS(
-                    NS,
-                    "text"
-                );
-
-            text.setAttribute(
-                "x",
-                (
-                    x1 + x2
-                ) / 2
-            );
-
-            text.setAttribute(
-                "y",
-                midY - 7
-            );
-
-            text.setAttribute(
-                "text-anchor",
-                "middle"
-            );
-
-            text.setAttribute(
-                "font-size",
-                "13"
-            );
-
-            text.setAttribute(
-                "font-family",
-                'Arial, "Noto Sans KR", sans-serif'
-            );
-
-            text.setAttribute(
-                "fill",
-                "#475569"
-            );
-
-            text.textContent =
-                edge.label;
-
-            svg.appendChild(text);
-        }
-    });
-
-
-    /*
-     * Nodes
-     */
-
-    graph.nodes.forEach(node => {
-
-        const pos =
-            layout.positions.get(
-                node.id
-            );
-
-        if (!pos)
-            return;
-
-
-        const group =
-            document.createElementNS(
-                NS,
-                "g"
-            );
-
-
-        const rect =
-            document.createElementNS(
-                NS,
-                "rect"
-            );
-
-        rect.setAttribute(
-            "x",
-            pos.x
-        );
-
-        rect.setAttribute(
-            "y",
-            pos.y
-        );
-
-        rect.setAttribute(
-            "width",
-            pos.w
-        );
-
-        rect.setAttribute(
-            "height",
-            pos.h
-        );
-
-        rect.setAttribute(
-            "rx",
-            node.type === "decision"
-                ? "4"
-                : "10"
-        );
-
-        rect.setAttribute(
-            "fill",
-            node.type === "decision"
-                ? "#fff7ed"
-                : "#f8fafc"
-        );
-
-        rect.setAttribute(
-            "stroke",
-            node.type === "decision"
-                ? "#fb923c"
-                : "#94a3b8"
-        );
-
-        rect.setAttribute(
-            "stroke-width",
-            "2"
-        );
-
-        group.appendChild(rect);
-
-
-        const lines =
-            svgTextLines(
-                node.label || node.id
-            );
-
-
-        const lineHeight = 18;
-
-        const startY =
-            pos.y +
-            pos.h / 2 -
-            (
-                lines.length - 1
-            ) *
-            lineHeight / 2;
-
-
-        lines.forEach(
-            (line, index) => {
-
-                const text =
-                    document.createElementNS(
-                        NS,
-                        "text"
-                    );
-
-                text.setAttribute(
-                    "x",
-                    pos.x +
-                    pos.w / 2
-                );
-
-                text.setAttribute(
-                    "y",
-                    startY +
-                    index *
-                    lineHeight
-                );
-
-                text.setAttribute(
-                    "text-anchor",
-                    "middle"
-                );
-
-                text.setAttribute(
-                    "dominant-baseline",
-                    "middle"
-                );
-
-                text.setAttribute(
-                    "font-size",
-                    "14"
-                );
-
-                text.setAttribute(
-                    "font-family",
-                    'Arial, "Noto Sans KR", sans-serif'
-                );
-
-                text.setAttribute(
-                    "fill",
-                    "#1f2937"
-                );
-
-                text.textContent =
-                    line;
-
-                group.appendChild(text);
-            }
-        );
-
-
-        svg.appendChild(group);
-    });
-
-
-    return svg;
-}
-
-
-/* =========================================================
-   Flow SVG 저장
-========================================================= */
-
-function downloadSvg(svg, filename) {
-
-    const clone =
-        svg.cloneNode(true);
-
-    clone.setAttribute(
-        "xmlns",
-        "http://www.w3.org/2000/svg"
-    );
-
-    const serializer =
-        new XMLSerializer();
-
-    const content =
-        '<?xml version="1.0" encoding="UTF-8"?>\n' +
-        serializer.serializeToString(
-            clone
-        );
-
-    const blob =
-        new Blob(
-            [content],
-            {
-                type:
-                    "image/svg+xml;charset=utf-8"
-            }
-        );
-
-    const url =
-        URL.createObjectURL(blob);
-
-    const link =
-        document.createElement("a");
-
-    link.href = url;
-    link.download = filename;
-
-    document.body.appendChild(link);
-
-    link.click();
-
-    link.remove();
-
-    setTimeout(
-        () =>
-            URL.revokeObjectURL(url),
-        1000
-    );
-}
-
-
-/* =========================================================
-   Flow Block 렌더링
-========================================================= */
-
-function renderFlows(documentName) {
-
-    const sources =
-        document.querySelectorAll(
-            ".flow-source"
-        );
-
-    sources.forEach(
-        (sourceElement, index) => {
-
-            const wrapper =
-                document.createElement(
-                    "div"
-                );
-
-            wrapper.className =
-                "flow-wrapper";
-
-
-            const toolbar =
-                document.createElement(
-                    "div"
-                );
-
-            toolbar.className =
-                "flow-toolbar";
-
-
-            try {
-
-                const source =
-                    decodeURIComponent(
-                        sourceElement.dataset.flow
-                    );
-
-                const svg =
-                    createFlowSvg(source);
-
-
-                const button =
-                    document.createElement(
-                        "button"
-                    );
-
-                button.className =
-                    "flow-download";
-
-                button.textContent =
-                    "SVG 저장";
-
-
-                button.onclick =
-                    () => {
-
-                        const base =
-                            String(
-                                documentName ||
-                                "flow"
-                            )
-                            .replace(
-                                /\.md$/i,
-                                ""
-                            );
-
-                        downloadSvg(
-                            svg,
-                            base +
-                            "-flow-" +
-                            (
-                                index + 1
-                            ) +
-                            ".svg"
-                        );
-                    };
-
-
-                toolbar.appendChild(
-                    button
-                );
-
-                wrapper.appendChild(
-                    toolbar
-                );
-
-                wrapper.appendChild(
-                    svg
-                );
-            }
-            catch (error) {
-
-                const errorBox =
-                    document.createElement(
-                        "div"
-                    );
-
-                errorBox.className =
-                    "flow-error";
-
-                errorBox.textContent =
-                    "Flow Chart 생성 실패\n\n" +
-                    error.message;
-
-                wrapper.appendChild(
-                    errorBox
-                );
-            }
-
-
-            sourceElement.replaceWith(
-                wrapper
-            );
-        }
-    );
-}
-
-
-/* =========================================================
-   Markdown 표시
-========================================================= */
-
-async function render(
-    handle,
-    button,
-    keepFE
-) {
-
-    if (!handle)
         return;
-
-    const file =
-        await handle.getFile();
-
-    const markdown =
-        await file.text();
-
-
-    if (!keepFE) {
-
-        active(button);
-    }
-    else {
-
-        document
-            .querySelectorAll(
-                "#apis button, #bes button"
-            )
-            .forEach(
-                item =>
-                    item.classList.remove(
-                        "active"
-                    )
-            );
-
-        if (button)
-            button.classList.add("active");
     }
 
+    try {
 
-    q("#viewer").innerHTML =
-        markdownToHtml(
-            markdown
-        );
+        const target =
+            await handle.getFile();
 
+        const markdown =
+            await target.text();
 
-    /*
-     * Markdown 변환 후
-     * flow block을 실제 SVG로 변환
-     */
+        renderMarkdown(markdown);
 
-    renderFlows(
-        handle.name
-    );
+        q("#status").innerHTML =
+            "표시 문서: <b>" +
+            escapeHtml(handle.name) +
+            "</b>";
+    }
+    catch (error) {
 
-
-    q("#status").innerHTML =
-        "표시 문서: <b>" +
-        esc(handle.name) +
-        "</b>";
+        q("#viewer").innerHTML =
+            '<div class="empty">' +
+            '문서를 읽을 수 없습니다.<br>' +
+            escapeHtml(error.message) +
+            '</div>';
+    }
 }
 
 
 /* =========================================================
-   화면 목록 검색
+   Scan
 ========================================================= */
 
 async function scan() {
 
     data.clear();
 
-
     for await (
         const [name, handle]
         of root.entries()
     ) {
 
-        if (handle.kind !== "directory")
-            continue;
+        if (
+            handle.kind !==
+            "directory"
+        ) {
 
+            continue;
+        }
 
         const screen =
             await file(
@@ -2054,13 +925,11 @@ async function scan() {
                 ".md"
             );
 
-
         const frontend =
             await dir(
                 handle,
                 "frontend"
             );
-
 
         const api =
             await dir(
@@ -2068,13 +937,11 @@ async function scan() {
                 "api"
             );
 
-
         const backend =
             await dir(
                 handle,
                 "backend"
             );
-
 
         if (
             screen ||
@@ -2095,29 +962,39 @@ async function scan() {
         }
     }
 
-
     const select =
         q("#screen");
-
 
     select.innerHTML =
         '<option value="">' +
         '화면 선택' +
         '</option>';
 
-
     [...data.keys()]
-        .sort()
-        .forEach(name => {
 
-            select.add(
-                new Option(
-                    name,
-                    name
+        .sort(
+            (a, b) =>
+                a.localeCompare(
+                    b,
+                    undefined,
+                    {
+                        numeric: true,
+                        sensitivity: "base"
+                    }
                 )
-            );
-        });
+        )
 
+        .forEach(
+            name => {
+
+                select.add(
+                    new Option(
+                        name,
+                        name
+                    )
+                );
+            }
+        );
 
     q("#status").textContent =
         data.size +
@@ -2126,7 +1003,7 @@ async function scan() {
 
 
 /* =========================================================
-   docs/analysis 선택
+   Folder Picker
 ========================================================= */
 
 q("#pick").onclick =
@@ -2137,31 +1014,38 @@ async () => {
     ) {
 
         alert(
-            "Chrome 또는 Edge에서 열어주세요."
+            "현재 브라우저에서는 폴더 선택 기능을 지원하지 않습니다.\n\n" +
+            "Chrome 또는 Edge 최신 버전에서 실행해 주세요."
         );
 
         return;
     }
 
-
     try {
 
         root =
-            await showDirectoryPicker({
+            await window.showDirectoryPicker({
                 mode: "read"
             });
 
         await scan();
+
     }
     catch (error) {
 
-        /* 사용자가 취소한 경우 */
+        if (
+            error.name !==
+            "AbortError"
+        ) {
+
+            console.error(error);
+        }
     }
 };
 
 
 /* =========================================================
-   화면 변경
+   Screen Change
 ========================================================= */
 
 q("#screen").onchange =
@@ -2172,22 +1056,26 @@ async event => {
 
     action = "";
 
-
     q("#sub")
         .classList
         .remove("show");
 
+    q("#backendRow")
+        .style.display =
+        "none";
 
-    q("#screenTab").disabled =
+    q("#screenTab")
+        .disabled =
         !screenName;
 
-    q("#feTab").disabled =
+    q("#feTab")
+        .disabled =
         !screenName;
 
+    if (!screenName) {
 
-    if (!screenName)
         return;
-
+    }
 
     await showScreen();
 };
@@ -2202,28 +1090,37 @@ async function showScreen() {
     const current =
         data.get(screenName);
 
+    if (!current) {
+
+        return;
+    }
 
     q("#sub")
         .classList
         .remove("show");
 
+    q("#backendRow")
+        .style.display =
+        "none";
 
-    active(
+    setMainActive(
         q("#screenTab")
     );
 
+    if (
+        current.screen
+    ) {
 
-    if (current.screen) {
-
-        await render(
-            current.screen,
-            q("#screenTab")
+        await renderFile(
+            current.screen
         );
     }
     else {
 
-        q("#viewer").textContent =
-            "SCREEN 문서가 없습니다.";
+        q("#viewer").innerHTML =
+            '<div class="empty">' +
+            'SCREEN 문서가 없습니다.' +
+            '</div>';
     }
 }
 
@@ -2233,7 +1130,7 @@ q("#screenTab").onclick =
 
 
 /* =========================================================
-   FE 목록
+   FE
 ========================================================= */
 
 q("#feTab").onclick =
@@ -2242,34 +1139,41 @@ async () => {
     const current =
         data.get(screenName);
 
+    if (!current) {
 
-    active(
+        return;
+    }
+
+    setMainActive(
         q("#feTab")
     );
-
 
     q("#sub")
         .classList
         .add("show");
 
-
     q("#fes").innerHTML = "";
+
     q("#apis").innerHTML = "";
+
     q("#bes").innerHTML = "";
 
-
-    q("#apiRow").style.display =
+    q("#apiRow")
+        .style.display =
         "none";
 
-    q("#beRow").style.display =
+    q("#beRow")
+        .style.display =
         "none";
 
+    q("#backendRow")
+        .style.display =
+        "none";
 
     const frontendFiles =
         await mds(
             current.frontend
         );
-
 
     if (
         !frontendFiles.length
@@ -2278,12 +1182,13 @@ async () => {
         q("#fes").textContent =
             "FE 문서 없음";
 
-        q("#viewer").textContent =
-            "이 화면에는 FE 문서가 없습니다.";
+        q("#viewer").innerHTML =
+            '<div class="empty">' +
+            '이 화면에는 FE 문서가 없습니다.' +
+            '</div>';
 
         return;
     }
-
 
     frontendFiles.forEach(
         handle => {
@@ -2293,12 +1198,13 @@ async () => {
                     "button"
                 );
 
-
             button.textContent =
                 feLabel(
                     handle.name
                 );
 
+            button.title =
+                handle.name;
 
             button.onclick =
                 () =>
@@ -2307,7 +1213,6 @@ async () => {
                         button
                     );
 
-
             q("#fes")
                 .appendChild(
                     button
@@ -2315,14 +1220,15 @@ async () => {
         }
     );
 
-
-    q("#viewer").textContent =
-        "FE 기능을 선택하세요.";
+    q("#viewer").innerHTML =
+        '<div class="empty">' +
+        'FE 기능을 선택하세요.' +
+        '</div>';
 };
 
 
 /* =========================================================
-   FE 선택
+   Select FE
 ========================================================= */
 
 async function selectFE(
@@ -2335,41 +1241,30 @@ async function selectFE(
             handle.name
         );
 
-
     document
         .querySelectorAll(
             "#fes button"
         )
         .forEach(
             item =>
-                item.classList.remove(
-                    "active"
-                )
+                item.classList
+                    .remove("active")
         );
 
-
-    button.classList.add(
-        "active"
-    );
-
-
-    q("#feTab")
+    button
         .classList
         .add("active");
 
-
-    await render(
-        handle,
-        null,
-        true
+    setMainActive(
+        q("#feTab")
     );
 
+    await renderFile(
+        handle
+    );
 
     const current =
-        data.get(
-            screenName
-        );
-
+        data.get(screenName);
 
     const apiFiles =
         (
@@ -2386,7 +1281,6 @@ async function selectFE(
                 )
         );
 
-
     const backendFiles =
         (
             await mds(
@@ -2402,50 +1296,69 @@ async function selectFE(
                 )
         );
 
-
-    fill(
+    fillChildren(
         "#apis",
         "#apiRow",
         apiFiles,
         "API"
     );
 
-
-    fill(
+    fillChildren(
         "#bes",
         "#beRow",
         backendFiles,
         "BE"
     );
+
+    if (
+        apiFiles.length ||
+        backendFiles.length
+    ) {
+
+        q("#backendRow")
+            .style.display =
+            "flex";
+    }
+    else {
+
+        q("#backendRow")
+            .style.display =
+            "none";
+    }
 }
 
 
 /* =========================================================
-   API / BE 버튼 생성
+   API / BE Buttons
 ========================================================= */
 
-function fill(
+function fillChildren(
     box,
     row,
     items,
     type
 ) {
 
-    q(box).innerHTML = "";
+    const container =
+        q(box);
 
+    container.innerHTML =
+        "";
 
-    if (!items.length) {
+    if (
+        !items.length
+    ) {
 
-        q(row).style.display =
+        q(row)
+            .style.display =
             "none";
 
         return;
     }
 
-
-    q(row).style.display =
+    q(row)
+        .style.display =
         "flex";
-
 
     items.forEach(
         handle => {
@@ -2455,29 +1368,2331 @@ function fill(
                     "button"
                 );
 
-
             button.textContent =
                 childLabel(
                     handle.name,
                     type
                 );
 
+            button.title =
+                handle.name;
 
             button.onclick =
-                () =>
-                    render(
-                        handle,
-                        button,
-                        true
-                    );
+async () => {
 
+    document
+        .querySelectorAll(
+            "#apis button, #bes button"
+        )
+        .forEach(
+            item =>
+                item.classList
+                    .remove("active")
+        );
 
-            q(box)
+    button
+        .classList
+        .add("active");
+
+    setMainActive(
+        q("#feTab")
+    );
+
+    await renderFile(
+        handle
+    );
+};
+
+            container
                 .appendChild(
                     button
                 );
         }
     );
+}
+
+
+/* =========================================================
+   Markdown Renderer
+========================================================= */
+
+function renderMarkdown(markdown) {
+
+    const html =
+        markdownToHtml(
+            markdown
+        );
+
+    q("#viewer").innerHTML =
+        html;
+
+    renderBuiltInMermaid();
+}
+
+
+/* =========================================================
+   Markdown → HTML
+========================================================= */
+
+function markdownToHtml(markdown) {
+
+    markdown =
+        markdown.replace(
+            /\r\n/g,
+            "\n"
+        );
+
+    const lines =
+        markdown.split("\n");
+
+    let html = "";
+
+    let index = 0;
+
+    let inCode = false;
+
+    let codeLanguage = "";
+
+    let codeBuffer = [];
+
+    let listType = null;
+
+    let mermaidIndex = 0;
+
+
+    while (
+        index < lines.length
+    ) {
+
+        const line =
+            lines[index];
+
+
+        /* =================================================
+           Code Block
+        ================================================= */
+
+        if (
+            line.trim()
+                .startsWith("```")
+        ) {
+
+            closeList();
+
+            if (!inCode) {
+
+                inCode = true;
+
+                codeLanguage =
+                    line
+                        .trim()
+                        .substring(3)
+                        .trim()
+                        .toLowerCase();
+
+                codeBuffer = [];
+            }
+            else {
+
+                /*
+                   Mermaid이면 일반 code block이 아니라
+                   전용 영역으로 만든다.
+                */
+
+                if (
+                    codeLanguage ===
+                    "mermaid"
+                ) {
+
+                    mermaidIndex++;
+
+                    html +=
+                        '<div class="mermaid-container">' +
+
+                            '<div class="mermaid-toolbar">' +
+
+                                '<span class="mermaid-title">' +
+                                    'Flowchart' +
+                                '</span>' +
+
+                                '<span>' +
+                                    '내장 Renderer' +
+                                '</span>' +
+
+                            '</div>' +
+
+                            '<div class="mermaid-scroll">' +
+
+                                '<div ' +
+                                    'class="builtin-mermaid" ' +
+                                    'data-mermaid-id="' +
+                                    mermaidIndex +
+                                    '"' +
+                                '>' +
+
+                                    '<pre class="mermaid-source" style="display:none">' +
+                                        escapeHtml(
+                                            codeBuffer.join("\n")
+                                        ) +
+                                    '</pre>' +
+
+                                '</div>' +
+
+                            '</div>' +
+
+                        '</div>';
+                }
+                else {
+
+                    html +=
+                        "<pre><code" +
+
+                        (
+                            codeLanguage
+
+                                ? ' class="language-' +
+                                  escapeAttribute(
+                                      codeLanguage
+                                  ) +
+                                  '"'
+
+                                : ""
+                        )
+
+                        + ">" +
+
+                        escapeHtml(
+                            codeBuffer.join("\n")
+                        )
+
+                        + "</code></pre>";
+                }
+
+                inCode = false;
+
+                codeLanguage = "";
+
+                codeBuffer = [];
+            }
+
+            index++;
+
+            continue;
+        }
+
+
+        if (inCode) {
+
+            codeBuffer.push(
+                line
+            );
+
+            index++;
+
+            continue;
+        }
+
+
+        /* =================================================
+           Table
+        ================================================= */
+
+        if (
+            isTableHeader(
+                lines,
+                index
+            )
+        ) {
+
+            closeList();
+
+            const result =
+                parseTable(
+                    lines,
+                    index
+                );
+
+            html +=
+                result.html;
+
+            index =
+                result.nextIndex;
+
+            continue;
+        }
+
+
+        /* =================================================
+           Blank
+        ================================================= */
+
+        if (
+            line.trim() === ""
+        ) {
+
+            closeList();
+
+            index++;
+
+            continue;
+        }
+
+
+        /* =================================================
+           HR
+        ================================================= */
+
+        if (
+            /^(\s*)(---|\*\*\*|___)(\s*)$/
+                .test(line)
+        ) {
+
+            closeList();
+
+            html += "<hr>";
+
+            index++;
+
+            continue;
+        }
+
+
+        /* =================================================
+           Heading
+        ================================================= */
+
+        const headingMatch =
+            line.match(
+                /^(#{1,6})\s+(.+)$/
+            );
+
+        if (headingMatch) {
+
+            closeList();
+
+            const level =
+                headingMatch[1].length;
+
+            html +=
+                "<h" +
+                level +
+                ">" +
+
+                inlineMarkdown(
+                    headingMatch[2]
+                ) +
+
+                "</h" +
+                level +
+                ">";
+
+            index++;
+
+            continue;
+        }
+
+
+        /* =================================================
+           Blockquote
+        ================================================= */
+
+        if (
+            line
+                .trimStart()
+                .startsWith(">")
+        ) {
+
+            closeList();
+
+            const quoteLines =
+                [];
+
+            while (
+                index < lines.length &&
+                lines[index]
+                    .trimStart()
+                    .startsWith(">")
+            ) {
+
+                quoteLines.push(
+                    lines[index]
+                        .trimStart()
+                        .replace(
+                            /^>\s?/,
+                            ""
+                        )
+                );
+
+                index++;
+            }
+
+            html +=
+                "<blockquote>" +
+
+                quoteLines
+                    .map(
+                        item =>
+                            item.trim()
+
+                                ? inlineMarkdown(
+                                    item
+                                )
+
+                                : "<br>"
+                    )
+                    .join("<br>") +
+
+                "</blockquote>";
+
+            continue;
+        }
+
+
+        /* =================================================
+           UL
+        ================================================= */
+
+        const ulMatch =
+            line.match(
+                /^\s*[-*+]\s+(.+)$/
+            );
+
+        if (ulMatch) {
+
+            if (
+                listType !== "ul"
+            ) {
+
+                closeList();
+
+                html += "<ul>";
+
+                listType = "ul";
+            }
+
+            html +=
+                "<li>" +
+
+                inlineMarkdown(
+                    ulMatch[1]
+                ) +
+
+                "</li>";
+
+            index++;
+
+            continue;
+        }
+
+
+        /* =================================================
+           OL
+        ================================================= */
+
+        const olMatch =
+            line.match(
+                /^\s*\d+\.\s+(.+)$/
+            );
+
+        if (olMatch) {
+
+            if (
+                listType !== "ol"
+            ) {
+
+                closeList();
+
+                html += "<ol>";
+
+                listType = "ol";
+            }
+
+            html +=
+                "<li>" +
+
+                inlineMarkdown(
+                    olMatch[1]
+                ) +
+
+                "</li>";
+
+            index++;
+
+            continue;
+        }
+
+
+        /* =================================================
+           Paragraph
+        ================================================= */
+
+        closeList();
+
+        const paragraphLines =
+            [line];
+
+        index++;
+
+        while (
+            index < lines.length
+        ) {
+
+            const next =
+                lines[index];
+
+            if (
+                next.trim() === "" ||
+
+                next
+                    .trim()
+                    .startsWith("```") ||
+
+                /^#{1,6}\s+/
+                    .test(next) ||
+
+                /^(\s*)(---|\*\*\*|___)(\s*)$/
+                    .test(next) ||
+
+                next
+                    .trimStart()
+                    .startsWith(">") ||
+
+                /^\s*[-*+]\s+/
+                    .test(next) ||
+
+                /^\s*\d+\.\s+/
+                    .test(next) ||
+
+                isTableHeader(
+                    lines,
+                    index
+                )
+            ) {
+
+                break;
+            }
+
+            paragraphLines.push(
+                next
+            );
+
+            index++;
+        }
+
+        html +=
+            "<p>" +
+
+            paragraphLines
+                .map(
+                    item =>
+                        inlineMarkdown(
+                            item
+                        )
+                )
+                .join("<br>") +
+
+            "</p>";
+    }
+
+
+    if (inCode) {
+
+        html +=
+            "<pre><code>" +
+
+            escapeHtml(
+                codeBuffer.join("\n")
+            ) +
+
+            "</code></pre>";
+    }
+
+
+    closeList();
+
+    return html;
+
+
+    function closeList() {
+
+        if (
+            listType === "ul"
+        ) {
+
+            html += "</ul>";
+        }
+
+        if (
+            listType === "ol"
+        ) {
+
+            html += "</ol>";
+        }
+
+        listType = null;
+    }
+}
+
+
+/* =========================================================
+   Markdown Table
+========================================================= */
+
+function isTableHeader(
+    lines,
+    index
+) {
+
+    if (
+        index + 1 >=
+        lines.length
+    ) {
+
+        return false;
+    }
+
+    const first =
+        lines[index].trim();
+
+    const second =
+        lines[index + 1].trim();
+
+    if (
+        !first.includes("|") ||
+        !second.includes("|")
+    ) {
+
+        return false;
+    }
+
+    const cells =
+        splitTableRow(
+            second
+        );
+
+    if (
+        cells.length === 0
+    ) {
+
+        return false;
+    }
+
+    return cells.every(
+        cell =>
+            /^:?-{3,}:?$/
+                .test(
+                    cell.trim()
+                )
+    );
+}
+
+
+function parseTable(
+    lines,
+    startIndex
+) {
+
+    const headers =
+        splitTableRow(
+            lines[startIndex]
+        );
+
+    let index =
+        startIndex + 2;
+
+    const rows = [];
+
+    while (
+        index < lines.length
+    ) {
+
+        const line =
+            lines[index].trim();
+
+        if (
+            line === "" ||
+            !line.includes("|")
+        ) {
+
+            break;
+        }
+
+        rows.push(
+            splitTableRow(
+                line
+            )
+        );
+
+        index++;
+    }
+
+    let html =
+        "<table><thead><tr>";
+
+    for (
+        const header
+        of headers
+    ) {
+
+        html +=
+            "<th>" +
+
+            inlineMarkdown(
+                header.trim()
+            ) +
+
+            "</th>";
+    }
+
+    html +=
+        "</tr></thead><tbody>";
+
+    for (
+        const row
+        of rows
+    ) {
+
+        html += "<tr>";
+
+        for (
+            let column = 0;
+            column < headers.length;
+            column++
+        ) {
+
+            const value =
+                row[column] ?? "";
+
+            html +=
+                "<td>" +
+
+                inlineMarkdown(
+                    value.trim()
+                ) +
+
+                "</td>";
+        }
+
+        html += "</tr>";
+    }
+
+    html +=
+        "</tbody></table>";
+
+    return {
+        html: html,
+        nextIndex: index
+    };
+}
+
+
+function splitTableRow(line) {
+
+    let value =
+        line.trim();
+
+    if (
+        value.startsWith("|")
+    ) {
+
+        value =
+            value.substring(1);
+    }
+
+    if (
+        value.endsWith("|")
+    ) {
+
+        value =
+            value.substring(
+                0,
+                value.length - 1
+            );
+    }
+
+    return value.split("|");
+}
+
+
+/* =========================================================
+   Inline Markdown
+========================================================= */
+
+function inlineMarkdown(text) {
+
+    let value =
+        escapeHtml(text);
+
+    value =
+        value.replace(
+            /`([^`]+)`/g,
+            "<code>$1</code>"
+        );
+
+    value =
+        value.replace(
+            /\*\*(.+?)\*\*/g,
+            "<strong>$1</strong>"
+        );
+
+    /*
+       lookbehind를 사용하지 않는다.
+       회사 PC의 오래된 브라우저에서도
+       최대한 오류가 나지 않도록 단순 처리.
+    */
+
+    value =
+        value.replace(
+            /(^|[^*])\*([^*]+)\*/g,
+            "$1<em>$2</em>"
+        );
+
+    return value;
+}
+
+
+/* =========================================================
+   Built-in Mermaid Renderer
+========================================================= */
+
+function renderBuiltInMermaid() {
+
+    const elements =
+        document.querySelectorAll(
+            ".builtin-mermaid"
+        );
+
+    elements.forEach(
+        element => {
+
+            const sourceElement =
+                element.querySelector(
+                    ".mermaid-source"
+                );
+
+            if (!sourceElement) {
+
+                return;
+            }
+
+            const source =
+                sourceElement.textContent;
+
+            try {
+
+                const graph =
+                    parseMermaidFlowchart(
+                        source
+                    );
+
+                element.innerHTML =
+                    createFlowchartSvg(
+                        graph
+                    );
+            }
+            catch (error) {
+
+                console.error(
+                    "Flowchart 렌더링 오류",
+                    error
+                );
+
+                element.innerHTML =
+                    '<div class="mermaid-error">' +
+                    'Flowchart를 표시하지 못했습니다.\n\n' +
+                    escapeHtml(
+                        error.message
+                    ) +
+                    '</div>';
+            }
+        }
+    );
+}
+
+
+/* =========================================================
+   Mermaid Parser
+========================================================= */
+
+function parseMermaidFlowchart(source) {
+
+    const lines =
+        source
+            .replace(/\r\n/g, "\n")
+            .split("\n");
+
+    const graph = {
+        direction: "TD",
+        nodes: new Map(),
+        edges: []
+    };
+
+    let firstMeaningfulLine =
+        true;
+
+    for (
+        let i = 0;
+        i < lines.length;
+        i++
+    ) {
+
+        let line =
+            lines[i].trim();
+
+        if (
+            !line ||
+            line.startsWith("%%")
+        ) {
+
+            continue;
+        }
+
+        /*
+           flowchart TD
+           graph TD
+        */
+
+        if (
+            firstMeaningfulLine
+        ) {
+
+            const header =
+                line.match(
+                    /^(?:flowchart|graph)\s+(TD|TB|BT|LR|RL)\s*;?$/i
+                );
+
+            if (header) {
+
+                graph.direction =
+                    header[1]
+                        .toUpperCase();
+
+                firstMeaningfulLine =
+                    false;
+
+                continue;
+            }
+
+            firstMeaningfulLine =
+                false;
+        }
+
+        /*
+           subgraph / end는
+           현재 경량 renderer에서는
+           구조 계산에서 제외한다.
+        */
+
+        if (
+            /^subgraph\b/i.test(line) ||
+            /^end\s*;?$/i.test(line)
+        ) {
+
+            continue;
+        }
+
+        /*
+           Mermaid는 한 줄 끝에 ;를
+           사용할 수 있으므로 제거.
+        */
+
+        if (
+            line.endsWith(";")
+        ) {
+
+            line =
+                line.substring(
+                    0,
+                    line.length - 1
+                )
+                .trim();
+        }
+
+        /*
+           Edge가 있는 줄
+        */
+
+        if (
+            line.includes("-->") ||
+            line.includes("---")
+        ) {
+
+            parseMermaidEdgeLine(
+                line,
+                graph
+            );
+
+            continue;
+        }
+
+        /*
+           Node 단독 선언
+        */
+
+        const node =
+            parseMermaidNode(
+                line
+            );
+
+        if (node) {
+
+            addMermaidNode(
+                graph,
+                node
+            );
+        }
+    }
+
+    if (
+        graph.nodes.size === 0
+    ) {
+
+        throw new Error(
+            "표시할 Flowchart Node를 찾지 못했습니다."
+        );
+    }
+
+    return graph;
+}
+
+
+/* =========================================================
+   Edge Parser
+========================================================= */
+
+function parseMermaidEdgeLine(
+    line,
+    graph
+) {
+
+    /*
+       지원 예:
+
+       A --> B
+       A -->|YES| B
+       A --- B
+       A[FE] --> B{Validation}
+    */
+
+    let arrow = null;
+
+    let arrowIndex =
+        line.indexOf("-->");
+
+    if (
+        arrowIndex >= 0
+    ) {
+
+        arrow = "-->";
+    }
+    else {
+
+        arrowIndex =
+            line.indexOf("---");
+
+        if (
+            arrowIndex >= 0
+        ) {
+
+            arrow = "---";
+        }
+    }
+
+    if (
+        !arrow
+    ) {
+
+        return;
+    }
+
+    const leftText =
+        line
+            .substring(
+                0,
+                arrowIndex
+            )
+            .trim();
+
+    let rightText =
+        line
+            .substring(
+                arrowIndex +
+                arrow.length
+            )
+            .trim();
+
+    let label = "";
+
+    /*
+       -->|YES| B
+    */
+
+    if (
+        rightText.startsWith("|")
+    ) {
+
+        const secondBar =
+            rightText.indexOf(
+                "|",
+                1
+            );
+
+        if (
+            secondBar > 0
+        ) {
+
+            label =
+                rightText
+                    .substring(
+                        1,
+                        secondBar
+                    )
+                    .trim();
+
+            rightText =
+                rightText
+                    .substring(
+                        secondBar + 1
+                    )
+                    .trim();
+        }
+    }
+
+    const leftNode =
+        parseMermaidNode(
+            leftText
+        );
+
+    const rightNode =
+        parseMermaidNode(
+            rightText
+        );
+
+    if (
+        !leftNode ||
+        !rightNode
+    ) {
+
+        return;
+    }
+
+    addMermaidNode(
+        graph,
+        leftNode
+    );
+
+    addMermaidNode(
+        graph,
+        rightNode
+    );
+
+    graph.edges.push({
+        from:
+            leftNode.id,
+
+        to:
+            rightNode.id,
+
+        label:
+            label,
+
+        arrow:
+            arrow
+    });
+}
+
+
+/* =========================================================
+   Node Parser
+========================================================= */
+
+function parseMermaidNode(text) {
+
+    text =
+        text.trim();
+
+    if (!text) {
+
+        return null;
+    }
+
+    /*
+       ID{Condition}
+    */
+
+    let match =
+        text.match(
+            /^([A-Za-z0-9_.:-]+)\{(.+)\}$/
+        );
+
+    if (match) {
+
+        return {
+            id:
+                match[1],
+
+            label:
+                cleanMermaidLabel(
+                    match[2]
+                ),
+
+            shape:
+                "condition"
+        };
+    }
+
+    /*
+       ID([Rounded])
+    */
+
+    match =
+        text.match(
+            /^([A-Za-z0-9_.:-]+)$begin:math:text$\\\[\(\.\+\)\\\]$end:math:text$$/
+        );
+
+    if (match) {
+
+        return {
+            id:
+                match[1],
+
+            label:
+                cleanMermaidLabel(
+                    match[2]
+                ),
+
+            shape:
+                "rounded"
+        };
+    }
+
+    /*
+       ID(text)
+    */
+
+    match =
+        text.match(
+            /^([A-Za-z0-9_.:-]+)$begin:math:text$\(\.\+\)$end:math:text$$/
+        );
+
+    if (match) {
+
+        return {
+            id:
+                match[1],
+
+            label:
+                cleanMermaidLabel(
+                    match[2]
+                ),
+
+            shape:
+                "rounded"
+        };
+    }
+
+    /*
+       ID[text]
+    */
+
+    match =
+        text.match(
+            /^([A-Za-z0-9_.:-]+)$begin:math:display$\(\.\+\)$end:math:display$$/
+        );
+
+    if (match) {
+
+        return {
+            id:
+                match[1],
+
+            label:
+                cleanMermaidLabel(
+                    match[2]
+                ),
+
+            shape:
+                "rect"
+        };
+    }
+
+    /*
+       ID["text"]
+    */
+
+    match =
+        text.match(
+            /^([A-Za-z0-9_.:-]+)$begin:math:display$\"\(\.\+\)\"$end:math:display$$/
+        );
+
+    if (match) {
+
+        return {
+            id:
+                match[1],
+
+            label:
+                cleanMermaidLabel(
+                    match[2]
+                ),
+
+            shape:
+                "rect"
+        };
+    }
+
+    /*
+       ID
+    */
+
+    match =
+        text.match(
+            /^([A-Za-z0-9_.:-]+)$/
+        );
+
+    if (match) {
+
+        return {
+            id:
+                match[1],
+
+            label:
+                match[1],
+
+            shape:
+                "rect"
+        };
+    }
+
+    return null;
+}
+
+
+function cleanMermaidLabel(value) {
+
+    let result =
+        String(value)
+            .trim();
+
+    if (
+        result.startsWith('"') &&
+        result.endsWith('"')
+    ) {
+
+        result =
+            result.substring(
+                1,
+                result.length - 1
+            );
+    }
+
+    /*
+       Mermaid에서 흔히 쓰는 <br/>
+    */
+
+    result =
+        result.replace(
+            /<br\s*\/?>/gi,
+            "\n"
+        );
+
+    return result;
+}
+
+
+function addMermaidNode(
+    graph,
+    node
+) {
+
+    if (
+        graph.nodes.has(
+            node.id
+        )
+    ) {
+
+        const old =
+            graph.nodes.get(
+                node.id
+            );
+
+        /*
+           단순 ID로 먼저 등록됐다가
+           나중에 실제 label 선언이 나오면
+           실제 선언으로 교체.
+        */
+
+        if (
+            old.label === old.id &&
+            node.label !== node.id
+        ) {
+
+            graph.nodes.set(
+                node.id,
+                node
+            );
+        }
+
+        return;
+    }
+
+    graph.nodes.set(
+        node.id,
+        node
+    );
+}
+
+
+/* =========================================================
+   SVG Flowchart
+========================================================= */
+
+function createFlowchartSvg(
+    graph
+) {
+
+    const nodes =
+        Array.from(
+            graph.nodes.values()
+        );
+
+    const horizontal =
+        graph.direction === "LR" ||
+        graph.direction === "RL";
+
+    const reverse =
+        graph.direction === "BT" ||
+        graph.direction === "RL";
+
+    const nodeWidth =
+        220;
+
+    const nodeHeight =
+        68;
+
+    const gapX =
+        100;
+
+    const gapY =
+        80;
+
+    /*
+       간단한 Layer 계산
+    */
+
+    const levels =
+        calculateGraphLevels(
+            graph
+        );
+
+    let maxLevel = 0;
+
+    levels.forEach(
+        level => {
+
+            if (
+                level > maxLevel
+            ) {
+
+                maxLevel =
+                    level;
+            }
+        }
+    );
+
+    const levelGroups =
+        new Map();
+
+    nodes.forEach(
+        node => {
+
+            let level =
+                levels.get(
+                    node.id
+                ) || 0;
+
+            if (reverse) {
+
+                level =
+                    maxLevel -
+                    level;
+            }
+
+            if (
+                !levelGroups.has(
+                    level
+                )
+            ) {
+
+                levelGroups.set(
+                    level,
+                    []
+                );
+            }
+
+            levelGroups
+                .get(level)
+                .push(node);
+        }
+    );
+
+    const positions =
+        new Map();
+
+    let maxItems =
+        1;
+
+    levelGroups.forEach(
+        items => {
+
+            if (
+                items.length >
+                maxItems
+            ) {
+
+                maxItems =
+                    items.length;
+            }
+        }
+    );
+
+    const margin =
+        60;
+
+    let width;
+    let height;
+
+    if (horizontal) {
+
+        width =
+            margin * 2 +
+            (maxLevel + 1) *
+            nodeWidth +
+            maxLevel *
+            gapX;
+
+        height =
+            margin * 2 +
+            maxItems *
+            nodeHeight +
+            Math.max(
+                0,
+                maxItems - 1
+            ) *
+            gapY;
+    }
+    else {
+
+        width =
+            margin * 2 +
+            maxItems *
+            nodeWidth +
+            Math.max(
+                0,
+                maxItems - 1
+            ) *
+            gapX;
+
+        height =
+            margin * 2 +
+            (maxLevel + 1) *
+            nodeHeight +
+            maxLevel *
+            gapY;
+    }
+
+    /*
+       최소 크기
+    */
+
+    width =
+        Math.max(
+            width,
+            600
+        );
+
+    height =
+        Math.max(
+            height,
+            260
+        );
+
+
+    /*
+       Node 위치
+    */
+
+    levelGroups.forEach(
+        (items, level) => {
+
+            items.forEach(
+                (node, itemIndex) => {
+
+                    let x;
+                    let y;
+
+                    if (horizontal) {
+
+                        x =
+                            margin +
+                            level *
+                            (
+                                nodeWidth +
+                                gapX
+                            );
+
+                        const totalHeight =
+                            items.length *
+                            nodeHeight +
+                            Math.max(
+                                0,
+                                items.length - 1
+                            ) *
+                            gapY;
+
+                        const startY =
+                            (
+                                height -
+                                totalHeight
+                            ) / 2;
+
+                        y =
+                            startY +
+                            itemIndex *
+                            (
+                                nodeHeight +
+                                gapY
+                            );
+                    }
+                    else {
+
+                        y =
+                            margin +
+                            level *
+                            (
+                                nodeHeight +
+                                gapY
+                            );
+
+                        const totalWidth =
+                            items.length *
+                            nodeWidth +
+                            Math.max(
+                                0,
+                                items.length - 1
+                            ) *
+                            gapX;
+
+                        const startX =
+                            (
+                                width -
+                                totalWidth
+                            ) / 2;
+
+                        x =
+                            startX +
+                            itemIndex *
+                            (
+                                nodeWidth +
+                                gapX
+                            );
+                    }
+
+                    positions.set(
+                        node.id,
+                        {
+                            x: x,
+                            y: y,
+                            width:
+                                nodeWidth,
+                            height:
+                                nodeHeight
+                        }
+                    );
+                }
+            );
+        }
+    );
+
+
+    /*
+       SVG
+    */
+
+    let svg =
+        '<svg ' +
+        'class="mermaid-svg" ' +
+        'xmlns="http://www.w3.org/2000/svg" ' +
+        'width="' +
+        width +
+        '" ' +
+        'height="' +
+        height +
+        '" ' +
+        'viewBox="0 0 ' +
+        width +
+        ' ' +
+        height +
+        '">' +
+
+        '<defs>' +
+
+            '<marker ' +
+                'id="flow-arrow" ' +
+                'viewBox="0 0 10 10" ' +
+                'refX="9" ' +
+                'refY="5" ' +
+                'markerWidth="7" ' +
+                'markerHeight="7" ' +
+                'orient="auto-start-reverse">' +
+
+                '<path ' +
+                    'd="M 0 0 L 10 5 L 0 10 z" ' +
+                    'fill="#57606a">' +
+                '</path>' +
+
+            '</marker>' +
+
+        '</defs>';
+
+
+    /*
+       Edge 먼저 그림
+    */
+
+    graph.edges.forEach(
+        edge => {
+
+            const from =
+                positions.get(
+                    edge.from
+                );
+
+            const to =
+                positions.get(
+                    edge.to
+                );
+
+            if (
+                !from ||
+                !to
+            ) {
+
+                return;
+            }
+
+            const edgeData =
+                createEdgePath(
+                    from,
+                    to,
+                    horizontal
+                );
+
+            svg +=
+                '<path ' +
+                    'class="mermaid-edge" ' +
+                    'd="' +
+                    edgeData.path +
+                    '"' +
+
+                    (
+                        edge.arrow === "-->"
+                            ? ' marker-end="url(#flow-arrow)"'
+                            : ""
+                    ) +
+
+                '></path>';
+
+
+            if (
+                edge.label
+            ) {
+
+                const labelWidth =
+                    Math.max(
+                        42,
+                        edge.label.length *
+                        8 +
+                        16
+                    );
+
+                svg +=
+                    '<rect ' +
+                        'class="mermaid-edge-label-bg" ' +
+                        'x="' +
+                        (
+                            edgeData.labelX -
+                            labelWidth / 2
+                        ) +
+                        '" ' +
+                        'y="' +
+                        (
+                            edgeData.labelY -
+                            11
+                        ) +
+                        '" ' +
+                        'width="' +
+                        labelWidth +
+                        '" ' +
+                        'height="22" ' +
+                        'rx="4">' +
+                    '</rect>';
+
+                svg +=
+                    '<text ' +
+                        'class="mermaid-edge-label" ' +
+                        'x="' +
+                        edgeData.labelX +
+                        '" ' +
+                        'y="' +
+                        (
+                            edgeData.labelY +
+                            4
+                        ) +
+                        '" ' +
+                        'text-anchor="middle">' +
+
+                        escapeSvgText(
+                            edge.label
+                        ) +
+
+                    '</text>';
+            }
+        }
+    );
+
+
+    /*
+       Node
+    */
+
+    nodes.forEach(
+        node => {
+
+            const pos =
+                positions.get(
+                    node.id
+                );
+
+            if (!pos) {
+
+                return;
+            }
+
+            svg +=
+                createSvgNode(
+                    node,
+                    pos
+                );
+        }
+    );
+
+
+    svg +=
+        "</svg>";
+
+    return svg;
+}
+
+
+/* =========================================================
+   Graph Levels
+========================================================= */
+
+function calculateGraphLevels(
+    graph
+) {
+
+    const levels =
+        new Map();
+
+    const incoming =
+        new Map();
+
+    graph.nodes.forEach(
+        (node, id) => {
+
+            incoming.set(
+                id,
+                0
+            );
+
+            levels.set(
+                id,
+                0
+            );
+        }
+    );
+
+    graph.edges.forEach(
+        edge => {
+
+            incoming.set(
+                edge.to,
+                (
+                    incoming.get(
+                        edge.to
+                    ) || 0
+                ) + 1
+            );
+        }
+    );
+
+    const queue = [];
+
+    incoming.forEach(
+        (count, id) => {
+
+            if (
+                count === 0
+            ) {
+
+                queue.push(id);
+            }
+        }
+    );
+
+    /*
+       순환 구조 때문에 시작점이 없으면
+       첫 번째 Node부터 시작.
+    */
+
+    if (
+        queue.length === 0 &&
+        graph.nodes.size > 0
+    ) {
+
+        queue.push(
+            graph.nodes
+                .keys()
+                .next()
+                .value
+        );
+    }
+
+    const processed =
+        new Set();
+
+    let safety =
+        0;
+
+    while (
+        queue.length > 0 &&
+        safety < 10000
+    ) {
+
+        safety++;
+
+        const current =
+            queue.shift();
+
+        processed.add(
+            current
+        );
+
+        const currentLevel =
+            levels.get(
+                current
+            ) || 0;
+
+        graph.edges.forEach(
+            edge => {
+
+                if (
+                    edge.from !==
+                    current
+                ) {
+
+                    return;
+                }
+
+                const nextLevel =
+                    Math.max(
+                        levels.get(
+                            edge.to
+                        ) || 0,
+
+                        currentLevel + 1
+                    );
+
+                levels.set(
+                    edge.to,
+                    nextLevel
+                );
+
+                const count =
+                    (
+                        incoming.get(
+                            edge.to
+                        ) || 0
+                    ) - 1;
+
+                incoming.set(
+                    edge.to,
+                    count
+                );
+
+                if (
+                    count <= 0 &&
+                    !processed.has(
+                        edge.to
+                    )
+                ) {
+
+                    queue.push(
+                        edge.to
+                    );
+                }
+            }
+        );
+    }
+
+    /*
+       아직 처리되지 않은 순환 Node
+    */
+
+    graph.nodes.forEach(
+        (node, id) => {
+
+            if (
+                !levels.has(id)
+            ) {
+
+                levels.set(
+                    id,
+                    0
+                );
+            }
+        }
+    );
+
+    return levels;
+}
+
+
+/* =========================================================
+   Edge SVG
+========================================================= */
+
+function createEdgePath(
+    from,
+    to,
+    horizontal
+) {
+
+    let startX;
+    let startY;
+    let endX;
+    let endY;
+
+    if (horizontal) {
+
+        startX =
+            from.x +
+            from.width;
+
+        startY =
+            from.y +
+            from.height / 2;
+
+        endX =
+            to.x;
+
+        endY =
+            to.y +
+            to.height / 2;
+
+        const middleX =
+            (
+                startX +
+                endX
+            ) / 2;
+
+        return {
+            path:
+                "M " +
+                startX +
+                " " +
+                startY +
+
+                " C " +
+                middleX +
+                " " +
+                startY +
+
+                ", " +
+                middleX +
+                " " +
+                endY +
+
+                ", " +
+                endX +
+                " " +
+                endY,
+
+            labelX:
+                middleX,
+
+            labelY:
+                (
+                    startY +
+                    endY
+                ) / 2
+        };
+    }
+
+    startX =
+        from.x +
+        from.width / 2;
+
+    startY =
+        from.y +
+        from.height;
+
+    endX =
+        to.x +
+        to.width / 2;
+
+    endY =
+        to.y;
+
+    const middleY =
+        (
+            startY +
+            endY
+        ) / 2;
+
+    return {
+        path:
+            "M " +
+            startX +
+            " " +
+            startY +
+
+            " C " +
+            startX +
+            " " +
+            middleY +
+
+            ", " +
+            endX +
+            " " +
+            middleY +
+
+            ", " +
+            endX +
+            " " +
+            endY,
+
+        labelX:
+            (
+                startX +
+                endX
+            ) / 2,
+
+        labelY:
+            middleY
+    };
+}
+
+
+/* =========================================================
+   Node SVG
+========================================================= */
+
+function createSvgNode(
+    node,
+    pos
+) {
+
+    let svg = "";
+
+    const centerX =
+        pos.x +
+        pos.width / 2;
+
+    const centerY =
+        pos.y +
+        pos.height / 2;
+
+
+    if (
+        node.shape ===
+        "condition"
+    ) {
+
+        const top =
+            centerX +
+            "," +
+            pos.y;
+
+        const right =
+            (
+                pos.x +
+                pos.width
+            ) +
+            "," +
+            centerY;
+
+        const bottom =
+            centerX +
+            "," +
+            (
+                pos.y +
+                pos.height
+            );
+
+        const left =
+            pos.x +
+            "," +
+            centerY;
+
+        svg +=
+            '<polygon ' +
+                'class="mermaid-condition" ' +
+                'points="' +
+                top +
+                " " +
+                right +
+                " " +
+                bottom +
+                " " +
+                left +
+                '">' +
+            '</polygon>';
+    }
+    else {
+
+        const className =
+            node.shape ===
+            "rounded"
+
+                ? "mermaid-rounded"
+
+                : "mermaid-node";
+
+        svg +=
+            '<rect ' +
+                'class="' +
+                className +
+                '" ' +
+                'x="' +
+                pos.x +
+                '" ' +
+                'y="' +
+                pos.y +
+                '" ' +
+                'width="' +
+                pos.width +
+                '" ' +
+                'height="' +
+                pos.height +
+                '" ' +
+                'rx="' +
+                (
+                    node.shape ===
+                    "rounded"
+                        ? 28
+                        : 6
+                ) +
+                '">' +
+            '</rect>';
+    }
+
+
+    svg +=
+        createSvgMultilineText(
+            node.label,
+            centerX,
+            centerY
+        );
+
+    return svg;
+}
+
+
+/* =========================================================
+   Multiline Text
+========================================================= */
+
+function createSvgMultilineText(
+    text,
+    x,
+    y
+) {
+
+    const lines =
+        String(text)
+            .split("\n");
+
+    const lineHeight =
+        17;
+
+    const startY =
+        y -
+        (
+            (
+                lines.length - 1
+            ) *
+            lineHeight
+        ) / 2;
+
+    let svg =
+        '<text ' +
+            'class="mermaid-node-text" ' +
+            'text-anchor="middle">';
+
+    lines.forEach(
+        (line, index) => {
+
+            svg +=
+                '<tspan ' +
+                    'x="' +
+                    x +
+                    '" ' +
+                    'y="' +
+                    (
+                        startY +
+                        index *
+                        lineHeight
+                    ) +
+                    '" ' +
+                    'dominant-baseline="middle">' +
+
+                    escapeSvgText(
+                        line
+                    ) +
+
+                '</tspan>';
+        }
+    );
+
+    svg +=
+        "</text>";
+
+    return svg;
+}
+
+
+/* =========================================================
+   SVG Escape
+========================================================= */
+
+function escapeSvgText(
+    value
+) {
+
+    return String(value)
+
+        .replace(/&/g, "&amp;")
+
+        .replace(/</g, "&lt;")
+
+        .replace(/>/g, "&gt;")
+
+        .replace(/"/g, "&quot;")
+
+        .replace(/'/g, "&#039;");
 }
 
 </script>
