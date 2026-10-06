@@ -7,6 +7,7 @@
 <title>GIPMS Analysis Viewer</title>
 
 <style>
+
 * {
     box-sizing: border-box;
 }
@@ -133,7 +134,7 @@ button:disabled {
 }
 
 /* =========================================================
-   FE Horizontal Scroll
+   FE
 ========================================================= */
 
 .fe-row {
@@ -162,7 +163,7 @@ button:disabled {
 }
 
 /* =========================================================
-   API + BE Same Row
+   API / BE
 ========================================================= */
 
 .backend-row {
@@ -198,25 +199,28 @@ button:disabled {
 }
 
 /* =========================================================
-   Scrollbars
+   Scrollbar
 ========================================================= */
 
 .fe-scroll::-webkit-scrollbar,
 .backend-row::-webkit-scrollbar,
-.top-row::-webkit-scrollbar {
-    height: 6px;
+.top-row::-webkit-scrollbar,
+.mermaid-scroll::-webkit-scrollbar {
+    height: 7px;
 }
 
 .fe-scroll::-webkit-scrollbar-track,
 .backend-row::-webkit-scrollbar-track,
-.top-row::-webkit-scrollbar-track {
+.top-row::-webkit-scrollbar-track,
+.mermaid-scroll::-webkit-scrollbar-track {
     background: #f1f3f5;
     border-radius: 5px;
 }
 
 .fe-scroll::-webkit-scrollbar-thumb,
 .backend-row::-webkit-scrollbar-thumb,
-.top-row::-webkit-scrollbar-thumb {
+.top-row::-webkit-scrollbar-thumb,
+.mermaid-scroll::-webkit-scrollbar-thumb {
     background: #afb8c1;
     border-radius: 5px;
 }
@@ -303,6 +307,12 @@ button:disabled {
     background: #f6f8fa;
 }
 
+.viewer hr {
+    border: 0;
+    border-top: 1px solid #d8dee4;
+    margin: 24px 0;
+}
+
 /* =========================================================
    Code
 ========================================================= */
@@ -364,39 +374,181 @@ button:disabled {
     background: #fbfcfd;
 }
 
-.viewer hr {
-    border: 0;
-    border-top: 1px solid #d8dee4;
-    margin: 24px 0;
-}
-
 /* =========================================================
    Mermaid
 ========================================================= */
 
 .mermaid-wrap {
     width: 100%;
-    margin: 20px 0;
-    padding: 18px;
+    margin: 22px 0;
+    padding: 12px 14px 18px;
     background: #ffffff;
     border: 1px solid #d8dee4;
     border-radius: 8px;
-    overflow-x: auto;
-    overflow-y: hidden;
+
+    /*
+       바깥쪽 clipping 방지
+    */
+    overflow: visible;
 }
 
-.mermaid {
-    width: max-content;
-    min-width: 100%;
-    text-align: center;
+/* =========================================================
+   Mermaid Toolbar
+========================================================= */
+
+.mermaid-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
 }
+
+.mermaid-download-btn {
+    padding: 6px 10px;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #24292f;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.mermaid-download-btn:hover {
+    border-color: #0969da;
+    color: #0969da;
+    background: #f6f8fa;
+}
+
+/* =========================================================
+   Mermaid Scroll Area
+========================================================= */
+
+.mermaid-scroll {
+    width: 100%;
+
+    /*
+       큰 차트는 가로 스크롤
+    */
+    overflow-x: auto;
+
+    /*
+       위/아래 텍스트가 잘리지 않도록
+    */
+    overflow-y: visible;
+
+    /*
+       Mermaid SVG 경계보다 추가 공간 확보
+    */
+    padding:
+        30px
+        35px
+        35px
+        35px;
+}
+
+/* =========================================================
+   Mermaid Body
+========================================================= */
+
+.mermaid {
+    display: block;
+    width: 100%;
+    min-width: max-content;
+    text-align: center;
+    overflow: visible;
+}
+
+/* =========================================================
+   Mermaid SVG
+========================================================= */
 
 .mermaid svg {
     display: block;
-    margin: 0 auto;
+
+    /*
+       Mermaid viewBox 기준 크기 사용
+    */
+    width: auto !important;
+    height: auto !important;
+
+    /*
+       부모 크기에 강제로 맞추지 않는다.
+       큰 Flowchart는 스크롤로 본다.
+    */
     max-width: none !important;
-    height: auto;
+
+    margin: 0 auto;
+
+    /*
+       SVG 바깥쪽 텍스트 clipping 방지
+    */
+    overflow: visible !important;
 }
+
+/* =========================================================
+   Mermaid foreignObject
+========================================================= */
+
+.mermaid foreignObject {
+    overflow: visible !important;
+}
+
+/* =========================================================
+   Mermaid Label
+========================================================= */
+
+.mermaid .label,
+.mermaid .nodeLabel,
+.mermaid .edgeLabel {
+    overflow: visible !important;
+}
+
+/*
+   Mermaid HTML Label 내부
+*/
+
+.mermaid .nodeLabel p,
+.mermaid .edgeLabel p {
+    margin: 0 !important;
+
+    line-height: 1.45 !important;
+
+    /*
+       한글 긴 텍스트
+    */
+    white-space: normal !important;
+
+    word-break: keep-all !important;
+
+    overflow-wrap: anywhere !important;
+
+    /*
+       글자 잘림 방지
+    */
+    overflow: visible !important;
+}
+
+/*
+   foreignObject 안쪽 div
+*/
+
+.mermaid foreignObject div {
+    overflow: visible !important;
+}
+
+/*
+   Node 내부 텍스트
+*/
+
+.mermaid .node text {
+    overflow: visible !important;
+}
+
+/* =========================================================
+   Mermaid Error
+========================================================= */
 
 .mermaid-error {
     margin: 16px 0;
@@ -407,6 +559,10 @@ button:disabled {
     color: #82071e;
     white-space: pre-wrap;
 }
+
+/* =========================================================
+   Empty
+========================================================= */
 
 .empty {
     padding: 60px 20px;
@@ -434,6 +590,10 @@ button:disabled {
     .top-row select {
         min-width: 160px;
     }
+
+    .mermaid-scroll {
+        padding: 20px;
+    }
 }
 
 </style>
@@ -445,16 +605,20 @@ button:disabled {
 
 <div class="controls">
 
-    <!-- 화면 + 폴더 + SCREEN + FE -->
+    <!-- =====================================================
+         TOP
+    ====================================================== -->
 
     <div class="row top-row">
 
         <label>화면명</label>
 
         <select id="screen">
+
             <option value="">
                 화면 선택
             </option>
+
         </select>
 
         <button id="pick">
@@ -479,28 +643,38 @@ button:disabled {
 
     </div>
 
-    <!-- FE / API / BE -->
+    <!-- =====================================================
+         SUB
+    ====================================================== -->
 
     <div
         id="sub"
         class="sub"
     >
 
+        <!-- FE -->
+
         <div class="row fe-row">
 
             <label>FE</label>
 
             <div class="fe-scroll">
+
                 <div id="fes"></div>
+
             </div>
 
         </div>
+
+        <!-- API / BE -->
 
         <div
             id="backendRow"
             class="backend-row"
             style="display:none"
         >
+
+            <!-- API -->
 
             <div
                 id="apiRow"
@@ -516,6 +690,8 @@ button:disabled {
                 ></div>
 
             </div>
+
+            <!-- BE -->
 
             <div
                 id="beRow"
@@ -540,6 +716,10 @@ button:disabled {
 
 </header>
 
+<!-- =========================================================
+     Status
+========================================================= -->
+
 <div
     id="status"
     class="status"
@@ -548,6 +728,10 @@ button:disabled {
     <b>docs/analysis 선택</b>
     버튼으로 분석 폴더를 선택하세요.
 </div>
+
+<!-- =========================================================
+     Viewer
+========================================================= -->
 
 <main
     id="viewer"
@@ -560,16 +744,16 @@ button:disabled {
 
 </main>
 
-
 <!-- =========================================================
      LOCAL MERMAID
 
-     analysis-viewer.html과
-     mermaid.min.js를 같은 폴더에 둡니다.
+     같은 폴더:
+
+     analysis-viewer.html
+     mermaid.min.js
 ========================================================= -->
 
 <script src="./mermaid.min.js"></script>
-
 
 <script>
 
@@ -614,9 +798,40 @@ if (
 
         flowchart: {
 
+            /*
+               긴 한글 텍스트 처리에 유리
+            */
+
             htmlLabels: true,
 
-            useMaxWidth: false
+
+            /*
+               Mermaid 자체 viewBox와
+               responsive 계산 사용
+            */
+
+            useMaxWidth: true,
+
+
+            /*
+               노드 사이 간격
+            */
+
+            nodeSpacing: 50,
+
+
+            /*
+               단계 사이 간격
+            */
+
+            rankSpacing: 60,
+
+
+            /*
+               Flowchart 내부 여백
+            */
+
+            padding: 20
         }
 
     });
@@ -634,25 +849,46 @@ else {
    Escape
 ========================================================= */
 
-function escapeHtml(value) {
+function escapeHtml(
+    value
+) {
 
     return String(value)
 
-        .replace(/&/g, "&amp;")
+        .replace(
+            /&/g,
+            "&amp;"
+        )
 
-        .replace(/</g, "&lt;")
+        .replace(
+            /</g,
+            "&lt;"
+        )
 
-        .replace(/>/g, "&gt;")
+        .replace(
+            />/g,
+            "&gt;"
+        )
 
-        .replace(/"/g, "&quot;")
+        .replace(
+            /"/g,
+            "&quot;"
+        )
 
-        .replace(/'/g, "&#039;");
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 }
 
 
-function escapeAttribute(value) {
+function escapeAttribute(
+    value
+) {
 
-    return escapeHtml(value);
+    return escapeHtml(
+        value
+    );
 }
 
 
@@ -700,7 +936,9 @@ async function file(
 }
 
 
-async function mds(handle) {
+async function mds(
+    handle
+) {
 
     const result = [];
 
@@ -727,6 +965,7 @@ async function mds(handle) {
         }
     }
 
+
     return result.sort(
         (a, b) =>
 
@@ -746,12 +985,15 @@ async function mds(handle) {
    Filename
 ========================================================= */
 
-function act(name) {
+function act(
+    name
+) {
 
     const match =
         name.match(
             /^FE-(ACT-\d+)/i
         );
+
 
     return match
         ? match[1].toUpperCase()
@@ -759,12 +1001,15 @@ function act(name) {
 }
 
 
-function feLabel(name) {
+function feLabel(
+    name
+) {
 
     const match =
         name.match(
             /^FE-(ACT-\d+)-(.+)\.md$/i
         );
+
 
     if (!match) {
 
@@ -773,6 +1018,7 @@ function feLabel(name) {
             ""
         );
     }
+
 
     return (
         match[1] +
@@ -794,6 +1040,7 @@ function child(
 
     const upper =
         name.toUpperCase();
+
 
     return (
 
@@ -827,10 +1074,12 @@ function childLabel(
             "i"
         );
 
+
     const match =
         name.match(
             regex
         );
+
 
     return match
         ? match[1].toUpperCase()
@@ -855,11 +1104,13 @@ function setMainActive(
             "active"
         );
 
+
     q("#feTab")
         .classList
         .remove(
             "active"
         );
+
 
     if (button) {
 
@@ -885,17 +1136,21 @@ async function renderFile(
         return;
     }
 
+
     try {
 
         const target =
             await handle.getFile();
 
+
         const markdown =
             await target.text();
+
 
         await renderMarkdown(
             markdown
         );
+
 
         q("#status")
             .innerHTML =
@@ -914,6 +1169,7 @@ async function renderFile(
         console.error(
             error
         );
+
 
         q("#viewer")
             .innerHTML =
@@ -939,6 +1195,7 @@ async function scan() {
 
     data.clear();
 
+
     for await (
         const [name, handle]
         of root.entries()
@@ -952,6 +1209,7 @@ async function scan() {
             continue;
         }
 
+
         const screen =
             await file(
                 handle,
@@ -960,11 +1218,13 @@ async function scan() {
                 ".md"
             );
 
+
         const frontend =
             await dir(
                 handle,
                 "frontend"
             );
+
 
         const api =
             await dir(
@@ -972,11 +1232,13 @@ async function scan() {
                 "api"
             );
 
+
         const backend =
             await dir(
                 handle,
                 "backend"
             );
+
 
         if (
             screen ||
@@ -997,13 +1259,16 @@ async function scan() {
         }
     }
 
+
     const select =
         q("#screen");
+
 
     select.innerHTML =
         '<option value="">' +
         '화면 선택' +
         '</option>';
+
 
     [...data.keys()]
 
@@ -1032,6 +1297,7 @@ async function scan() {
             }
         );
 
+
     q("#status")
         .textContent =
 
@@ -1058,8 +1324,10 @@ async () => {
             "Chrome 또는 Edge 최신 버전에서 실행해 주세요."
         );
 
+
         return;
     }
+
 
     try {
 
@@ -1068,6 +1336,7 @@ async () => {
                 .showDirectoryPicker({
                     mode: "read"
                 });
+
 
         await scan();
 
@@ -1098,7 +1367,9 @@ async event => {
     screenName =
         event.target.value;
 
+
     action = "";
+
 
     q("#sub")
         .classList
@@ -1106,22 +1377,27 @@ async event => {
             "show"
         );
 
+
     q("#backendRow")
         .style.display =
         "none";
+
 
     q("#screenTab")
         .disabled =
         !screenName;
 
+
     q("#feTab")
         .disabled =
         !screenName;
+
 
     if (!screenName) {
 
         return;
     }
+
 
     await showScreen();
 };
@@ -1138,10 +1414,12 @@ async function showScreen() {
             screenName
         );
 
+
     if (!current) {
 
         return;
     }
+
 
     q("#sub")
         .classList
@@ -1149,13 +1427,16 @@ async function showScreen() {
             "show"
         );
 
+
     q("#backendRow")
         .style.display =
         "none";
 
+
     setMainActive(
         q("#screenTab")
     );
+
 
     if (
         current.screen
@@ -1196,14 +1477,17 @@ async () => {
             screenName
         );
 
+
     if (!current) {
 
         return;
     }
 
+
     setMainActive(
         q("#feTab")
     );
+
 
     q("#sub")
         .classList
@@ -1211,31 +1495,39 @@ async () => {
             "show"
         );
 
+
     q("#fes")
         .innerHTML = "";
+
 
     q("#apis")
         .innerHTML = "";
 
+
     q("#bes")
         .innerHTML = "";
+
 
     q("#apiRow")
         .style.display =
         "none";
 
+
     q("#beRow")
         .style.display =
         "none";
+
 
     q("#backendRow")
         .style.display =
         "none";
 
+
     const frontendFiles =
         await mds(
             current.frontend
         );
+
 
     if (
         !frontendFiles.length
@@ -1245,6 +1537,7 @@ async () => {
             .textContent =
             "FE 문서 없음";
 
+
         q("#viewer")
             .innerHTML =
 
@@ -1252,8 +1545,10 @@ async () => {
             '이 화면에는 FE 문서가 없습니다.' +
             '</div>';
 
+
         return;
     }
+
 
     frontendFiles.forEach(
         handle => {
@@ -1263,13 +1558,16 @@ async () => {
                     "button"
                 );
 
+
             button.textContent =
                 feLabel(
                     handle.name
                 );
 
+
             button.title =
                 handle.name;
+
 
             button.onclick =
                 () =>
@@ -1279,12 +1577,14 @@ async () => {
                         button
                     );
 
+
             q("#fes")
                 .appendChild(
                     button
                 );
         }
     );
+
 
     q("#viewer")
         .innerHTML =
@@ -1309,6 +1609,7 @@ async function selectFE(
             handle.name
         );
 
+
     document
         .querySelectorAll(
             "#fes button"
@@ -1322,24 +1623,29 @@ async function selectFE(
                     )
         );
 
+
     button
         .classList
         .add(
             "active"
         );
 
+
     setMainActive(
         q("#feTab")
     );
+
 
     await renderFile(
         handle
     );
 
+
     const current =
         data.get(
             screenName
         );
+
 
     const apiFiles =
         (
@@ -1357,6 +1663,7 @@ async function selectFE(
                 )
         );
 
+
     const backendFiles =
         (
             await mds(
@@ -1373,6 +1680,7 @@ async function selectFE(
                 )
         );
 
+
     fillChildren(
         "#apis",
         "#apiRow",
@@ -1380,12 +1688,14 @@ async function selectFE(
         "API"
     );
 
+
     fillChildren(
         "#bes",
         "#beRow",
         backendFiles,
         "BE"
     );
+
 
     if (
         apiFiles.length ||
@@ -1420,8 +1730,10 @@ function fillChildren(
     const container =
         q(box);
 
+
     container.innerHTML =
         "";
+
 
     if (
         !items.length
@@ -1431,12 +1743,15 @@ function fillChildren(
             .style.display =
             "none";
 
+
         return;
     }
+
 
     q(row)
         .style.display =
         "flex";
+
 
     items.forEach(
         handle => {
@@ -1446,14 +1761,17 @@ function fillChildren(
                     "button"
                 );
 
+
             button.textContent =
                 childLabel(
                     handle.name,
                     type
                 );
 
+
             button.title =
                 handle.name;
+
 
             button.onclick =
 async () => {
@@ -1471,20 +1789,24 @@ async () => {
                     )
         );
 
+
     button
         .classList
         .add(
             "active"
         );
 
+
     setMainActive(
         q("#feTab")
     );
+
 
     await renderFile(
         handle
     );
 };
+
 
             container
                 .appendChild(
@@ -1508,9 +1830,11 @@ async function renderMarkdown(
             markdown
         );
 
+
     q("#viewer")
         .innerHTML =
         html;
+
 
     await renderMermaidBlocks();
 }
@@ -1527,12 +1851,14 @@ async function renderMermaidBlocks() {
             "#viewer .mermaid"
         );
 
+
     if (
         blocks.length === 0
     ) {
 
         return;
     }
+
 
     if (
         typeof mermaid ===
@@ -1545,23 +1871,36 @@ async function renderMermaidBlocks() {
                 const source =
                     block.textContent;
 
-                block.parentElement.innerHTML =
-                    '<div class="mermaid-error">' +
 
-                    '<b>Mermaid를 불러오지 못했습니다.</b>\n\n' +
+                const wrap =
+                    block.closest(
+                        ".mermaid-wrap"
+                    );
 
-                    'analysis-viewer.html과 mermaid.min.js가 같은 폴더에 있는지 확인하세요.\n\n' +
 
-                    escapeHtml(
-                        source
-                    ) +
+                if (wrap) {
 
-                    '</div>';
+                    wrap.innerHTML =
+
+                        '<div class="mermaid-error">' +
+
+                        '<b>Mermaid를 불러오지 못했습니다.</b>\n\n' +
+
+                        'analysis-viewer.html과 mermaid.min.js가 같은 폴더에 있는지 확인하세요.\n\n' +
+
+                        escapeHtml(
+                            source
+                        ) +
+
+                        '</div>';
+                }
             }
         );
 
+
         return;
     }
+
 
     for (
         const block
@@ -1571,17 +1910,20 @@ async function renderMermaidBlocks() {
         const source =
             block.textContent;
 
+
         mermaidSequence++;
+
 
         const id =
             "mermaid-svg-" +
             mermaidSequence;
 
+
         try {
 
-            /*
-               Mermaid 11 공식 render API
-            */
+            /* =============================================
+               Mermaid 11 Render
+            ============================================= */
 
             const result =
                 await mermaid.render(
@@ -1589,13 +1931,10 @@ async function renderMermaidBlocks() {
                     source
                 );
 
+
             block.innerHTML =
                 result.svg;
 
-            /*
-               Mermaid가 bindFunctions를
-               반환하는 경우 적용
-            */
 
             if (
                 result.bindFunctions
@@ -1606,6 +1945,180 @@ async function renderMermaidBlocks() {
                 );
             }
 
+
+            /* =============================================
+               SVG 후처리
+            ============================================= */
+
+            const svg =
+                block.querySelector(
+                    "svg"
+                );
+
+
+            if (svg) {
+
+                /*
+                   Mermaid가 max-width를 inline style로
+                   넣는 경우 제거
+                */
+
+                svg.style.maxWidth =
+                    "none";
+
+
+                svg.style.overflow =
+                    "visible";
+
+
+                /*
+                   viewBox가 있으면 그대로 사용
+                */
+
+                const viewBox =
+                    svg.getAttribute(
+                        "viewBox"
+                    );
+
+
+                if (viewBox) {
+
+                    const values =
+                        viewBox
+                            .trim()
+                            .split(/\s+/)
+                            .map(Number);
+
+
+                    if (
+                        values.length === 4 &&
+                        values.every(
+                            Number.isFinite
+                        )
+                    ) {
+
+                        const width =
+                            values[2];
+
+
+                        const height =
+                            values[3];
+
+
+                        /*
+                           실제 SVG 크기 설정
+
+                           큰 차트는 축소하지 않고
+                           가로 스크롤로 표시
+                        */
+
+                        if (
+                            width > 0
+                        ) {
+
+                            svg.setAttribute(
+                                "width",
+                                width
+                            );
+                        }
+
+
+                        if (
+                            height > 0
+                        ) {
+
+                            svg.setAttribute(
+                                "height",
+                                height
+                            );
+                        }
+                    }
+                }
+            }
+
+
+            /* =============================================
+               Toolbar
+            ============================================= */
+
+            const wrap =
+                block.closest(
+                    ".mermaid-wrap"
+                );
+
+
+            if (wrap) {
+
+                const toolbar =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                toolbar.className =
+                    "mermaid-toolbar";
+
+
+                const downloadButton =
+                    document.createElement(
+                        "button"
+                    );
+
+
+                downloadButton.type =
+                    "button";
+
+
+                downloadButton.className =
+                    "mermaid-download-btn";
+
+
+                downloadButton.textContent =
+                    "SVG 다운로드";
+
+
+                downloadButton.title =
+                    "현재 Flowchart를 SVG 파일로 저장";
+
+
+                downloadButton.onclick =
+                    () => {
+
+                        downloadMermaidSvg(
+                            block,
+                            id
+                        );
+                    };
+
+
+                toolbar.appendChild(
+                    downloadButton
+                );
+
+
+                const scroll =
+                    block.closest(
+                        ".mermaid-scroll"
+                    );
+
+
+                if (scroll) {
+
+                    wrap.insertBefore(
+                        toolbar,
+                        scroll
+                    );
+
+                }
+                else {
+
+                    wrap.insertBefore(
+                        toolbar,
+                        block
+                    );
+                }
+            }
+
         }
         catch (error) {
 
@@ -1614,7 +2127,15 @@ async function renderMermaidBlocks() {
                 error
             );
 
-            block.innerHTML =
+
+            const wrap =
+                block.closest(
+                    ".mermaid-wrap"
+                );
+
+
+            const errorHtml =
+
                 '<div class="mermaid-error">' +
 
                 '<b>Mermaid Flowchart 오류</b>\n\n' +
@@ -1631,8 +2152,423 @@ async function renderMermaidBlocks() {
                 ) +
 
                 '</div>';
+
+
+            if (wrap) {
+
+                wrap.innerHTML =
+                    errorHtml;
+
+            }
+            else {
+
+                block.innerHTML =
+                    errorHtml;
+            }
         }
     }
+}
+
+
+/* =========================================================
+   SVG Download
+========================================================= */
+
+function downloadMermaidSvg(
+    block,
+    id
+) {
+
+    const svg =
+        block.querySelector(
+            "svg"
+        );
+
+
+    if (!svg) {
+
+        alert(
+            "다운로드할 SVG를 찾을 수 없습니다."
+        );
+
+
+        return;
+    }
+
+
+    /*
+       화면 SVG 복사
+    */
+
+    const clone =
+        svg.cloneNode(
+            true
+        );
+
+
+    /* =====================================================
+       Namespace
+    ===================================================== */
+
+    clone.setAttribute(
+        "xmlns",
+        "http://www.w3.org/2000/svg"
+    );
+
+
+    clone.setAttribute(
+        "xmlns:xlink",
+        "http://www.w3.org/1999/xlink"
+    );
+
+
+    /* =====================================================
+       SVG Overflow
+    ===================================================== */
+
+    clone.setAttribute(
+        "overflow",
+        "visible"
+    );
+
+
+    clone.style.overflow =
+        "visible";
+
+
+    clone.style.maxWidth =
+        "none";
+
+
+    /* =====================================================
+       ViewBox 여백 추가
+    ===================================================== */
+
+    const viewBox =
+        clone.getAttribute(
+            "viewBox"
+        );
+
+
+    if (viewBox) {
+
+        const values =
+            viewBox
+                .trim()
+                .split(/\s+/)
+                .map(Number);
+
+
+        if (
+            values.length === 4 &&
+            values.every(
+                Number.isFinite
+            )
+        ) {
+
+            const x =
+                values[0];
+
+
+            const y =
+                values[1];
+
+
+            const width =
+                values[2];
+
+
+            const height =
+                values[3];
+
+
+            /*
+               다운로드 SVG에
+               상하좌우 40px 추가
+            */
+
+            const padding =
+                40;
+
+
+            const newX =
+                x -
+                padding;
+
+
+            const newY =
+                y -
+                padding;
+
+
+            const newWidth =
+                width +
+                (
+                    padding *
+                    2
+                );
+
+
+            const newHeight =
+                height +
+                (
+                    padding *
+                    2
+                );
+
+
+            clone.setAttribute(
+                "viewBox",
+
+                [
+                    newX,
+                    newY,
+                    newWidth,
+                    newHeight
+                ].join(
+                    " "
+                )
+            );
+
+
+            clone.setAttribute(
+                "width",
+                newWidth
+            );
+
+
+            clone.setAttribute(
+                "height",
+                newHeight
+            );
+        }
+    }
+
+
+    /* =====================================================
+       흰색 배경
+
+       PowerPoint / Word / 브라우저 등에서
+       보기 편하도록 SVG 첫 번째 요소에
+       흰색 배경 추가
+    ===================================================== */
+
+    const viewBoxAfter =
+        clone.getAttribute(
+            "viewBox"
+        );
+
+
+    if (viewBoxAfter) {
+
+        const values =
+            viewBoxAfter
+                .trim()
+                .split(/\s+/)
+                .map(Number);
+
+
+        if (
+            values.length === 4 &&
+            values.every(
+                Number.isFinite
+            )
+        ) {
+
+            const background =
+                document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "rect"
+                );
+
+
+            background.setAttribute(
+                "x",
+                values[0]
+            );
+
+
+            background.setAttribute(
+                "y",
+                values[1]
+            );
+
+
+            background.setAttribute(
+                "width",
+                values[2]
+            );
+
+
+            background.setAttribute(
+                "height",
+                values[3]
+            );
+
+
+            background.setAttribute(
+                "fill",
+                "white"
+            );
+
+
+            clone.insertBefore(
+                background,
+                clone.firstChild
+            );
+        }
+    }
+
+
+    /* =====================================================
+       Serialize
+    ===================================================== */
+
+    const serializer =
+        new XMLSerializer();
+
+
+    let svgSource =
+        serializer.serializeToString(
+            clone
+        );
+
+
+    svgSource =
+        '<?xml version="1.0" encoding="UTF-8"?>\n' +
+        svgSource;
+
+
+    /* =====================================================
+       Blob
+    ===================================================== */
+
+    const blob =
+        new Blob(
+            [
+                svgSource
+            ],
+            {
+                type:
+                    "image/svg+xml;charset=utf-8"
+            }
+        );
+
+
+    const url =
+        URL.createObjectURL(
+            blob
+        );
+
+
+    /* =====================================================
+       Download
+    ===================================================== */
+
+    const link =
+        document.createElement(
+            "a"
+        );
+
+
+    link.href =
+        url;
+
+
+    link.download =
+        createSvgFilename(
+            id
+        );
+
+
+    document.body
+        .appendChild(
+            link
+        );
+
+
+    link.click();
+
+
+    document.body
+        .removeChild(
+            link
+        );
+
+
+    setTimeout(
+        () => {
+
+            URL.revokeObjectURL(
+                url
+            );
+
+        },
+        1000
+    );
+}
+
+
+/* =========================================================
+   SVG Filename
+========================================================= */
+
+function createSvgFilename(
+    id
+) {
+
+    let filename =
+        "flowchart";
+
+
+    const status =
+        q("#status");
+
+
+    if (status) {
+
+        let text =
+            status
+                .textContent
+                .replace(
+                    "표시 문서:",
+                    ""
+                )
+                .trim();
+
+
+        if (text) {
+
+            text =
+                text.replace(
+                    /\.md$/i,
+                    ""
+                );
+
+
+            /*
+               Windows 금지 문자 제거
+            */
+
+            text =
+                text.replace(
+                    /[\\/:*?"<>|]/g,
+                    "_"
+                );
+
+
+            filename =
+                text;
+        }
+    }
+
+
+    return (
+        filename +
+        "-" +
+        id +
+        ".svg"
+    );
 }
 
 
@@ -1650,10 +2586,12 @@ function markdownToHtml(
             "\n"
         );
 
+
     const lines =
         markdown.split(
             "\n"
         );
+
 
     let html = "";
 
@@ -1691,12 +2629,14 @@ function markdownToHtml(
 
             closeList();
 
+
             if (
                 !inCode
             ) {
 
                 inCode =
                     true;
+
 
                 codeLanguage =
                     line
@@ -1705,15 +2645,16 @@ function markdownToHtml(
                         .trim()
                         .toLowerCase();
 
+
                 codeBuffer =
                     [];
 
             }
             else {
 
-                /*
+                /* =========================================
                    Mermaid
-                */
+                ========================================= */
 
                 if (
                     codeLanguage ===
@@ -1721,26 +2662,30 @@ function markdownToHtml(
                 ) {
 
                     html +=
+
                         '<div class="mermaid-wrap">' +
 
-                        '<div class="mermaid">' +
+                            '<div class="mermaid-scroll">' +
 
-                        escapeHtml(
-                            codeBuffer.join(
-                                "\n"
-                            )
-                        ) +
+                                '<div class="mermaid">' +
 
-                        '</div>' +
+                                    escapeHtml(
+                                        codeBuffer.join(
+                                            "\n"
+                                        )
+                                    ) +
+
+                                '</div>' +
+
+                            '</div>' +
 
                         '</div>';
-
                 }
                 else {
 
-                    /*
-                       일반 Code Block
-                    */
+                    /* =====================================
+                       일반 Code
+                    ===================================== */
 
                     html +=
 
@@ -1750,9 +2695,11 @@ function markdownToHtml(
                             codeLanguage
 
                                 ? ' class="language-' +
+
                                   escapeAttribute(
                                       codeLanguage
                                   ) +
+
                                   '"'
 
                                 : ""
@@ -1769,21 +2716,30 @@ function markdownToHtml(
                         + "</code></pre>";
                 }
 
+
                 inCode =
                     false;
 
+
                 codeLanguage =
                     "";
+
 
                 codeBuffer =
                     [];
             }
 
+
             index++;
+
 
             continue;
         }
 
+
+        /* =================================================
+           Code 내용
+        ================================================= */
 
         if (
             inCode
@@ -1793,7 +2749,9 @@ function markdownToHtml(
                 line
             );
 
+
             index++;
+
 
             continue;
         }
@@ -1812,17 +2770,21 @@ function markdownToHtml(
 
             closeList();
 
+
             const result =
                 parseTable(
                     lines,
                     index
                 );
 
+
             html +=
                 result.html;
 
+
             index =
                 result.nextIndex;
+
 
             continue;
         }
@@ -1839,14 +2801,16 @@ function markdownToHtml(
 
             closeList();
 
+
             index++;
+
 
             continue;
         }
 
 
         /* =================================================
-           Horizontal Rule
+           HR
         ================================================= */
 
         if (
@@ -1858,10 +2822,13 @@ function markdownToHtml(
 
             closeList();
 
+
             html +=
                 "<hr>";
 
+
             index++;
+
 
             continue;
         }
@@ -1876,17 +2843,21 @@ function markdownToHtml(
                 /^(#{1,6})\s+(.+)$/
             );
 
+
         if (
             headingMatch
         ) {
 
             closeList();
 
+
             const level =
                 headingMatch[1]
                     .length;
 
+
             html +=
+
                 "<h" +
                 level +
                 ">" +
@@ -1899,7 +2870,9 @@ function markdownToHtml(
                 level +
                 ">";
 
+
             index++;
+
 
             continue;
         }
@@ -1919,8 +2892,10 @@ function markdownToHtml(
 
             closeList();
 
+
             const quoteLines =
                 [];
+
 
             while (
                 index <
@@ -1945,10 +2920,13 @@ function markdownToHtml(
                         )
                 );
 
+
                 index++;
             }
 
+
             html +=
+
                 "<blockquote>" +
 
                 quoteLines
@@ -1965,9 +2943,10 @@ function markdownToHtml(
                     )
                     .join(
                         "<br>"
-                    ) +
+                    )
 
-                "</blockquote>";
+                + "</blockquote>";
+
 
             continue;
         }
@@ -1982,6 +2961,7 @@ function markdownToHtml(
                 /^\s*[-*+]\s+(.+)$/
             );
 
+
         if (
             ulMatch
         ) {
@@ -1993,23 +2973,29 @@ function markdownToHtml(
 
                 closeList();
 
+
                 html +=
                     "<ul>";
+
 
                 listType =
                     "ul";
             }
 
+
             html +=
+
                 "<li>" +
 
                 inlineMarkdown(
                     ulMatch[1]
-                ) +
+                )
 
-                "</li>";
+                + "</li>";
+
 
             index++;
+
 
             continue;
         }
@@ -2024,6 +3010,7 @@ function markdownToHtml(
                 /^\s*\d+\.\s+(.+)$/
             );
 
+
         if (
             olMatch
         ) {
@@ -2035,23 +3022,29 @@ function markdownToHtml(
 
                 closeList();
 
+
                 html +=
                     "<ol>";
+
 
                 listType =
                     "ol";
             }
 
+
             html +=
+
                 "<li>" +
 
                 inlineMarkdown(
                     olMatch[1]
-                ) +
+                )
 
-                "</li>";
+                + "</li>";
+
 
             index++;
+
 
             continue;
         }
@@ -2063,12 +3056,15 @@ function markdownToHtml(
 
         closeList();
 
+
         const paragraphLines =
             [
                 line
             ];
 
+
         index++;
+
 
         while (
             index <
@@ -2077,6 +3073,7 @@ function markdownToHtml(
 
             const next =
                 lines[index];
+
 
             if (
                 next.trim() ===
@@ -2137,34 +3134,39 @@ function markdownToHtml(
                 break;
             }
 
+
             paragraphLines.push(
                 next
             );
 
+
             index++;
         }
 
+
         html +=
+
             "<p>" +
 
             paragraphLines
                 .map(
                     item =>
+
                         inlineMarkdown(
                             item
                         )
                 )
                 .join(
                     "<br>"
-                ) +
+                )
 
-            "</p>";
+            + "</p>";
     }
 
 
-    /*
+    /* =====================================================
        닫히지 않은 Code Block
-    */
+    ===================================================== */
 
     if (
         inCode
@@ -2176,17 +3178,22 @@ function markdownToHtml(
         ) {
 
             html +=
+
                 '<div class="mermaid-wrap">' +
 
-                '<div class="mermaid">' +
+                    '<div class="mermaid-scroll">' +
 
-                escapeHtml(
-                    codeBuffer.join(
-                        "\n"
-                    )
-                ) +
+                        '<div class="mermaid">' +
 
-                '</div>' +
+                            escapeHtml(
+                                codeBuffer.join(
+                                    "\n"
+                                )
+                            ) +
+
+                        '</div>' +
+
+                    '</div>' +
 
                 '</div>';
 
@@ -2194,20 +3201,22 @@ function markdownToHtml(
         else {
 
             html +=
+
                 "<pre><code>" +
 
                 escapeHtml(
                     codeBuffer.join(
                         "\n"
                     )
-                ) +
+                )
 
-                "</code></pre>";
+                + "</code></pre>";
         }
     }
 
 
     closeList();
+
 
     return html;
 
@@ -2223,6 +3232,7 @@ function markdownToHtml(
                 "</ul>";
         }
 
+
         if (
             listType ===
             "ol"
@@ -2232,6 +3242,7 @@ function markdownToHtml(
                 "</ol>";
         }
 
+
         listType =
             null;
     }
@@ -2239,7 +3250,7 @@ function markdownToHtml(
 
 
 /* =========================================================
-   Markdown Table
+   Table Detection
 ========================================================= */
 
 function isTableHeader(
@@ -2255,13 +3266,16 @@ function isTableHeader(
         return false;
     }
 
+
     const first =
         lines[index]
             .trim();
 
+
     const second =
         lines[index + 1]
             .trim();
+
 
     if (
         !first.includes(
@@ -2272,6 +3286,7 @@ function isTableHeader(
         return false;
     }
 
+
     if (
         !second.includes(
             "|"
@@ -2281,10 +3296,12 @@ function isTableHeader(
         return false;
     }
 
+
     const cells =
         splitTableRow(
             second
         );
+
 
     if (
         cells.length ===
@@ -2293,6 +3310,7 @@ function isTableHeader(
 
         return false;
     }
+
 
     return cells.every(
         cell =>
@@ -2304,6 +3322,10 @@ function isTableHeader(
     );
 }
 
+
+/* =========================================================
+   Table
+========================================================= */
 
 function parseTable(
     lines,
@@ -2317,11 +3339,14 @@ function parseTable(
             ]
         );
 
+
     let index =
         startIndex + 2;
 
+
     const rows =
         [];
+
 
     while (
         index <
@@ -2331,6 +3356,7 @@ function parseTable(
         const line =
             lines[index]
                 .trim();
+
 
         if (
             line ===
@@ -2346,17 +3372,21 @@ function parseTable(
             break;
         }
 
+
         rows.push(
             splitTableRow(
                 line
             )
         );
 
+
         index++;
     }
 
+
     let html =
         "<table><thead><tr>";
+
 
     for (
         const header
@@ -2364,17 +3394,20 @@ function parseTable(
     ) {
 
         html +=
+
             "<th>" +
 
             inlineMarkdown(
                 header.trim()
-            ) +
+            )
 
-            "</th>";
+            + "</th>";
     }
+
 
     html +=
         "</tr></thead><tbody>";
+
 
     for (
         const row
@@ -2383,6 +3416,7 @@ function parseTable(
 
         html +=
             "<tr>";
+
 
         for (
             let column = 0;
@@ -2395,24 +3429,30 @@ function parseTable(
                 row[column] ??
                 "";
 
+
             html +=
+
                 "<td>" +
 
                 inlineMarkdown(
                     value.trim()
-                ) +
+                )
 
-                "</td>";
+                + "</td>";
         }
+
 
         html +=
             "</tr>";
     }
 
+
     html +=
         "</tbody></table>";
 
+
     return {
+
         html:
             html,
 
@@ -2422,12 +3462,17 @@ function parseTable(
 }
 
 
+/* =========================================================
+   Split Table Row
+========================================================= */
+
 function splitTableRow(
     line
 ) {
 
     let value =
         line.trim();
+
 
     if (
         value.startsWith(
@@ -2441,6 +3486,7 @@ function splitTableRow(
             );
     }
 
+
     if (
         value.endsWith(
             "|"
@@ -2453,6 +3499,7 @@ function splitTableRow(
                 value.length - 1
             );
     }
+
 
     return value.split(
         "|"
@@ -2473,9 +3520,10 @@ function inlineMarkdown(
             text
         );
 
-    /*
+
+    /* =====================================================
        Inline Code
-    */
+    ===================================================== */
 
     value =
         value.replace(
@@ -2484,9 +3532,9 @@ function inlineMarkdown(
         );
 
 
-    /*
+    /* =====================================================
        Bold
-    */
+    ===================================================== */
 
     value =
         value.replace(
@@ -2495,17 +3543,18 @@ function inlineMarkdown(
         );
 
 
-    /*
+    /* =====================================================
        Italic
 
-       lookbehind를 사용하지 않음.
-    */
+       lookbehind 사용 안 함
+    ===================================================== */
 
     value =
         value.replace(
             /(^|[^*])\*([^*]+)\*/g,
             "$1<em>$2</em>"
         );
+
 
     return value;
 }
