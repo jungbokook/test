@@ -129,3 +129,17 @@ pm-sheet ACT-001
 
 
 #####
+
+
+be-direct-parallel agent를 사용해서 아래 Backend를 분석해줘.
+
+화면명:
+equipment-search
+
+Backend:
+1. POST /api/equipment/search
+2. GET /api/equipment/detail
+3. UNKNOWN /api/equipment/status
+
+
+#####
