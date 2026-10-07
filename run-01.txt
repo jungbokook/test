@@ -160,3 +160,9 @@ Backend:
 
 
 #####
+
+
+/be-analysis 자재등록 FE-ACT-010-create UNKNOWN /material/create
+
+
+#####
