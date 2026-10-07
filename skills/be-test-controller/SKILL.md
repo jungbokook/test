@@ -1,36 +1,45 @@
 ---
 name: be-test-controller
-description: Backend URL에서 Controller부터 ServiceImpl, 동일 Class Local/private Method, Mapper 호출, MyBatis XML과 직접 SQL까지 부분 Read 방식으로 추적하는 성능 테스트 Skill.
-argument-hint: "<HTTP Method|UNKNOWN> <Backend URL>"
-allowed-tools: Read, Grep
+description: Backend URL 하나를 대상으로 Controller부터 실제 종료점까지 부분 Read와 실제 호출 기반으로 빠르게 추적하고 BE-REFERENCE 형식의 최종 BE 분석 문서를 생성하는 전체 성능 테스트 Skill.
+argument-hint: "<화면명> <FE Base Name> <HTTP Method|UNKNOWN> <Backend URL>"
+allowed-tools: Read, Grep, Write
 ---
 
-# BE Fast Search Test - Local Method + SQL
+# BE Full Fast Analysis Test
 
 ## 0. 목적
 
-이 Skill은 최종 BE 분석 문서를 생성하지 않는다.
+이 Skill은 지금까지 검증한 FAST 탐색 규칙을 사용하여
+실제 최종 BE 분석 전체 범위를 수행한다.
 
-이번 테스트 범위:
+이번 테스트는 부분 단계 테스트가 아니다.
+
+다음 전체 실행 흐름을 끝까지 추적한다.
 
 Controller
 → Service
-→ ServiceImpl 대상 Method
-→ 동일 ServiceImpl 내부 Local/private Method
-→ Mapper 호출
-→ Mapper Type
-→ Mapper Java SKIP
+→ ServiceImpl
+→ Validation
+→ 조건/분기
+→ Local/private Method
+→ 다른 Service
+→ Mapper
 → MyBatis XML
-→ Statement 부분 Read
-→ 직접 SQL 분석
-→ STOP
+→ SQL
+→ 실제 사용되는 include
+→ SAP/RFC/외부 연동
+→ 후처리
+→ Response
+→ Exception
+→ 실제 종료점
 
-이번 테스트에서 새로 추가되는 것은:
+그리고 BE-REFERENCE 형식을 사용하여
+최종 Markdown 문서를 생성한다.
 
-동일 ServiceImpl Class 내부의
-Local/private Method 호출 추적
+핵심 원칙:
 
-이다.
+검색 범위는 좁게,
+호출 깊이는 끝까지.
 
 ---
 
@@ -38,23 +47,77 @@ Local/private Method 호출 추적
 
 사용법:
 
-/be-test-controller <HTTP Method|UNKNOWN> <Backend URL>
+/be-test-controller <화면명> <FE Base Name> <HTTP Method|UNKNOWN> <Backend URL>
 
 예:
 
-/be-test-controller POST /material/create
+/be-test-controller 자재등록 FE-ACT-010-create POST /material/create
 
-/be-test-controller UNKNOWN /material/create
+입력:
+
+- 화면명
+- FE Base Name
+- HTTP Method 또는 UNKNOWN
+- Backend URL
 
 ---
 
-# 2. 검색 범위
+# 2. 출력 경로
+
+출력 기본 경로:
+
+docs/analysis/{화면명}/backend/
+
+파일명:
+
+{FE Base Name}-BE-{NNN}.md
+
+예:
+
+docs/analysis/자재등록/backend/FE-ACT-010-create-BE-001.md
+
+---
+
+# 3. BE ID 결정
+
+출력 디렉토리에서 현재 FE Base Name에 해당하는
+BE 파일명만 확인한다.
+
+예:
+
+FE-ACT-010-create-BE-001.md
+FE-ACT-010-create-BE-002.md
+
+가 존재하면:
+
+다음 ID:
+
+BE-003
+
+기존 번호의 최대값 + 1을 사용한다.
+
+파일 내용은 읽지 않는다.
+
+파일명만 확인한다.
+
+동일 Backend URL의 기존 결과가 명확히 확인되는 경우
+임의 overwrite하지 않는다.
+
+---
+
+# 4. 검색 대상
 
 Backend 프로젝트:
 
 gipms-api-*
 
-제외:
+Frontend 프로젝트는 분석하지 않는다.
+
+---
+
+# 5. 검색 제외
+
+다음은 검색하지 않는다.
 
 - docs/**
 - sample/**
@@ -67,63 +130,76 @@ gipms-api-*
 - generated/**
 - node_modules/**
 
-Frontend 프로젝트는 검색하지 않는다.
+절대경로 기반 탐색을 하지 않는다.
 
-절대경로를 출력하지 않는다.
-
----
-
-# 3. 허용 도구
-
-사용:
-
-- Grep
-- Read
-
-사용하지 않는다:
-
-- Glob
-- Code Index
-- Agent
-- BE-REFERENCE
+Evidence는 Project Root 기준 상대경로만 사용한다.
 
 ---
 
-# 4. 핵심 성능 원칙
+# 6. BE-REFERENCE
 
-전체 파일 Read를 기본적으로 하지 않는다.
+최종 문서 형식 확인을 위해
+BE-REFERENCE를 분석 시작 시 정확히 1회만 Read한다.
 
-기본 탐색 방식:
+중간 분석 중 다시 읽지 않는다.
 
-정확한 Symbol
-→ 제한 Grep
-→ 위치 확보
-→ 필요한 범위만 Read
-→ 다음 호출
-→ STOP 조건 확인
+BE-REFERENCE는:
+
+- 출력 구조
+- 제목
+- 표
+- 표현 방식
+- 실행 흐름 표현
+
+을 위한 Format Reference다.
+
+BE-REFERENCE 자체는 Evidence가 아니다.
+
+중요:
+
+BE-REFERENCE의 예제 내용을
+실제 분석 결과로 복사하지 않는다.
+
+실제 Source에서 확인한 내용만 작성한다.
+
+---
+
+# 7. 핵심 FAST 규칙
 
 반드시 다음 규칙을 따른다.
 
-1. 동일 검색을 반복하지 않는다.
-2. 이미 발견한 파일을 다시 찾지 않는다.
-3. 이미 확보한 정보를 다시 검색하지 않는다.
-4. 이미 읽은 Method를 다시 읽지 않는다.
-5. 현재 Backend 프로젝트부터 검색한다.
-6. 찾지 못할 때만 다른 gipms-api-*로 확대한다.
-7. ServiceImpl 전체 Read를 하지 않는다.
-8. Local Method도 전체 파일 Read 없이 Method 위치부터 부분 Read한다.
-9. Mapper Java Interface를 검색하지 않는다.
-10. XML 전체 Read를 하지 않는다.
-11. SQL은 이미 읽은 Statement 범위에서 분석한다.
-12. Evidence를 위한 재검색을 하지 않는다.
+1. 전체 Java 파일 Read를 기본적으로 금지한다.
+2. 정확한 Symbol 위치를 먼저 찾는다.
+3. Method 위치 확인 후 해당 범위만 Read한다.
+4. 초기 Java Method Read는 약 80줄을 기준으로 한다.
+5. Method가 계속될 때만 다음 범위를 읽는다.
+6. Method 종료 즉시 추가 Read를 중단한다.
+7. XML도 전체 Read하지 않는다.
+8. XML Statement는 약 40줄부터 시작한다.
+9. Statement 종료가 안 보일 때만 다음 범위를 읽는다.
+10. 동일 검색을 반복하지 않는다.
+11. 동일 파일을 다시 찾지 않는다.
+12. 동일 Method를 다시 분석하지 않는다.
+13. 이미 확보한 정보를 다시 검색하지 않는다.
+14. 현재 Backend 프로젝트를 우선한다.
+15. 현재 프로젝트에서 찾지 못할 때만 다른 gipms-api-*로 확대한다.
+16. Evidence는 최초 Read 시 같이 확보한다.
+17. Evidence를 위한 두 번째 탐색을 하지 않는다.
+18. 실제 호출된 경로만 추적한다.
+19. 관련 있어 보인다는 이유로 주변 코드를 탐색하지 않는다.
+20. 종료점 이후 탐색하지 않는다.
 
-내부적으로 유지:
+---
+
+# 8. 탐색 상태 관리
+
+분석 중 내부적으로 다음을 유지한다.
 
 KNOWN_FILES
 
 KNOWN_SYMBOLS
 
-VISITED_FILES
+KNOWN_VARIABLE_TYPES
 
 VISITED_METHODS
 
@@ -131,30 +207,54 @@ VISITED_XML
 
 VISITED_STATEMENTS
 
+VISITED_INCLUDES
+
+VISITED_EXTERNAL_CALLS
+
+CALL_STACK
+
+VISITED_METHODS는 다음 형태로 관리한다.
+
+ClassName#MethodName(signature)
+
+예:
+
+MaterialServiceImpl#create(MaterialRequest)
+
+ValidationServiceImpl#check(MaterialRequest)
+
+동일 이름 Method라도 Class 또는 signature가 다르면
+별개로 처리한다.
+
 ---
 
-# STEP 1. URL 분리
+# 9. URL 분리
 
-입력 Backend URL을 path 단위로 확인한다.
+입력 Backend URL에서:
+
+- 상위 path
+- 마지막 segment
+
+를 확인한다.
 
 예:
 
 /material/create
 
-상위 path:
+상위:
 
 /material
 
-마지막 segment:
+마지막:
 
 /create
 
 Controller 검색에서는
-식별력이 높은 상위 path를 우선 사용한다.
+상위 path를 우선 사용한다.
 
 ---
 
-# STEP 2. Controller 찾기
+# 10. Controller 검색
 
 검색 범위:
 
@@ -162,37 +262,25 @@ gipms-api-*/**/*Controller.java
 
 URL 상위 path를 먼저 Grep한다.
 
-후보 Controller가 발견되면
-Backend 전체 URL 검색을 중단한다.
+후보가 발견되면
+전체 Backend URL 검색을 중단한다.
 
-필요한 경우에만 마지막 segment를 사용한다.
+후보 Controller에서만:
 
----
+- class-level mapping
+- method-level mapping
 
-# STEP 3. Controller Mapping 검증
-
-class-level mapping과
-method-level mapping을 조합한다.
-
-예:
-
-@RequestMapping("/material")
-
-+
-
-@PostMapping("/create")
-
-=
-
-POST /material/create
-
-입력 URL과 일치하는 Method를 확정한다.
+을 확인한다.
 
 ---
 
-# STEP 4. HTTP Method
+# 11. HTTP Method
 
-입력이:
+입력 Method가 명확하면 annotation과 비교한다.
+
+UNKNOWN이면 Controller annotation에서 확정한다.
+
+지원:
 
 GET
 POST
@@ -200,11 +288,8 @@ PUT
 DELETE
 PATCH
 
-이면 annotation과 일치해야 한다.
-
-UNKNOWN이면 annotation에서 실제 Method를 확정한다.
-
-동일 URL에 여러 HTTP Method가 존재하면:
+동일 URL에 여러 Method가 있고
+UNKNOWN 상태에서 하나로 확정할 수 없으면:
 
 AMBIGUOUS
 
@@ -212,23 +297,54 @@ AMBIGUOUS
 
 ---
 
-# STEP 5. Controller Method
+# 12. Controller Method
+
+실제 URL과 HTTP Method가 일치하는
+Controller Method 하나를 확정한다.
 
 확인:
 
 - Controller Class
 - Controller Method
+- Mapping
 - HTTP Method
+- Request
+- Response
 - Evidence
 
-확정 후 다른 Controller를 탐색하지 않는다.
+다른 Controller Method는 분석하지 않는다.
 
 ---
 
-# STEP 6. Service 호출
+# 13. Controller Validation
 
-Controller Method에서
-실제로 호출되는 Service를 확인한다.
+Controller Method 내부에서 직접 수행되는 Validation이 있으면 추적한다.
+
+예:
+
+@Valid
+
+BindingResult
+
+직접 조건 검사
+
+필수값 확인
+
+Validation 실패 시:
+
+- 조건
+- 처리
+- Response 또는 Exception
+
+을 기록한다.
+
+실제로 없는 Validation을 추측하지 않는다.
+
+---
+
+# 14. Service 호출
+
+Controller에서 실제 호출되는 Service를 확인한다.
 
 예:
 
@@ -236,323 +352,288 @@ materialService.create(request);
 
 확인:
 
-Service Variable:
-materialService
-
-Service Method:
-create
-
----
-
-# STEP 7. Service Type
-
-이미 확보한 Controller 내용에서
-Service Variable Type을 확인한다.
-
-예:
-
-private final MaterialService materialService;
-
-결과:
-
-Service Type:
-MaterialService
-
-Controller를 재검색하지 않는다.
+- Service Variable
+- Service Type
+- Service Method
+- Parameter
+- Return 처리
 
 ---
 
-# STEP 8. Service 찾기
+# 15. Service Interface
 
-현재 Backend 프로젝트에서
-정확한 Service Type을 검색한다.
+필요한 경우 정확한 Service Type만 검색한다.
 
 예:
 
 interface MaterialService
 
-발견되면 다른 프로젝트를 검색하지 않는다.
+호출된 Method 선언만 확인한다.
 
-없을 때만 다른 gipms-api-*로 확대한다.
-
----
-
-# STEP 9. Service Method
-
-Controller가 실제 호출한
-Service Method 선언만 확인한다.
-
-확인:
-
-- Service Method
-- Parameter
-- Return Type
-- Evidence
+전체 Service 파일 분석은 하지 않는다.
 
 ---
 
-# STEP 10. ServiceImpl 찾기
+# 16. ServiceImpl
 
-Service가 interface이면:
+implements ServiceType
 
-implements MaterialService
-
-를 검색한다.
+으로 실제 구현체를 찾는다.
 
 현재 Backend 프로젝트를 우선한다.
 
-구현체 발견 즉시 검색을 중단한다.
+구현체가 확정되면 다른 구현체 검색을 중단한다.
 
-ServiceImpl 전체 파일을 읽지 않는다.
+ServiceImpl 전체 파일을 Read하지 않는다.
 
 ---
 
-# STEP 11. ServiceImpl Entry Method
+# 17. ServiceImpl Method 부분 Read
 
-확정된 ServiceImpl 파일 하나에서
-실제 호출된 Method 이름을 Grep한다.
+호출된 Method 이름을
+확정된 ServiceImpl 파일 하나에서 Grep한다.
+
+Method 시작 line 확보 후:
+
+약 80줄 Read
+
+↓
+
+Method 종료 여부 확인
+
+↓
+
+필요한 경우에만 다음 약 80줄
+
+Method 종료 즉시 중단한다.
+
+---
+
+# 18. Method 내부 분석
+
+실제 Method 범위에서 다음을 확인한다.
+
+- Validation
+- 조건문
+- 상태값 변경
+- Parameter 생성
+- DTO 변환
+- Local/private Method
+- 다른 Service 호출
+- Mapper 호출
+- 외부 연동
+- Return
+- Exception
+
+실제 실행 흐름 순서를 유지한다.
+
+---
+
+# 19. Validation
+
+다음 형태를 포함한다.
 
 예:
 
-create(
+if (...) {
+    throw ...
+}
 
-Service Interface signature와 비교해
-정확한 구현 Method를 확정한다.
-
----
-
-# STEP 12. Method 부분 Read
-
-Method 시작부터 약 80줄을 Read한다.
-
-예:
-
-420 ~ 500
-
-Method 종료가 확인되면 중단한다.
-
-종료되지 않은 경우에만
-다음 약 80줄을 추가한다.
-
-전체 파일을 읽지 않는다.
-
----
-
-# STEP 13. Entry Method 호출 추출
-
-ServiceImpl Entry Method에서
-직접 호출되는 항목을 확인한다.
-
-이번 테스트에서 추적 대상:
-
-1. Mapper 호출
-2. 동일 Class Local/private Method 호출
-
-현재 추적하지 않는 것:
-
-- 다른 Service
-- 외부 Component
-- Client
-- SAP
-- RFC
-- HTTP API
-
----
-
-# STEP 14. Local/private Method 판별
-
-Entry Method에서 다음과 같은 호출이 보이면:
-
-validate(request);
-
-saveMaterial(request);
-
-buildResult(request);
-
-동일 ServiceImpl Class 내부 Method일 가능성이 있는 호출을 기록한다.
-
-하지만 모든 Method 호출을 무조건 Local Method라고 판단하지 않는다.
-
-다음은 Local Method 후보에서 제외한다.
-
-예:
-
-request.getId()
-
-list.add(...)
-
-String.valueOf(...)
+Assert...
 
 Objects.requireNonNull(...)
 
-Collections.emptyList()
+Validator 호출
 
-mapper.xxx(...)
+Validation Service 호출
 
-다른 객체의 명시적 Method 호출
+Validation마다 다음을 기록한다.
+
+- 검사 대상
+- 조건
+- YES 흐름
+- NO 흐름
+- Exception 또는 후속 처리
 
 ---
 
-# STEP 15. Local Method 위치 찾기
+# 20. 조건/분기
 
-Local Method 후보:
+다음 분기를 실제 코드대로 유지한다.
 
-saveMaterial
-
-가 발견되면
-
-이미 확정된 동일 ServiceImpl 파일 하나에서만:
-
-saveMaterial(
-
-을 Grep한다.
-
-다른 파일을 검색하지 않는다.
-
-Method 선언 위치를 찾는다.
+- if
+- else
+- else if
+- switch
+- ternary
+- early return
 
 예:
 
-private void saveMaterial(
+IF exists
 
-protected void saveMaterial(
+├─ YES
+│  → update
+└─ NO
+   → insert
 
-public void saveMaterial(
-
-Method 선언이 존재하면
-Local Method로 확정한다.
-
----
-
-# STEP 16. Local Method 부분 Read
-
-Local Method 시작 위치부터
-약 80줄만 Read한다.
-
-예:
-
-610 ~ 690
-
-Method 종료가 확인되면 중단한다.
-
-종료되지 않은 경우에만
-다음 약 80줄을 추가한다.
-
-ServiceImpl 전체 파일을 읽지 않는다.
+분기를 임의로 합치지 않는다.
 
 ---
 
-# STEP 17. Local Method 재귀 추적
+# 21. Local/private Method
 
-Local Method 내부에서
-또 다른 Local Method가 호출될 수 있다.
+동일 Class 내부 Method 호출이 있으면 추적한다.
 
 예:
 
 create()
+→ validate()
 → saveMaterial()
+
+Local Method는 동일 파일에서
+정확한 Method 이름을 Grep한다.
+
+Method 위치부터 부분 Read한다.
+
+전체 ServiceImpl 파일을 읽지 않는다.
+
+Local Method 내부에서도 동일 분석 규칙을 적용한다.
+
+---
+
+# 22. Local Method 재귀
+
+Local Method 내부에서 또 다른 Local Method가 호출되면
+계속 추적한다.
+
+예:
+
+create()
+→ save()
 → createHistory()
+→ normalize()
 
-이 경우 동일 방식으로 추적한다.
+단:
 
-createHistory(
+이미 VISITED_METHODS에 있는 Method는 재분석하지 않는다.
 
-Grep
+순환 호출을 방지한다.
+
+---
+
+# 23. 다른 Service 호출
+
+현재 Method에서 다른 Service가 호출되면
+실제 호출된 Method를 추적한다.
+
+예:
+
+validationService.check(request);
+
+확인:
+
+Service Variable
 
 ↓
 
-Method 위치
+Service Type
+
+↓
+
+Service Interface
+
+↓
+
+ServiceImpl
+
+↓
+
+check() 위치
 
 ↓
 
 부분 Read
 
-↓
+다른 Service 전체를 분석하지 않는다.
 
-내부 호출 확인
-
-단:
-
-VISITED_METHODS에 이미 존재하는 Method는
-다시 추적하지 않는다.
+호출된 Method만 분석한다.
 
 ---
 
-# STEP 18. 순환 호출 방지
+# 24. 다중 Service 왕복
+
+다른 Service 호출이 끝나면
+원래 Caller 흐름으로 복귀한다.
 
 예:
 
-methodA()
-→ methodB()
-→ methodA()
+MaterialServiceImpl.create()
 
-와 같은 구조가 있을 수 있다.
+→ ValidationServiceImpl.check()
 
-이미 VISITED_METHODS에 등록된 Method가 다시 호출되면:
+   → ValidationMapper.select()
 
-ALREADY_VISITED
+   → SQL
 
-로 처리하고 재탐색하지 않는다.
+   → return
 
-무한 추적하지 않는다.
+→ MaterialServiceImpl.create() 복귀
+
+→ MaterialMapper.insert()
+
+→ SQL
+
+이 왕복 구조를 Execution Flow에 유지한다.
 
 ---
 
-# STEP 19. Local Method Overload
+# 25. Service Chain 재귀
 
-동일 이름 Method가 여러 개 존재하면
-호출부 argument와 Method signature를 비교한다.
+호출된 Service가 또 다른 Service를 호출하면
+실제 호출 체인을 계속 추적한다.
 
 예:
 
-saveMaterial(request)
+ServiceA.method()
 
-saveMaterial(request, user)
+→ ServiceB.check()
 
-호출과 일치하는 Method만 추적한다.
+→ ServiceC.validate()
 
-확정할 수 없으면:
+→ Mapper
 
-AMBIGUOUS_LOCAL_METHOD
+실제 종료점까지 추적한다.
 
-로 기록한다.
-
-임의 선택하지 않는다.
+이미 방문한 Method는 다시 분석하지 않는다.
 
 ---
 
-# STEP 20. Mapper 호출
+# 26. Mapper 호출
 
-Entry Method 또는 추적된 Local Method에서
-직접 Mapper 호출이 발견되면 기록한다.
+실제 Method에서 Mapper 호출을 확인한다.
 
 예:
+
+materialMapper.selectMaterial(param);
 
 materialMapper.insertMaterial(param);
 
-기록:
+확인:
 
-- 호출 Method
+- Caller
 - Mapper Variable
+- Mapper Type
 - Mapper Method
-- 호출 순서
-
-예:
-
-create()
-→ saveMaterial()
-→ materialMapper.insertMaterial()
+- Parameter
+- Return 사용
 
 ---
 
-# STEP 21. Mapper Type
+# 27. Mapper Type
 
-Mapper Java Interface는 찾지 않는다.
-
-Mapper Variable Type만 확인한다.
-
-이미 확보한 ServiceImpl 정보에 없으면
-동일 ServiceImpl 파일에서
+Mapper Variable Type이 이미 읽은 범위에 없으면
+해당 ServiceImpl 파일 하나에서
 Mapper Variable 이름만 Grep한다.
 
 예:
@@ -563,40 +644,46 @@ materialMapper
 
 private final MaterialMapper materialMapper;
 
-결과:
-
-Mapper Type:
-MaterialMapper
-
-Type 확보 후 추가 검색하지 않는다.
+Type 확보 후 검색을 중단한다.
 
 ---
 
-# STEP 22. Mapper Java SKIP
+# 28. Mapper Java FAST 정책
 
-절대 수행하지 않는다.
+기본 FAST 경로에서는 Mapper Java Interface를 중간 분석 단계로 사용하지 않는다.
 
-- MaterialMapper.java 검색
-- interface MaterialMapper 검색
-- Mapper Java Method 검색
-- @Mapper 검색
-- Mapper Java Evidence 검색
+즉:
 
-Mapper Type + Mapper Method로
-MyBatis XML을 직접 찾는다.
+ServiceImpl
+→ Mapper Variable Type
+→ Mapper Method
+→ MyBatis XML
+
+로 바로 이동한다.
+
+Mapper Java 전체 Read는 하지 않는다.
+
+Mapper Java Method를 단순 확인하기 위한 별도 탐색도 기본적으로 하지 않는다.
+
+단:
+
+XML 연결이 모호하거나
+Mapper Type/Method 매핑을 확정할 수 없는 경우에만
+Mapper Java를 보조 Evidence로 최소 확인할 수 있다.
 
 ---
 
-# STEP 23. MyBatis XML 찾기
+# 29. MyBatis XML 검색
 
-현재 Backend 프로젝트 XML에서
-Mapper Type을 먼저 검색한다.
+현재 Backend 프로젝트를 우선한다.
+
+Mapper Type을 이용해 namespace 후보를 찾는다.
 
 예:
 
 MaterialMapper
 
-목표:
+↓
 
 <mapper namespace="...MaterialMapper">
 
@@ -605,143 +692,95 @@ XML이 확정되면
 
 ---
 
-# STEP 24. XML fallback
+# 30. XML fallback
 
-Mapper Type으로 찾지 못한 경우에만
-Mapper Method로 검색한다.
-
-예:
-
-id="insertMaterial"
-
-현재 Backend 프로젝트를 우선한다.
-
-현재 프로젝트에서 없을 때만
-다른 gipms-api-*로 확대한다.
-
----
-
-# STEP 25. Statement 위치
-
-확정된 XML 파일 하나에서
-실제 Mapper Method에 대응하는
-statement id를 찾는다.
+Mapper Type으로 XML을 찾지 못한 경우에만
+Mapper Method를 사용한다.
 
 예:
 
 id="insertMaterial"
 
-가능:
+현재 프로젝트에서 먼저 검색한다.
 
-<select>
-<insert>
-<update>
-<delete>
+없을 때만 다른 gipms-api-*로 확대한다.
 
 ---
 
-# STEP 26. Statement 부분 Read
+# 31. Statement
 
-Statement 시작부터 약 40줄을 Read한다.
+확정된 XML 파일에서
+실제 Mapper Method의 statement만 찾는다.
 
-종료 tag가 확인되면 중단한다.
+예:
 
-종료되지 않은 경우에만
-다음 약 40줄을 추가한다.
+<select id="selectMaterial">
 
-XML 전체 파일을 읽지 않는다.
+<insert id="insertMaterial">
+
+<update id="updateMaterial">
+
+<delete id="deleteMaterial">
+
+Statement 시작 위치부터 약 40줄 Read한다.
+
+종료가 안 보일 때만 추가 Read한다.
 
 ---
 
-# STEP 27. SQL 분석
+# 32. SQL 분석
 
-이미 읽은 Statement 범위에서만 분석한다.
-
-확인:
+실제 Statement에서 다음을 분석한다.
 
 - SQL Type
 - Main Table
-- 직접 보이는 추가 Table
+- Additional Table
+- JOIN
+- WHERE
 - Parameter
 - Dynamic SQL
-- Include 존재
-- ResultMap 존재
-- SQL 구조
+- 조건 분기
+- foreach
+- include
+- resultMap 참조
 
-SQL 분석을 위해 추가 검색하지 않는다.
-
----
-
-# STEP 28. SQL Type
-
-Statement tag 기준:
-
-<select> → SELECT
-
-<insert> → INSERT
-
-<update> → UPDATE
-
-<delete> → DELETE
+실제 코드에 있는 것만 기록한다.
 
 ---
 
-# STEP 29. Table
+# 33. Parameter Mapping
 
-직접 보이는 SQL에서 Table을 추출한다.
+Mapper 호출 Parameter와
+SQL의 #{...} 사용을 연결한다.
 
 예:
 
-FROM TB_MATERIAL
+Service:
 
-INSERT INTO TB_MATERIAL
+param.setMaterialId(request.getMaterialId());
 
-UPDATE TB_MATERIAL
+↓
 
-DELETE FROM TB_MATERIAL
+Mapper:
 
-JOIN TB_PLANT
+materialMapper.selectMaterial(param)
 
-결과:
+↓
 
-Main Table:
-TB_MATERIAL
+SQL:
 
-Additional Tables:
-- TB_PLANT
+WHERE MATERIAL_ID = #{materialId}
 
-다른 SQL을 검색하지 않는다.
+가능한 범위에서 실제 Source State와
+실제 전송값을 구분한다.
 
----
-
-# STEP 30. Parameter
-
-직접 보이는:
-
-#{...}
-
-Parameter만 추출한다.
-
-예:
-
-#{materialId}
-
-#{plantCode}
-
-결과:
-
-- materialId
-- plantCode
-
-중복은 제거한다.
-
-Parameter 원본 추적은 하지 않는다.
+추측하지 않는다.
 
 ---
 
-# STEP 31. Dynamic SQL
+# 34. Dynamic SQL
 
-직접 보이는 다음 Element만 기록한다.
+다음을 실제 실행 구조로 분석한다.
 
 - if
 - choose
@@ -749,124 +788,312 @@ Parameter 원본 추적은 하지 않는다.
 - otherwise
 - foreach
 
-조건이 직접 보이면 함께 기록한다.
-
 예:
 
 <if test="plantCode != null">
 
-↓
+이면:
 
-IF plantCode != null
+plantCode != null
+├─ YES → 조건 SQL 포함
+└─ NO  → 조건 SQL 미포함
 
 ---
 
-# STEP 32. include
+# 35. include
 
-다음이 발견되어도:
+이번 전체 테스트에서는
+실제 Statement가 사용하는 include를 추적한다.
+
+예:
 
 <include refid="Base_Column_List"/>
 
-추적하지 않는다.
+이면 해당 fragment를 찾는다.
 
-기록만 한다.
+단:
 
-Include:
-Base_Column_List
+실제로 호출된 Statement가 참조하는 include만 찾는다.
 
-Status:
-NOT_TRACED
+XML 전체의 다른 sql fragment는 탐색하지 않는다.
 
 ---
 
-# STEP 33. resultMap
+# 36. include 재귀
 
-resultMap이 보여도
-정의를 추적하지 않는다.
+include fragment 내부에서
+다른 include를 다시 사용하는 경우
+실제 참조된 것만 계속 추적한다.
 
-기록:
+VISITED_INCLUDES를 사용한다.
+
+이미 확인한 fragment는 다시 읽지 않는다.
+
+---
+
+# 37. resultMap
+
+resultMap이 실제 Response/후처리 이해에 필요한 경우에만
+해당 resultMap을 최소 범위로 확인한다.
+
+단순히 resultMap 속성이 있다는 이유만으로
+모든 Mapping을 분석하지 않는다.
+
+필요하지 않으면:
 
 ResultMap:
-MaterialResultMap
+REFERENCE_ONLY
 
-Status:
-NOT_TRACED
+로 기록할 수 있다.
 
 ---
 
-# STEP 34. 호출 순서 유지
+# 38. SQL 이후 흐름
 
-Entry Method와 Local Method의
-실제 호출 순서를 유지한다.
+Mapper/SQL 실행 후 반드시 Caller로 복귀한다.
 
 예:
 
-create()
+Mapper SELECT
+→ 결과 반환
+→ ServiceImpl result 변수
+→ IF result exists
+→ DTO 변환
+→ 다음 Mapper
+→ return
 
-→ validate()
-
-→ saveMaterial()
-
-→ materialMapper.insertMaterial()
-
-→ createHistory()
-
-→ historyMapper.insertHistory()
-
-순서를 임의로 재배치하지 않는다.
+SQL에서 분석을 끝내지 않는다.
 
 ---
 
-# STEP 35. 분기 유지
+# 39. 외부 연동 탐지
 
-Local Method 내부에 조건 분기가 있으면
-직접 보이는 구조를 유지한다.
+실제 호출 체인에서 다음과 같은 외부 연동이 발견되면 추적한다.
+
+- SAP
+- RFC
+- Feign
+- RestTemplate
+- WebClient
+- HTTP Client
+- 외부 SDK
+- 외부 시스템 Adapter
+- Gateway
+- Client Class
+
+실제로 호출된 경우에만 추적한다.
+
+프로젝트 전체에서 SAP/RFC를 선검색하지 않는다.
+
+---
+
+# 40. SAP/RFC
+
+실제 SAP/RFC 호출이 발견되면 다음을 확인한다.
+
+- 호출 Method
+- Function/연동 식별자
+- Request 생성
+- Parameter Mapping
+- 호출 조건
+- 실제 외부 호출
+- Response 수신
+- 성공 처리
+- 실패 처리
+- Exception
+- 원래 BE 흐름 복귀
+
+외부 호출에서 분석을 끝내지 않는다.
+
+---
+
+# 41. 외부 HTTP/API
+
+Feign/RestTemplate/WebClient 등이 실제 호출되면 다음을 확인한다.
+
+- 대상 Client
+- 호출 Method
+- HTTP Method
+- URL 또는 endpoint
+- Request
+- Header
+- Query/Path/Body
+- Response
+- Error 처리
+- Caller 복귀
+
+확인 가능한 Source까지만 기록한다.
+
+추측하지 않는다.
+
+---
+
+# 42. 외부 연동의 추가 내부 추적
+
+외부 연동 전에 별도 Adapter/Service/Helper를 거치면
+실제 호출된 Method만 추적한다.
 
 예:
 
-saveMaterial()
+ServiceImpl
+→ SapService
+→ SapAdapter
+→ RFC Call
 
-→ IF exists
+각 Method는 부분 Read한다.
 
-   ├─ YES
-   │   → materialMapper.updateMaterial()
-
-   └─ NO
-       → materialMapper.insertMaterial()
-
-조건값의 출처는 아직 추적하지 않는다.
+전체 Class를 읽지 않는다.
 
 ---
 
-# STEP 36. 현재 테스트에서 다른 Service는 STOP
+# 43. 후처리
+
+DB 또는 외부 연동 이후 수행되는 후처리를 반드시 추적한다.
 
 예:
 
-commonService.validate(request);
+- 결과 상태 확인
+- DTO 변환
+- List 가공
+- 값 재설정
+- 추가 Validation
+- 후속 DB 저장
+- History 저장
+- Response 생성
 
-가 발견되어도
-CommonService 내부로 들어가지 않는다.
-
-기록만 가능하다.
-
-External Service Call:
-
-commonService.validate()
-
-Status:
-NOT_TRACED
+DB/SAP 호출만 보고 분석을 종료하지 않는다.
 
 ---
 
-# STEP 37. Evidence
+# 44. Exception
 
-Evidence 대상:
+실제 실행 경로에서 다음을 확인한다.
 
-- Controller Method
-- Service Method
-- ServiceImpl Entry Method
-- Local/private Method
-- MyBatis Statement
+- throw
+- catch
+- finally
+- custom exception
+- error response
+- validation failure
+- mapper failure 처리
+- 외부 연동 failure 처리
+
+Exception이 발생하는 조건을 가능한 경우 분기와 연결한다.
+
+---
+
+# 45. Return / Response
+
+최종적으로 Controller까지 반환되는 값을 추적한다.
+
+확인:
+
+ServiceImpl Return
+
+↓
+
+Service Return
+
+↓
+
+Controller Response
+
+가능한 경우:
+
+- Response DTO
+- 상태값
+- HTTP Status
+- Response Body
+
+를 기록한다.
+
+Response가 없는 구조도 허용한다.
+
+---
+
+# 46. 종료점 정의
+
+하나의 실행 Path는 다음 중 하나에 도달하면 종료된다.
+
+1. 정상 Response
+2. 정상 void 종료
+3. 명시적 return
+4. Exception
+5. Error Response
+
+외부 연동은 그 자체로 종료점이 아니다.
+
+외부 연동 이후 Caller로 복귀하여
+최종 처리까지 추적한다.
+
+---
+
+# 47. 모든 실제 분기 완료
+
+하나의 Method에 여러 실제 분기가 존재하면
+각 분기를 종료점까지 추적한다.
+
+예:
+
+IF exists
+
+├─ YES
+│  → UPDATE
+│  → Response
+│
+└─ NO
+   → INSERT
+   → SAP
+   → 후처리
+   → Response
+
+한 분기만 분석하고 종료하지 않는다.
+
+---
+
+# 48. 탐색 종료 조건
+
+다음 조건이 모두 만족되면 Source 탐색을 종료한다.
+
+- Controller 확정
+- 실제 Service chain 확인
+- Local Method 실제 호출 확인
+- 다른 Service 실제 호출 확인
+- Mapper/SQL 실제 호출 확인
+- 외부 연동 실제 호출 확인
+- 후처리 확인
+- Exception 확인
+- 모든 실제 분기가 종료점 도달
+
+그 이후 관련 코드를 더 찾지 않는다.
+
+---
+
+# 49. 금지
+
+절대 하지 않는다.
+
+- 관련 있을 것 같은 Class 탐색
+- 사용되지 않는 Mapper 탐색
+- 사용되지 않는 XML Statement 탐색
+- 프로젝트 전체 SAP/RFC 선검색
+- 프로젝트 전체 Exception 검색
+- 전체 Java 파일 반복 Read
+- 전체 XML 반복 Read
+- 동일 Method 재분석
+- 동일 SQL 재분석
+- Evidence 재수집
+- Oracle Metadata 분석
+- DB Metadata 분석
+- JAR 탐색
+- sample 탐색
+- docs 탐색
+
+---
+
+# 50. Evidence
+
+Evidence는 분석과 동시에 확보한다.
 
 형식:
 
@@ -876,153 +1103,208 @@ Project Root 기준 상대경로:라인범위
 
 gipms-api-material/src/main/java/.../MaterialController.java:42-58
 
-gipms-api-material/src/main/java/.../MaterialService.java:15-18
-
 gipms-api-material/src/main/java/.../MaterialServiceImpl.java:420-468
 
-gipms-api-material/src/main/java/.../MaterialServiceImpl.java:610-645
+gipms-api-material/src/main/java/.../ValidationServiceImpl.java:80-115
 
-gipms-api-material/src/main/resources/.../MaterialMapper.xml:210-235
+gipms-api-material/src/main/resources/.../MaterialMapper.xml:210-250
 
-Evidence 확보를 위해 재검색하지 않는다.
+절대경로를 사용하지 않는다.
 
----
-
-# STEP 38. 강제 STOP
-
-다음이 완료되면 종료한다.
-
-- Entry Method 확인
-- 동일 Class Local/private Method 추적
-- 직접 Mapper 호출 확인
-- MyBatis Statement 확인
-- 직접 SQL 분석
-
-이후 추가 Grep/Read를 수행하지 않는다.
-
-현재 절대 수행하지 않는다:
-
-- Mapper Java Interface
-- Mapper Java Method
-- include fragment 추적
-- resultMap 추적
-- 다른 Service 내부 추적
-- Component 내부 추적
-- Client 내부 추적
-- SAP
-- RFC
-- 외부 API
-- DB Metadata
-- Oracle Metadata
-- BE-REFERENCE
-- Markdown 문서 생성
+Evidence를 얻기 위한 두 번째 검색을 하지 않는다.
 
 ---
 
-# STEP 39. 출력
+# 51. 실행 흐름
 
-아래 형식으로만 출력한다.
+최종 문서에는 실제 호출 순서를 유지한
+전체 실행 흐름을 작성한다.
 
-## BE Fast Search Result
+단순:
 
-- URL:
-- HTTP Method:
+Controller
+→ Service
+→ Mapper
 
-### Controller
-
-- Controller:
-- Controller Method:
-- Evidence:
-
-### Service
-
-- Service Type:
-- Service Method:
-- Service Interface:
-- Service Implementation:
-- Evidence:
-
-### ServiceImpl Entry Method
-
-- Method:
-- Read Range:
-- Evidence:
-
-### Local Methods
-
-각 Local Method:
-
-- Method:
-- Caller:
-- Read Range:
-- Evidence:
-
-Local Method가 없으면:
-
-- Local Method: NONE
-
-### Mapper Calls
-
-각 Mapper 호출:
-
-- Caller:
-- Mapper Variable:
-- Mapper Type:
-- Mapper Method:
-
-Mapper Java Interface:
-
-SKIPPED
-
-### MyBatis
-
-각 Mapper Method:
-
-- XML:
-- Namespace:
-- Statement Type:
-- Statement ID:
-- Evidence:
-
-### SQL
-
-각 Statement:
-
-- SQL Type:
-- Main Table:
-- Additional Tables:
-- Parameters:
-- Dynamic SQL:
-- Include:
-- ResultMap:
-
-### Execution Flow
-
-실제 호출 순서를 유지한다.
+형태로 축약하지 않는다.
 
 예:
 
 Controller.create()
-→ MaterialService.create()
+
 → MaterialServiceImpl.create()
-→ validate()
-→ saveMaterial()
-   → MaterialMapper.insertMaterial()
-   → MaterialMapper.xml
-   → <insert id="insertMaterial">
-   → INSERT TB_MATERIAL
-→ createHistory()
-   → HistoryMapper.insertHistory()
-   → HistoryMapper.xml
-   → <insert id="insertHistory">
-   → INSERT TB_HISTORY
-→ STOP
 
-분기가 있으면 실제 구조를 유지한다.
+→ ValidationServiceImpl.check()
 
-### Search Status
+   → ValidationMapper.selectExists()
 
-FOUND
+   → SELECT TB_MATERIAL
+
+   → 결과 반환
+
+→ MaterialServiceImpl.create() 복귀
+
+→ IF exists
+
+   ├─ YES
+
+   │  → MaterialMapper.updateMaterial()
+
+   │  → UPDATE TB_MATERIAL
+
+   └─ NO
+
+      → MaterialMapper.insertMaterial()
+
+      → INSERT TB_MATERIAL
+
+      → SapService.send()
+
+         → RFC Request 생성
+
+         → RFC 호출
+
+         → Response 수신
+
+      → MaterialServiceImpl.create() 복귀
+
+→ Response 생성
+
+→ Controller 반환
+
+---
+
+# 52. 한눈에 보는 실행 흐름
+
+BE-REFERENCE에서 정의한
+한눈에 보는 실행 흐름 형식을 사용한다.
+
+단:
+
+실제 Source에서 확인된 실행 순서만 사용한다.
+
+중간 Service 왕복,
+DB,
+SAP/RFC,
+분기,
+후처리를 생략하지 않는다.
+
+---
+
+# 53. 최종 문서 생성
+
+모든 Source 분석이 완료된 후에만
+Markdown 문서를 생성한다.
+
+분석 도중 Markdown을 반복 수정하지 않는다.
+
+즉:
+
+Source 탐색 완료
+
+↓
+
+분석 결과 정리
+
+↓
+
+BE-REFERENCE 형식 적용
+
+↓
+
+최종 Markdown 1회 Write
+
+이 순서를 사용한다.
+
+---
+
+# 54. 최종 문서 내용
+
+BE-REFERENCE의 기존 형식을 그대로 유지한다.
+
+최소한 실제 분석 결과에는 다음 정보가 반영되어야 한다.
+
+- 대상 API
+- Controller
+- Request
+- Validation
+- Service
+- 비즈니스 로직
+- 조건/분기
+- Local Method
+- 다른 Service 호출
+- Mapper
+- SQL
+- Parameter Mapping
+- Dynamic SQL
+- 외부 연동
+- SAP/RFC
+- 후처리
+- Response
+- Exception
+- Evidence
+- 전체 실행 흐름
+- 한눈에 보는 실행 흐름
+
+해당 항목이 실제 Source에 없으면
+없는 내용을 만들어내지 않는다.
+
+---
+
+# 55. 최종 검증
+
+문서 생성 전 내부적으로 확인한다.
+
+1. 실제 호출되지 않은 내용을 넣지 않았는가?
+2. Controller부터 종료점까지 연결됐는가?
+3. SQL 이후 Caller 복귀를 놓치지 않았는가?
+4. 외부 연동 이후 복귀를 놓치지 않았는가?
+5. 모든 실제 분기를 확인했는가?
+6. Local Method를 놓치지 않았는가?
+7. 다른 Service 왕복을 놓치지 않았는가?
+8. Evidence가 실제 Source와 연결되는가?
+9. 절대경로가 없는가?
+10. Oracle Metadata가 포함되지 않았는가?
+11. BE-REFERENCE를 Evidence로 사용하지 않았는가?
+12. 불필요한 전체 파일 Read를 하지 않았는가?
+
+Validator를 위한 Source 재검색은 하지 않는다.
+
+이미 확보한 분석 결과를 기준으로 검증한다.
+
+---
+
+# 56. 출력
+
+최종 Markdown 파일을 생성한 후
+대화에는 간단히 다음만 출력한다.
+
+## BE Full Fast Analysis Result
+
+- URL:
+- HTTP Method:
+- BE ID:
+- Output:
+- Controller:
+- Entry Service:
+- Service Chain Count:
+- Local Method Count:
+- Mapper Call Count:
+- SQL Statement Count:
+- External Integration:
+- Final Status:
+
+### Performance Search Strategy
+
+- Java: METHOD_PARTIAL_READ
+- Mapper Java: SKIPPED_UNLESS_REQUIRED
+- MyBatis XML: STATEMENT_PARTIAL_READ
+- Evidence: COLLECTED_DURING_ANALYSIS
+- Reference: READ_ONCE
+
+### Analysis Status
+
+COMPLETED
 
 또는
 
@@ -1032,4 +1314,5 @@ AMBIGUOUS
 
 NOT_FOUND
 
-추가 분석을 수행하지 않는다.
+전체 분석이 끝난 이후
+추가 Source 탐색을 수행하지 않는다.
