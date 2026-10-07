@@ -1,7 +1,7 @@
 ---
 name: be-direct-analysis
-description: API 분석 문서 없이 화면명, Action ID, HTTP Method와 Backend URL을 입력받아 실제 FE 문서에서 FE Base Name을 확정하고 Controller부터 Response까지 Backend를 분석한다. BE-REFERENCE.md를 최종 출력 Template으로 사용하며 FE Base Name 기반의 정확한 BE 파일명으로 저장한다.
-argument-hint: "<화면명> <Action ID> <HTTP Method|UNKNOWN> <Backend URL>"
+description: API 분석 문서 없이 FE Base Name, HTTP Method와 Backend URL을 직접 입력받아 Controller를 찾고, Backend Rule과 BE-REFERENCE.md를 적용하여 기존 Backend 분석 수준의 문서를 정확한 FE Base Name 기반 파일명으로 생성한다.
+argument-hint: "<화면명> <FE Base Name> <HTTP Method|UNKNOWN> <Backend URL>"
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -16,7 +16,7 @@ API 분석 문서 없이 Backend를 직접 분석한다.
 
 ```text
 화면명
-Action ID
+FE Base Name
 HTTP Method
 Backend URL
 ```
@@ -24,37 +24,134 @@ Backend URL
 예:
 
 ```text
-/be-direct-analysis equipment-search ACT-010 UNKNOWN /api/equipment/create
+/be-direct-analysis equipment-search FE-ACT-010-create UNKNOWN /api/equipment/create
 ```
 
-Direct 분석의 시작점:
+분석 흐름:
 
 ```text
-화면명 + Action ID
+입력 검증
  ↓
-실제 FE 문서 탐색
+FE Base Name 고정
  ↓
-FE Base Name 확정
+BE ID 확정
  ↓
-HTTP Method + Backend URL
+OUTPUT_PATH 확정
  ↓
-Controller 직접 탐색
+Backend Rule Read
  ↓
-Backend 실제 실행 흐름 분석
+BE-REFERENCE.md Read
  ↓
-BE-REFERENCE 기반 최종 문서 생성
+Controller 확인
  ↓
-FE Base Name 기반 파일명으로 저장
+Backend 전체 Call Path 분석
  ↓
-결과 문서 재검증
+Oracle Metadata 필요성 판단
+ ↓
+BE-REFERENCE 기반 Rendering
+ ↓
+OUTPUT_PATH 저장
+ ↓
+생성 파일 재검증
+ ↓
+PASS / STOP / ERROR
 ```
 
-API 분석 문서는 필요하지 않다.
+API Document는 필요하지 않다.
 
 
-# 2. 적용 파일
+# 2. 입력
 
-분석 시작 시 다음 파일을 실제로 읽는다.
+필수 입력:
+
+```text
+SCREEN_NAME
+FE_BASE_NAME
+HTTP_METHOD
+BACKEND_URL
+```
+
+예:
+
+```text
+SCREEN_NAME:
+equipment-search
+
+FE_BASE_NAME:
+FE-ACT-010-create
+
+HTTP_METHOD:
+UNKNOWN
+
+BACKEND_URL:
+/api/equipment/create
+```
+
+FE_BASE_NAME은 사용자가 전달한 값을 그대로 사용한다.
+
+
+# 3. FE Base Name 불변 계약
+
+FE_BASE_NAME은 파일명 생성의 기준값이다.
+
+입력받은 FE_BASE_NAME을:
+
+```text
+재계산하지 않는다.
+추측하지 않는다.
+축약하지 않는다.
+변환하지 않는다.
+다른 문서에서 다시 추출하지 않는다.
+```
+
+예:
+
+```text
+INPUT:
+
+FE_BASE_NAME:
+FE-ACT-010-create
+```
+
+이면 분석 종료까지:
+
+```text
+FE_BASE_NAME:
+FE-ACT-010-create
+```
+
+이다.
+
+다음 값으로 변경하면 안 된다.
+
+```text
+ACT-010
+ACT-010-create
+create
+equipment-create
+Controller 이름
+Service 이름
+URL 일부
+문서 Section 번호
+문서 Heading 번호
+36
+36.2
+```
+
+특히 Markdown 문서의:
+
+```text
+# 36.
+## 36.2
+```
+
+같은 Section 번호를
+FE_BASE_NAME 또는 파일명으로 사용하지 않는다.
+
+
+# 4. 적용 Rule / Reference
+
+Backend 분석 시 다음 실제 파일을 사용한다.
 
 ```text
 .claude/rules/08-be-analysis-scope.md
@@ -62,190 +159,119 @@ API 분석 문서는 필요하지 않다.
 .claude/references/BE-REFERENCE.md
 ```
 
-이 세 파일은 이름만 알고 진행하면 안 된다.
-
-반드시 실제 파일 내용을 읽는다.
+Skill 내부 설명으로 위 파일을 대체하지 않는다.
 
 
-# 3. 실행 순서 강제
+# 5. 실행 순서
 
-다음 순서를 변경하지 않는다.
+다음 순서를 따른다.
 
 ```text
 STEP 1
-FE 문서 확인
+입력 검증
 
 STEP 2
-FE Base Name 확정
+FE_BASE_NAME 불변값 확정
 
 STEP 3
-BE ID / OUTPUT_PATH 확정
+BE_ID 확정
 
 STEP 4
-08-be-analysis-scope.md Read
+OUTPUT_FILENAME 계산
 
 STEP 5
-09-be-call-tracing.md Read
+OUTPUT_PATH 계산 및 검증
 
 STEP 6
-BE-REFERENCE.md Read
+08-be-analysis-scope.md Read
 
 STEP 7
-Controller 탐색
+09-be-call-tracing.md Read
 
 STEP 8
-Backend 전체 Call Path 분석
+BE-REFERENCE.md Read
 
 STEP 9
-필요한 Oracle Metadata 확인
+Controller Mapping 확인
 
 STEP 10
-BE-REFERENCE 기반 Rendering
+Controller → Response 전체 Call Path 분석
 
 STEP 11
-OUTPUT_PATH Write
+Oracle Metadata 필요성 판단 및 필요한 경우 최소 조회
 
 STEP 12
-생성된 문서 다시 Read
+BE-REFERENCE 기반 Rendering
 
 STEP 13
-파일명 + Reference 형식 검증
+OUTPUT_PATH Write
 
 STEP 14
+실제 저장 파일 Read
+
+STEP 15
+Filename 검증
+
+STEP 16
+Reference Format 검증
+
+STEP 17
 PASS / STOP / ERROR
 ```
 
-STEP 1~6이 완료되기 전에
-Backend 상세 분석을 시작하지 않는다.
 
+# 6. BE ID
 
-# 4. FE 문서 탐색
+## 6.1 Parallel Worker
 
-입력받은:
-
-```text
-화면명
-Action ID
-```
-
-를 이용한다.
-
-FE 문서 위치:
+Parent가 다음 값을 전달한 경우:
 
 ```text
-docs/analysis/{화면명}/frontend/
+BE_ID
+OUTPUT_PATH
 ```
 
-Action ID에 해당하는 FE 문서를 찾는다.
+Worker는 전달받은 값을 그대로 사용한다.
+
+재계산하지 않는다.
+
+
+## 6.2 Standalone 실행
+
+Parent가 없는 `/be-direct-analysis` 직접 실행에서는
+다음 디렉토리만 확인한다.
+
+```text
+docs/analysis/{SCREEN_NAME}/backend/
+```
+
+현재 FE_BASE_NAME으로 시작하는 Backend 문서만 확인한다.
 
 예:
 
 ```text
-Action ID:
-ACT-010
-
-검색 대상:
-docs/analysis/equipment-search/frontend/
-
-발견:
-FE-ACT-010-create.md
-```
-
-검색은 해당 frontend 디렉토리로 제한한다.
-
-Project 전체 재귀 검색을 하지 않는다.
-
-
-# 5. FE 문서 선택 규칙
-
-Action ID와 일치하는 FE 문서가 정확히 하나이면 사용한다.
-
-예:
-
-```text
-ACT-010
-
-→ FE-ACT-010-create.md
-```
-
-일치하는 FE 문서가 없으면:
-
-```text
-STATUS:
-STOP
-
-ERROR:
-Action ID에 해당하는 FE 문서를 찾을 수 없음
-```
-
-여러 개가 발견되어 하나를 확정할 수 없으면:
-
-```text
-STATUS:
-STOP
-
-ERROR:
-Action ID에 해당하는 FE 문서가 여러 개 존재
-```
-
-임의 선택하지 않는다.
-
-
-# 6. FE Base Name 확정
-
-FE Base Name은 사용자 입력이나 Backend URL에서 만들지 않는다.
-
-반드시 실제 FE 문서 파일명에서 확정한다.
-
-예:
-
-```text
-FE Document:
-FE-ACT-010-create.md
-
-.md 제거
- ↓
-
 FE_BASE_NAME:
 FE-ACT-010-create
 ```
 
-즉:
-
-```text
-FE-ACT-010-create.md
-        ↓
-FE-ACT-010-create
-```
-
-이다.
-
-다음으로 변경하지 않는다.
-
-```text
-FE-ACT-010
-ACT-010-create
-create
-equipment-create
-```
-
-
-# 7. BE ID
-
-Standalone 실행에서는 현재 FE Base Name에 연결된
-Backend 문서만 확인하여 다음 BE ID를 결정한다.
-
-Backend 문서 위치:
-
-```text
-docs/analysis/{화면명}/backend/
-```
-
-예:
+확인 대상:
 
 ```text
 FE-ACT-010-create-BE-001.md
 FE-ACT-010-create-BE-002.md
+FE-ACT-010-create-BE-003.md
+```
+
+다른 FE Action의 Backend 문서는
+BE ID 계산에 사용하지 않는다.
+
+기존 번호 다음의 충돌 없는 BE ID를 사용한다.
+
+예:
+
+```text
+BE-001
+BE-002
 ```
 
 가 존재하면:
@@ -255,22 +281,17 @@ BE_ID:
 BE-003
 ```
 
-으로 결정한다.
-
-다른 FE Action의 BE 번호는 사용하지 않는다.
-
-Parallel Worker에서 BE_ID를 전달받은 경우에는
-새로 계산하지 않는다.
-
-전달받은 BE_ID를 그대로 사용한다.
+이다.
 
 
-# 8. 공식 파일명
+# 7. 파일명 생성 규칙
 
-Backend 문서의 공식 파일명은 오직 다음 형식이다.
+파일명 생성 공식은 하나뿐이다.
 
 ```text
-{FE_BASE_NAME}-{BE_ID}.md
+OUTPUT_FILENAME
+=
+FE_BASE_NAME + "-" + BE_ID + ".md"
 ```
 
 예:
@@ -283,32 +304,83 @@ BE_ID:
 BE-001
 ```
 
-이면:
+계산:
+
+```text
+FE-ACT-010-create
++
+-
++
+BE-001
++
+.md
+```
+
+결과:
 
 ```text
 FE-ACT-010-create-BE-001.md
 ```
 
-이다.
-
-다음 형식은 허용하지 않는다.
+파일명을 생성할 때 사용할 수 있는 값은 오직:
 
 ```text
-BE-001.md
-BE-001-create.md
-BE-ACT-010-create.md
-FE-ACT-010-BE-001.md
-BE-API-001-create.md
-API-001-BE-001.md
+FE_BASE_NAME
+BE_ID
 ```
+
+두 개뿐이다.
+
+
+# 8. 파일명 생성 금지 Source
+
+다음 값으로 파일명을 생성하지 않는다.
+
+```text
+Backend URL
+HTTP Method
+Controller
+Controller Method
+Service
+Service Method
+Mapper
+SQL ID
+기능명
+Reference Heading
+Skill Heading
+Section 번호
+문서 번호
+분석 단계 번호
+현재 Markdown Heading
+36
+36.1
+36.2
+```
+
+예를 들어 분석 중:
+
+```text
+## 36.2 Standalone 실행
+```
+
+을 읽었더라도:
+
+```text
+36.2.md
+36.2-BE-001.md
+```
+
+같은 파일을 생성해서는 안 된다.
 
 
 # 9. OUTPUT_PATH
 
-Standalone 실행:
+Standalone 공식:
 
 ```text
-docs/analysis/{화면명}/backend/{FE_BASE_NAME}-{BE_ID}.md
+OUTPUT_PATH
+=
+docs/analysis/{SCREEN_NAME}/backend/{OUTPUT_FILENAME}
 ```
 
 예:
@@ -317,72 +389,62 @@ docs/analysis/{화면명}/backend/{FE_BASE_NAME}-{BE_ID}.md
 docs/analysis/equipment-search/backend/FE-ACT-010-create-BE-001.md
 ```
 
-Parallel Worker에서 OUTPUT_PATH를 전달받은 경우
-전달받은 값을 그대로 사용한다.
-
-Worker는 OUTPUT_PATH를 다시 생성하지 않는다.
+Parallel Worker에서는 Parent가 전달한 OUTPUT_PATH를 사용한다.
 
 
-# 10. Worker 불변값
+# 10. OUTPUT_PATH 불변 계약
 
-Parallel Worker 실행 시 다음 값은 불변이다.
+OUTPUT_PATH가 확정된 이후에는:
 
 ```text
-SCREEN_NAME
-ACTION_ID
-FE_DOCUMENT
-FE_BASE_NAME
-BE_ID
-HTTP_METHOD
-BACKEND_URL
-OUTPUT_PATH
+재계산 금지
+변경 금지
+축약 금지
+Rename 금지
+다른 이름 생성 금지
 ```
 
-Worker가 다시 계산하거나 변경하지 않는다.
+이다.
+
+Worker가 분석 결과를 보고
+더 적절한 파일명을 판단해서는 안 된다.
 
 
-# 11. OUTPUT_PATH 사전 검증
+# 11. 분석 전 파일명 검증
 
-Backend 분석 시작 전에 검증한다.
+Backend Source 분석 전에 먼저 계산한다.
 
 ```text
 EXPECTED_FILENAME
-  =
+=
 {FE_BASE_NAME}-{BE_ID}.md
+```
 
-OUTPUT_PATH filename
-  =
+그 후:
+
+```text
+basename(OUTPUT_PATH)
+=
 EXPECTED_FILENAME
 ```
 
-다르면 STOP 한다.
+인지 확인한다.
 
-예:
-
-```text
-FE_BASE_NAME:
-FE-ACT-010-create
-
-BE_ID:
-BE-001
-
-EXPECTED_FILENAME:
-FE-ACT-010-create-BE-001.md
-```
-
-OUTPUT_PATH가:
+다르면 Backend 분석을 시작하지 않는다.
 
 ```text
-docs/analysis/equipment-search/backend/BE-001.md
-```
+STATUS:
+STOP
 
-이면 분석을 시작하지 않는다.
+ERROR:
+OUTPUT_PATH filename does not match FE_BASE_NAME + BE_ID
+```
 
 
 # 12. 기존 파일 보호
 
 OUTPUT_PATH가 이미 존재하면
-사용자가 명시적으로 overwrite를 요청하지 않은 한
+사용자가 명시적으로 overwrite를 요청하지 않는 한
 덮어쓰지 않는다.
 
 ```text
@@ -394,177 +456,539 @@ Output file already exists
 ```
 
 
-# 13. Rule Load
+# 13. Rule 08 Read
 
-다음 두 파일을 실제 Read 한다.
+실제 파일:
 
 ```text
 .claude/rules/08-be-analysis-scope.md
+```
+
+을 읽는다.
+
+읽을 수 없으면 STOP 한다.
+
+
+# 14. Rule 09 Read
+
+실제 파일:
+
+```text
 .claude/rules/09-be-call-tracing.md
 ```
 
-Skill에 유사한 내용이 있다는 이유로
-Read를 생략하지 않는다.
+을 읽는다.
 
-Rule을 읽을 수 없으면 STOP 한다.
+읽을 수 없으면 STOP 한다.
+
+특히 기존 Rule 09의 탐색 제한을 그대로 적용한다.
+
+```text
+xargs 금지
+Project Root 전체 find 금지
+grep -r/-R/-rn 금지
+```
 
 
-# 14. BE-REFERENCE Load
+# 15. BE-REFERENCE Read
 
-다음 파일을 실제 Read 한다.
+실제 파일:
 
 ```text
 .claude/references/BE-REFERENCE.md
 ```
 
-이 파일은 단순 참고자료가 아니다.
+을 읽는다.
 
-현재 Backend 문서의:
+Reference는 Evidence가 아니다.
+
+Reference의 Sample 값도 Evidence가 아니다.
+
+Reference는 최종 Backend 문서의:
 
 ```text
-OUTPUT TEMPLATE
+구조
+표현 형식
+상세 수준
+ASCII Block
+ASCII Tree
+Section 구성
 ```
 
-이다.
+을 결정하는 Rendering Template이다.
 
-Reference를 읽을 수 없으면
-Backend 분석을 계속하지 않는다.
+읽을 수 없으면 STOP 한다.
+
+
+# 16. Reference 적용 대상
+
+BE-REFERENCE.md의 다음 특성을 유지한다.
+
+```text
+Section 순서
+Section 제목
+기능 정보 Block
+기능 요약 Block
+한눈에 보는 실행 흐름 Block
+핵심 정보 Block
+전체 실행 Tree
+Business Logic Block
+DB Block
+SQL Block
+Dynamic SQL Block
+Parameter Mapping
+Result Mapping
+Oracle Metadata
+RFC Block
+REST Block
+Exception Block
+Transaction Block
+Response Block
+Source Evidence Block
+미확인 항목 Block
+분석 경계 Block
+```
+
+
+# 17. Reference Sample 금지
+
+Reference 안의 예제 값은
+실제 분석 결과로 사용하지 않는다.
+
+최종 값은 다음에서만 가져온다.
+
+```text
+실제 Backend Source
+실제 MyBatis
+실제 SQL
+필요한 경우 Oracle Metadata
+확인된 외부 연동 Source
+```
+
+
+# 18. Reference 재로드 금지
+
+BE-REFERENCE.md는 STEP 8에서 1회 읽는다.
+
+이후 분석 중 반복해서 다시 읽지 않는다.
+
+처음 읽은 Reference의 구조를
+최종 Rendering까지 유지한다.
+
+
+# 19. Project 범위
+
+Project Root 아래 Backend 프로젝트:
+
+```text
+gipms-api-*
+```
+
+중 현재 Backend URL과 실제 Call Path에
+연결된 프로젝트를 분석한다.
+
+관련 없는 프로젝트로 확장하지 않는다.
+
+
+# 20. Source Evidence Path
+
+Source Evidence에는
+Project Root 기준 상대경로를 사용한다.
+
+절대경로를 최종 문서에 기록하지 않는다.
+
+
+# 21. Controller 탐색
+
+입력:
+
+```text
+HTTP_METHOD
+BACKEND_URL
+```
+
+을 기준으로 Controller 후보를 찾는다.
+
+Code Index MCP를 Discovery 용도로 사용한다.
+
+후보를 찾은 후 반드시 실제 Controller Source를 읽는다.
+
+확인:
+
+```text
+Class Mapping
+Method Mapping
+HTTP Method
+Backend URL
+Controller Method
+Request
+Response
+```
+
+
+# 22. UNKNOWN Method
+
+HTTP_METHOD가:
+
+```text
+UNKNOWN
+```
+
+이면 실제 Controller Source에서 확정한다.
+
+동일 URL에 여러 HTTP Method가 존재하여
+하나로 확정할 수 없으면 STOP 한다.
+
+임의 선택하지 않는다.
+
+
+# 23. Controller 확정 실패
+
+실제 Source에서 Controller를 확정하지 못하면:
 
 ```text
 STATUS:
 STOP
-
-ERROR:
-BE-REFERENCE.md를 읽을 수 없음
 ```
 
+한다.
 
-# 15. Reference 역할
+유사 URL을 대신 선택하지 않는다.
 
-BE-REFERENCE.md는 다음을 결정한다.
+
+# 24. Code Index 원칙
+
+Code Index는 Discovery이다.
+
+다음 탐색에 사용한다.
 
 ```text
-문서 구조
-Section 순서
-Section 제목
-표현 형식
-상세 수준
-ASCII Tree
-ASCII Block
-Excel 복사 구조
-Block 독립성
-DB 상세 표현
-SQL 상세 표현
-Dynamic SQL 표현
-Parameter Mapping 표현
-Result Mapping 표현
-Oracle Metadata 표현
-외부 연동 표현
-Exception / Transaction 표현
-Response 표현
-Source Evidence 표현
-미확인 항목 표현
-분석 경계 표현
+Controller 후보
+Symbol
+Reference
+Caller
+Callee
+관련 Source
 ```
 
-실제 값은 Reference에서 가져오지 않는다.
-
-실제 값은:
-
-```text
-실제 Source
-MyBatis SQL
-필요한 경우 Oracle Metadata
-확인된 Runtime Evidence
-```
-
-에서 가져온다.
+Business Logic 확정은
+실제 Source를 읽어서 수행한다.
 
 
-# 16. Reference Sample 사용 금지
+# 25. Backend Call Path
 
-BE-REFERENCE.md의 Sample은 Evidence가 아니다.
+Controller 이후 실제 실행 순서를 추적한다.
 
 예:
 
 ```text
-EquipmentController
-EquipmentServiceImpl
-EquipmentMapper
-TB_EQUIPMENT
-TB_PLANT
-Z_PM_EQUIPMENT_SEARCH
-/api/equipment/search
-plantCode
+Controller
+ ↓
+Service
+ ↓
+ServiceImpl
+ ↓
+Business Logic
+ ↓
+Internal Method
+ ↓
+Other Service
+ ↓
+Mapper
+ ↓
+MyBatis
+ ↓
+SQL
+ ↓
+Caller 복귀
+ ↓
+후속 Business Logic
+ ↓
+RFC / REST
+ ↓
+Caller 복귀
+ ↓
+Response 생성
+ ↓
+Controller Return
 ```
 
-실제 Source에서 확인되지 않았다면
-최종 문서에 사용하지 않는다.
+실제 Source 순서가 우선이다.
 
 
-# 17. Reference 재로드 금지
+# 26. Layer 재정렬 금지
 
-BE-REFERENCE.md는 STEP 6에서 1회 읽는다.
+실제 실행 순서를
+Layer 종류별로 재정렬하지 않는다.
 
-이후:
+실제 코드가:
 
 ```text
-Controller 탐색
-Service 분석
-Mapper 분석
-SQL 분석
-Oracle Metadata
-RFC
-REST
-Rendering
-Write
-검증
+DB #1
+ ↓
+조건
+ ↓
+RFC #1
+ ↓
+결과 가공
+ ↓
+DB #2
+ ↓
+REST #1
+ ↓
+결과 가공
+ ↓
+DB #3
+ ↓
+Response
 ```
 
-중간에 반복 Read하지 않는다.
+이면 그대로 기록한다.
 
 
-# 18. Reference Template 우선 원칙
+# 27. Caller 복귀
 
-최종 문서를 작성할 때
-Claude가 별도의 문서 디자인을 만들지 않는다.
+하위 호출에서 분석을 종료하지 않는다.
 
-Reference의 형식을 우선한다.
+예:
+
+```text
+Service A
+ │
+ ├─ Common Service
+ │    │
+ │    ├─ RFC #1
+ │    └─ return
+ │
+ ├─ Service A 복귀
+ ├─ RFC 결과 처리
+ ├─ DB #2
+ └─ Response
+```
+
+Caller로 돌아온 후
+후속 처리를 계속 추적한다.
+
+
+# 28. Mapper / MyBatis / SQL
+
+다음 연결을 실제 Source로 확인한다.
+
+```text
+Mapper Interface
+ ↓
+Mapper Method
+ ↓
+namespace
+ ↓
+Statement ID
+ ↓
+MyBatis XML / Annotation
+ ↓
+Dynamic SQL
+ ↓
+실제 SQL
+```
+
+Mapper Method 이름만 보고
+SQL을 추측하지 않는다.
+
+
+# 29. DB 번호
+
+DB 호출은 실제 실행 위치 기준으로:
+
+```text
+DB #1
+DB #2
+DB #3
+...
+```
+
+번호를 부여한다.
+
+동일 Mapper Statement가 여러 번 호출되어도
+실행 위치가 다르면 별도 DB 호출이다.
+
+
+# 30. 외부 연동
+
+실제 Source에서 확인되는:
+
+```text
+RFC
+REST
+HTTP
+SOAP
+WebService
+다른 Backend
+Gateway
+Interface Server
+Message / Queue
+File
+기타 외부 시스템
+```
+
+을 실제 실행 위치에서 기록한다.
+
+RFC/REST를 문서 뒤로 임의 이동하지 않는다.
+
+
+# 31. 조건 / 반복
+
+실제 Source에서 확인되는:
+
+```text
+if
+else
+switch
+loop
+stream 조건
+filter
+분기
+```
+
+를 실행 흐름에 보존한다.
+
+추측하지 않는다.
+
+
+# 32. Exception / Transaction
+
+실제 Source에서 확인되는 내용만 기록한다.
+
+Framework 일반 동작을
+실제 동작처럼 추측하지 않는다.
+
+
+# 33. Response
+
+DB나 외부 연동에서 분석을 끝내지 않는다.
+
+반드시 가능한 범위에서:
+
+```text
+하위 호출 결과
+ ↓
+Caller 복귀
+ ↓
+후속 Business Logic
+ ↓
+변환
+ ↓
+Response 생성
+ ↓
+Controller Return
+```
+
+까지 추적한다.
+
+
+# 34. Oracle Metadata
+
+먼저 Controller → Response 전체 Call Path를 완료한다.
+
+그 과정에서 실제 SQL에 사용된:
+
+```text
+Table
+View
+Column
+```
+
+을 수집한다.
+
+전체 Call Path 완료 후 중복 제거한다.
+
+그 다음 Metadata 필요성을 판단한다.
+
+필요한 경우에만
+Oracle MCP로 최소 조회한다.
 
 금지:
 
 ```text
-Reference Section을 임의로 합치기
-
-Section 순서를 임의 변경
-
-ASCII Block을 Markdown Bullet로 대체
-
-ASCII 실행 Tree를 일반 번호 목록으로 대체
-
-ASCII Tree를 Mermaid로 대체
-
-DB 상세 Block을 Markdown Table로 변경
-
-Business Logic Block을 Markdown Table로 변경
-
-RFC / REST Block을 Markdown Table로 변경
-
-Source Evidence를 Markdown Table로 변경
-
-Reference보다 간단한 요약형 문서 생성
-
-Claude가 더 보기 좋다고 판단한
-새로운 문서 형식 사용
+Schema 전체 탐색
+관련 없는 Object 조회
+모든 Column 무조건 조회
+동일 Object 반복 조회
+DB 호출마다 Metadata 조회
 ```
 
-Oracle Metadata는 Reference에서 허용한 경우에만
-Markdown Table을 사용할 수 있다.
+
+# 35. Metadata 상태 표현
+
+Metadata 추가 조회가 필요하지 않았다면:
+
+```text
+Metadata 추가 조회하지 않음
+```
+
+으로 기록한다.
+
+Metadata 확인이 필요했지만
+실제로 확인하지 못했다면:
+
+```text
+확인되지 않음
+```
+
+으로 기록한다.
+
+두 상태를 혼동하지 않는다.
 
 
-# 19. Reference 기본 Section
+# 36. 전체 Call Path 검증
 
-최종 문서는 BE-REFERENCE.md의 기본 구조를 따른다.
+Rendering 전에 실제 Call Path를 확인한다.
+
+```text
+Controller
+ ↓
+Service / 구현체
+ ↓
+Business Logic
+ ↓
+하위 호출
+ ↓
+Caller 복귀
+ ↓
+DB / External
+ ↓
+Caller 복귀
+ ↓
+후속 Business Logic
+ ↓
+Response
+ ↓
+Controller Return
+```
+
+끊긴 구간이 있는지 확인한다.
+
+
+# 37. BE-REFERENCE 기반 Rendering
+
+분석 완료 후
+BE-REFERENCE.md의 구조로 최종 문서를 작성한다.
+
+먼저 Claude 자체 문서를 만든 후
+Reference 스타일을 일부 덧씌우는 방식은 사용하지 않는다.
+
+정상 방식:
+
+```text
+BE-REFERENCE 구조
+        +
+실제 분석 결과
+        ↓
+최종 Backend 문서
+```
+
+
+# 38. 최종 Section 순서
+
+BE-REFERENCE.md의 기본 순서를 따른다.
 
 ```text
 1. 기능 정보
@@ -583,399 +1007,164 @@ Markdown Table을 사용할 수 있다.
 14. 분석 경계
 ```
 
-실제 기능에 존재하지 않는 상세 항목을
-억지로 생성하지 않는다.
-
-단, 문서 전체 구조를 Claude 임의 형식으로
-재설계하지 않는다.
+실제 기능에 존재하지 않는 세부 Block을
+억지로 만들지 않는다.
 
 
-# 20. Direct 기능 정보 적용
+# 39. Markdown Table 제한
 
-Direct 분석에는 API Document가 없으므로
-API ID를 임의 생성하지 않는다.
+일반 분석 영역은
+Reference의 ASCII/Text Block 형식을 사용한다.
 
-Reference의 기능 정보 형식을 유지하면서
-Direct 식별값을 사용한다.
+Markdown Table은
+BE-REFERENCE.md에서 허용하는
+실제 Oracle Metadata 비교 영역에만 사용한다.
 
-예:
+다음을 임의 Table로 변경하지 않는다.
 
 ```text
-┌─ 기능 정보 ──────────────────────────────────
-│ 화면
-│   {화면명}
-│
-│ FE Action
-│   {FE_BASE_NAME}
-│
-│ BE ID
-│   {BE_ID}
-│
-│ 기능명
-│   {실제 Source에서 확인된 경우}
-│
-│ HTTP Method
-│   {RESOLVED_METHOD}
-│
-│ Backend URL
-│   {BACKEND_URL}
-│
-│ Backend Project
-│   {실제 Project}
+Business Logic
+DB 호출
+SQL
+RFC
+REST
+Exception
+Response
+Source Evidence
+```
+
+
+# 40. 한눈에 보는 실행 흐름 강제 형식
+
+`한눈에 보는 실행 흐름`은
+BE-REFERENCE.md의 해당 Block 형식을 그대로 사용한다.
+
+이 Section만 Claude가
+다른 표현 방식으로 변경하면 안 된다.
+
+반드시 다음 형태를 사용한다.
+
+```text
+┌─ 한눈에 보는 실행 흐름 ─────────────────────
+│ {실제 시작 처리}
+│   ↓
+│ {실제 다음 처리}
+│   ↓
+│ {실제 다음 처리}
+│   ↓
+│ {실제 Response 처리}
 └──────────────────────────────────────────────
 ```
 
-기능명을 Source에서 확정할 수 없으면
-추측하지 않는다.
+조건이나 분기가 존재하면
+ASCII Tree 표현을 사용한다.
 
-
-# 21. Project Root
-
-Code Index MCP에 설정된
-현재 Project Root를 기준으로 분석한다.
-
-Backend 기본 대상:
+예시 형식:
 
 ```text
-gipms-api-*
+│ {실제 조건}
+│   ├─ {조건 1} → {실제 처리}
+│   └─ {조건 2} → {실제 처리}
 ```
 
-현재 Backend URL과 실제 Call Path에 연결된
-Project만 분석한다.
+반복이 중요한 실행 흐름이면
+실제 Source에서 확인된 반복 구조를
+ASCII 형태로 표현한다.
 
-
-# 22. Source Path
-
-Source Evidence는 Project Root 기준 상대경로를 사용한다.
-
-절대경로를 최종 문서에 기록하지 않는다.
-
-
-# 23. Controller 탐색
-
-입력:
+이 Block은:
 
 ```text
-HTTP_METHOD
-BACKEND_URL
+전체 실행 Tree
 ```
 
-을 기준으로 Controller Mapping을 찾는다.
+를 그대로 복사하는 영역이 아니다.
 
-Code Index MCP를 우선 사용한다.
+주요 실행 흐름을 한눈에 볼 수 있도록
+핵심 단계만 표시한다.
 
-확인 대상:
+하지만 실제 실행 순서는 보존한다.
+
+
+# 41. 한눈에 보는 실행 흐름 금지 형식
+
+다음 형식을 사용하지 않는다.
 
 ```text
-@RequestMapping
-@GetMapping
-@PostMapping
-@PutMapping
-@PatchMapping
-@DeleteMapping
+Mermaid
+
+Markdown Bullet List
+
+Markdown Number List
+
+Markdown Table
+
+Controller → Service → DB → Response
+
+한 줄 Arrow Flow
+
+Reference에 없는 Flowchart 문법
 ```
 
-Class Mapping과 Method Mapping을 조합한다.
+반드시 Reference의:
 
-Code Index 결과만으로 확정하지 않는다.
+```text
+┌─
+│
+│   ↓
+│
+└─
+```
 
-실제 Controller Source를 읽어서 확정한다.
-
-
-# 24. UNKNOWN Method
-
-HTTP_METHOD가 UNKNOWN이면
-실제 Controller Source에서 Method를 확정한다.
-
-동일 URL에 여러 Method가 존재하고
-하나로 확정할 수 없으면 STOP 한다.
-
-임의 선택하지 않는다.
+형식을 사용한다.
 
 
-# 25. Controller 탐색 실패
+# 42. 전체 실행 Tree
 
-실제 Source에서 Controller Mapping을
-확정하지 못하면 STOP 한다.
+전체 실행 Tree는
+Backend 분석의 핵심 Section이다.
 
-유사 URL을 대신 선택하지 않는다.
+실제 실행 순서를 보존한다.
 
-
-# 26. Backend 분석
-
-Controller 확정 이후에는
-08-be-analysis-scope.md와
-09-be-call-tracing.md를 기준으로 분석한다.
-
-실제 Source 실행 순서를 보존한다.
-
-기본 흐름:
+다음을 포함한다.
 
 ```text
 Controller
- ↓
-Service / ServiceImpl
- ↓
 Business Logic
- ↓
-Internal Method
- ↓
-Other Service / Common Service
- ↓
-Mapper
- ↓
-MyBatis
- ↓
-SQL / Dynamic SQL
- ↓
-Caller 복귀
- ↓
-RFC / REST / 기타 외부 연동
- ↓
-Caller 복귀
- ↓
-후속 Business Logic
- ↓
-Response
- ↓
-Controller Return
-```
-
-이 흐름은 예시이며
-실제 Source 순서가 우선이다.
-
-
-# 27. Code Index 사용
-
-Code Index는 Discovery 용도이다.
-
-```text
-Controller 후보
-Symbol
-Reference
-Caller
-Callee
-관련 Source
-```
-
-를 찾는 데 사용한다.
-
-Business Logic 확정은
-실제 Source를 읽은 결과를 기준으로 한다.
-
-
-# 28. Shell 탐색 제한
-
-다음을 사용하지 않는다.
-
-```text
-xargs
-Project Root 전체 find
-grep -r
-grep -R
-grep -rn
-```
-
-Rule 09의 탐색 제한을 그대로 적용한다.
-
-
-# 29. 실제 실행 순서
-
-Layer 기준으로 재정렬하지 않는다.
-
-예를 들어 실제 Source가:
-
-```text
-DB #1
- ↓
-조건
- ↓
-RFC #1
- ↓
-RFC 결과 처리
- ↓
-DB #2
- ↓
-REST #1
- ↓
-REST 결과 처리
- ↓
-DB #3
- ↓
-Response
-```
-
-이면 그대로 유지한다.
-
-
-# 30. Caller 복귀
-
-하위 호출 이후 Caller의 후속 처리를
-반드시 계속 추적한다.
-
-```text
-Service A
- │
- ├─ Common Service
- │    │
- │    ├─ RFC #1
- │    └─ return
- │
- ├─ Service A 복귀
- ├─ RFC 결과 처리
- ├─ DB #2
- └─ Response
-```
-
-하위 호출에서 분석을 종료하지 않는다.
-
-
-# 31. Mapper / MyBatis / SQL
-
-실제 연결을 확인한다.
-
-```text
-Mapper Interface
- ↓
-Mapper Method
- ↓
-namespace
- ↓
-Statement ID
- ↓
-MyBatis XML / Annotation
- ↓
-Dynamic SQL
- ↓
-SQL
-```
-
-Method 이름으로 SQL을 추측하지 않는다.
-
-
-# 32. DB 호출
-
-실제 실행 위치별로 번호를 부여한다.
-
-```text
-DB #1
-DB #2
-DB #3
-...
-```
-
-동일 Mapper/Statement가 반복되어도
-실행 위치가 다르면 별도 호출이다.
-
-
-# 33. 외부 연동
-
-다음을 실제 실행 위치에서 추적한다.
-
-```text
-RFC
-REST / HTTP
-SOAP
-WebService
-다른 Backend
-Gateway
-Interface Server
-Message / Queue
-File
-기타 외부 시스템
-```
-
-종류별로 재정렬하지 않는다.
-
-
-# 34. 조건 / 반복 / Exception / Transaction
-
-실제 Source에서 확인되는 구조만 기록한다.
-
-```text
 조건
 분기
 반복
-Exception
-Transaction
-```
-
-Framework 일반 동작으로 추측하지 않는다.
-
-
-# 35. Response까지 추적
-
-DB나 외부 연동에서 종료하지 않는다.
-
-```text
-DB / External Result
- ↓
+DB #n
+RFC #n
+REST #n
 Caller 복귀
- ↓
-후속 Business Logic
- ↓
-변환
- ↓
+후속 처리
+Exception
 Response
- ↓
-Controller Return
 ```
 
-까지 확인한다.
+실제로 존재하는 항목만 표현한다.
 
 
-# 36. Oracle Metadata
+# 43. 독립 Block
 
-먼저 Controller부터 Response까지
-전체 Call Path를 완료한다.
+각 상세 Block은
+해당 Block만 복사해도 이해할 수 있게 작성한다.
 
-그 과정에서 실제 SQL에 사용된:
+다음 표현을 피한다.
 
 ```text
-Table
-View
-Column
+위와 동일
+앞에서 설명
+상동
+이전 내용 참고
 ```
 
-을 수집한다.
-
-그 후:
-
-```text
-중복 제거
- ↓
-Metadata 필요성 판단
- ↓
-필요한 Object / Column만 Oracle MCP 확인
- ↓
-SQL ↔ Metadata 교차 검증
-```
-
-한다.
-
-금지:
-
-```text
-Schema 전체 탐색
-관련 없는 Object 조회
-모든 Column 무조건 조회
-동일 Object 반복 조회
-동일 Column 반복 조회
-DB 호출마다 Metadata 조회
-```
-
-Metadata가 필요하지 않으면:
-
-```text
-Metadata 추가 조회하지 않음
-```
-
-으로 구분한다.
+필요한 식별 정보를 Block 안에 포함한다.
 
 
-# 37. Source Evidence
+# 44. Source Evidence
 
-중요한 판단은 가능한 경우 다음과 연결한다.
+가능한 경우:
 
 ```text
 Source Path
@@ -984,33 +1173,27 @@ Method
 Line Range
 ```
 
-DB:
+를 기록한다.
+
+Line Range를 실제로 확인하지 못하면
+만들어내지 않는다.
+
+MyBatis는 가능한 경우:
 
 ```text
 Mapper
 Mapper Method
-MyBatis XML
-Namespace
+XML
+namespace
 Statement ID
-SQL
 ```
 
-외부 연동:
-
-```text
-Source Path
-Class
-Method
-Adapter / Client
-RFC Function / Endpoint
-```
-
-Line Range를 확인할 수 없으면 추측하지 않는다.
+를 포함한다.
 
 
-# 38. JAR / 외부 Dependency
+# 45. JAR / 외부 Source 제한
 
-자동 확장하지 않는다.
+자동 탐색하지 않는다.
 
 ```text
 *.jar
@@ -1022,69 +1205,31 @@ Gradle Cache
 Project Root 외부 Source
 ```
 
-Project Root 아래 실제 Source Project이며
-현재 Call Path와 연결된 경우에는 추적할 수 있다.
+현재 Project Root 아래의 실제 Source이며
+Call Path에 연결된 경우만 분석한다.
 
 
-# 39. 전체 Call Path 검증
+# 46. 안전 원칙
 
-Rendering 전에 확인한다.
+Read-Only 분석이다.
 
-```text
-Controller
- ↓
-Service / 구현체
- ↓
-Business Logic
- ↓
-Internal / Other Service
- ↓
-Caller 복귀
- ↓
-DB / External
- ↓
-Caller 복귀
- ↓
-후속 Business Logic
- ↓
-Response
- ↓
-Controller Return
-```
-
-끊긴 부분이 있으면
-확인 가능한 Source를 추가 추적한다.
-
-
-# 40. Reference 기반 Rendering
-
-분석이 완료되면
-STEP 6에서 읽은 BE-REFERENCE.md를
-최종 문서의 Template으로 사용한다.
-
-중요:
+실행하지 않는다.
 
 ```text
-분석 결과를 먼저 임의 Markdown으로 작성한 뒤
-Reference를 참고해 조금 수정하는 방식이 아니다.
+Oracle DML
+Oracle DDL
+실제 RFC 업무 Function
+상태 변경 REST
+SOAP 업무 요청
+Message Publish
+업무 File 전송
+실제 저장/수정/삭제 API
 ```
 
-반드시:
 
-```text
-BE-REFERENCE Template
-        +
-실제 분석 결과
-        ↓
-최종 문서
-```
+# 47. OUTPUT Write
 
-방식으로 생성한다.
-
-
-# 41. OUTPUT_PATH Write
-
-최종 문서를 오직:
+최종 문서는 오직:
 
 ```text
 OUTPUT_PATH
@@ -1092,68 +1237,112 @@ OUTPUT_PATH
 
 에 저장한다.
 
-Worker에서는 별도 파일명을 생성하지 않는다.
+새로운 파일명을 만들지 않는다.
 
-다른 이름의 Backend 문서를 추가 생성하지 않는다.
+OUTPUT_FILENAME을 다시 계산하지 않는다.
 
-
-# 42. 생성 문서 재검증
-
-Write 직후 OUTPUT_PATH의 문서를
-실제로 다시 읽는다.
-
-자기 직전 출력 내용을 기억해서
-검증했다고 처리하지 않는다.
-
-실제 저장된 파일을 대상으로 검증한다.
+Section 번호를 파일명으로 사용하지 않는다.
 
 
-# 43. 파일명 검증
+# 48. Write 직전 파일명 재확인
 
-다시 읽은 실제 파일의 경로가:
+파일을 Write하기 **직전** 다시 확인한다.
 
 ```text
-OUTPUT_PATH
-```
+FE_BASE_NAME:
+{처음 입력받은 값}
 
-와 정확히 일치하는지 확인한다.
+BE_ID:
+{확정된 값}
 
-파일명:
-
-```text
+EXPECTED_FILENAME:
 {FE_BASE_NAME}-{BE_ID}.md
+
+OUTPUT_PATH:
+{확정된 경로}
 ```
 
-와 정확히 일치해야 한다.
+그리고:
+
+```text
+basename(OUTPUT_PATH)
+=
+EXPECTED_FILENAME
+```
+
+이어야 한다.
+
+아니면 Write하지 않고 ERROR로 종료한다.
+
+
+# 49. Write 후 실제 파일 Read
+
+Write가 완료되면
+OUTPUT_PATH의 실제 파일을 다시 읽는다.
+
+기억하고 있는 생성 결과만으로
+검증했다고 판단하지 않는다.
+
+
+# 50. 파일명 최종 검증
+
+다음을 다시 검증한다.
+
+```text
+EXPECTED_FILENAME
+=
+FE_BASE_NAME + "-" + BE_ID + ".md"
+
+ACTUAL_FILENAME
+=
+실제 생성된 파일의 basename
+```
+
+반드시:
+
+```text
+EXPECTED_FILENAME
+=
+ACTUAL_FILENAME
+```
+
+이어야 한다.
 
 다르면 PASS 금지.
 
 
-# 44. Reference 결과 검증
+# 51. Reference 결과 검증
 
-`REFERENCE LOADED = YES`만으로
-Reference 적용 성공으로 판단하지 않는다.
-
-실제 생성된 문서를 대상으로 검증한다.
-
-다음을 확인한다.
+실제 생성된 파일을 기준으로 확인한다.
 
 ```text
-[ ] Reference 기본 Section 구조 사용
+[ ] 기능 정보가 Reference 형식
 
-[ ] 기능 정보가 Reference의 ASCII Block 형태
+[ ] 기능 요약이 Reference 형식
 
-[ ] 기능 요약이 Reference의 ASCII Block 형태
+[ ] 한눈에 보는 실행 흐름이
+    `┌─ 한눈에 보는 실행 흐름 ─`
+    ASCII Block 형식
 
-[ ] 한눈에 보는 실행 흐름이 ASCII Block 형태
+[ ] 한눈에 보는 실행 흐름의 각 단계가
+    `│` 내부에 존재
 
-[ ] 핵심 정보가 ASCII Block 형태
+[ ] 순차 흐름에 `↓` 사용
 
-[ ] 전체 실행 Tree가 ASCII Tree 형태
+[ ] 조건/분기가 존재하면
+    `├─`, `└─` 형식 사용
 
-[ ] Business Logic 상세가 독립 ASCII Block
+[ ] 한눈에 보는 실행 흐름에
+    Mermaid / Markdown List / Table /
+    한 줄 Arrow Flow를 사용하지 않음
 
-[ ] DB 호출이 DB #n별 독립 Block
+[ ] 핵심 정보가 Reference 형식
+
+[ ] 전체 실행 Tree가 ASCII Tree 형식
+
+[ ] Business Logic이 독립 Block
+
+[ ] DB 호출이 존재하면 DB #n별 독립 Block
 
 [ ] SQL 상세가 Reference 형식
 
@@ -1177,31 +1366,36 @@ Reference 적용 성공으로 판단하지 않는다.
 
 [ ] 분석 경계가 Reference 형식
 
-[ ] Oracle Metadata 이외 일반 영역에
+[ ] Oracle Metadata 이외 영역에서
     Markdown Table을 임의 사용하지 않음
-
-[ ] "위와 동일", "앞에서 설명" 등
-    Block 독립성을 깨는 표현 사용하지 않음
 ```
 
-실제 기능에 존재하지 않는 세부 Block은
-없다는 이유만으로 실패 처리하지 않는다.
+
+# 52. Reference 형식 수정
+
+Reference 검증에서 실패한 경우
+OUTPUT_PATH의 같은 파일을
+Reference 형식에 맞게 최대 1회 수정할 수 있다.
+
+새 파일을 만들지 않는다.
+
+특히:
+
+```text
+한눈에 보는 실행 흐름
+```
+
+만 실패했다면
+다른 정상 Section을 다시 설계하지 않는다.
+
+해당 Section만 수정한다.
+
+수정 후 실제 파일을 다시 읽어 검증한다.
 
 
-# 45. Reference 검증 실패
+# 53. Reference 검증 실패
 
-문서 구조가 Reference와 다르면
-PASS 하지 않는다.
-
-가능한 경우 OUTPUT_PATH의 문서를
-Reference Template에 맞게 수정한 뒤
-다시 Read하여 재검증한다.
-
-무한 반복하지 않는다.
-
-최대 1회 수정한다.
-
-1회 수정 후에도 Reference 형식이 맞지 않으면:
+1회 수정 후에도 실패하면:
 
 ```text
 STATUS:
@@ -1213,18 +1407,15 @@ NO
 
 로 종료한다.
 
+문서가 존재한다는 이유만으로
+PASS하지 않는다.
 
-# 46. PASS 조건
+
+# 54. PASS 조건
 
 다음을 모두 만족해야 한다.
 
 ```text
-FE DOCUMENT FOUND:
-YES
-
-FE BASE NAME FROM FE DOCUMENT:
-YES
-
 RULE 08 LOADED:
 YES
 
@@ -1253,11 +1444,11 @@ REFERENCE FORMAT MATCH:
 YES
 ```
 
-하나라도 필수 조건이 NO이면
-PASS를 반환하지 않는다.
+필수 조건 하나라도 NO이면
+PASS하지 않는다.
 
 
-# 47. Worker 결과
+# 55. Worker 결과 Contract
 
 Parent에는 상세 Backend 문서 본문을 반환하지 않는다.
 
@@ -1267,14 +1458,14 @@ Parent에는 상세 Backend 문서 본문을 반환하지 않는다.
 STATUS:
 PASS | STOP | ERROR
 
-SCREEN:
-...
+REFERENCE LOADED:
+YES | NO
 
-ACTION ID:
-...
+RULE 08 LOADED:
+YES | NO
 
-FE DOCUMENT:
-...
+RULE 09 LOADED:
+YES | NO
 
 FE BASE NAME:
 ...
@@ -1291,11 +1482,11 @@ RESOLVED METHOD:
 BACKEND URL:
 ...
 
-REFERENCE LOADED:
-YES | NO
+EXPECTED FILENAME:
+...
 
-REFERENCE FORMAT MATCH:
-YES | NO
+ACTUAL FILENAME:
+...
 
 EXPECTED OUTPUT:
 ...
@@ -1309,40 +1500,30 @@ YES | NO
 OUTPUT FILENAME MATCH:
 YES | NO
 
+REFERENCE FORMAT MATCH:
+YES | NO
+
 ERROR:
-없음 또는 오류
+...
 ```
 
 
-# 48. 안전 원칙
+# 56. STOP
 
-Read-Only 분석이다.
-
-실행하지 않는다.
+현재 Backend 하나에 대해:
 
 ```text
-Oracle DML / DDL
-실제 RFC 업무 Function
-상태 변경 REST
-SOAP 업무 요청
-Message Publish
-업무 File 전송
-실제 저장 / 수정 / 삭제 API
-```
-
-
-# 49. STOP
-
-현재 Backend 하나의 분석과:
-
-```text
-Reference 기반 Rendering
-OUTPUT_PATH 저장
-저장 파일 재검증
-Reference 형식 검증
+Controller 확정
+Backend Call Path 분석
+Response 추적
+필요한 Oracle Metadata 확인
+BE-REFERENCE Rendering
+OUTPUT_PATH Write
+실제 파일 재검증
 파일명 검증
+Reference 형식 검증
 ```
 
-까지 완료하면 STOP 한다.
+이 완료되면 STOP 한다.
 
 다른 Backend를 자동 분석하지 않는다.
