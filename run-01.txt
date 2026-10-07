@@ -166,3 +166,21 @@ Backend:
 
 
 #####
+
+
+code-index MCP만 사용해서
+POST /실제/url
+에 매핑되는 Spring Controller와 Controller Method를 찾아줘.
+
+Grep, Glob은 사용하지 마.
+Service 이하 분석하지 마.
+Controller를 찾으면 즉시 종료해.
+
+출력:
+- Controller 파일
+- Controller Method
+- HTTP Method
+- Evidence
+
+
+#####
