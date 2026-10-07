@@ -1,11 +1,11 @@
 ---
 name: be-test-controller
-description: Backend URL에서 ServiceImpl의 실제 Mapper 호출을 확인한 뒤 Mapper Java Interface를 건너뛰고 MyBatis XML statement까지 부분 탐색하는 성능 테스트 Skill.
+description: Backend URL에서 Controller부터 ServiceImpl 실제 Mapper 호출과 MyBatis XML Statement를 찾고 해당 Statement의 직접 SQL 구조까지만 분석하는 성능 테스트 Skill.
 argument-hint: "<HTTP Method|UNKNOWN> <Backend URL>"
 allowed-tools: Read, Grep
 ---
 
-# BE Fast Search Test - Direct MyBatis XML
+# BE Fast Search Test - Direct SQL Analysis
 
 ## 0. 목적
 
@@ -22,17 +22,13 @@ Controller
 → Mapper Java Interface SKIP
 → MyBatis XML 찾기
 → 실제 Statement 부분 Read
+→ Statement 내부 SQL 분석
 → STOP
 
-이번 테스트에서는 Mapper Java Interface를 검색하지 않는다.
+목적:
 
-목적은:
-
-Mapper Interface 탐색을 제거하고
-ServiceImpl에서 확인한 Mapper 정보로
-MyBatis XML까지 직접 연결했을 때의 속도를 측정하는 것이다.
-
-SQL의 상세 비즈니스 분석은 아직 하지 않는다.
+MyBatis Statement까지 찾은 상태에서
+SQL 자체를 분석하는 비용이 얼마나 추가되는지 측정한다.
 
 ---
 
@@ -93,36 +89,37 @@ Frontend 프로젝트는 검색하지 않는다.
 
 # 4. 핵심 성능 원칙
 
-가장 중요한 원칙:
-
 전체 파일 Read를 기본적으로 하지 않는다.
 
-다음 방식으로 탐색한다.
+탐색 순서:
 
 정확한 Symbol
-→ 제한된 Grep
+→ 제한 Grep
 → 위치 확보
 → 필요한 범위만 Read
+→ 정보 확보
 → 다음 단계
 
-반드시 다음 규칙을 따른다.
+규칙:
 
 1. 동일 검색을 반복하지 않는다.
 2. 이미 발견한 파일을 다시 찾지 않는다.
 3. 이미 확보한 정보를 다시 검색하지 않는다.
-4. 현재 Backend 프로젝트를 우선한다.
-5. 현재 프로젝트에서 찾지 못한 경우에만 다른 gipms-api-*로 확대한다.
+4. 현재 Backend 프로젝트부터 검색한다.
+5. 찾지 못할 경우에만 다른 gipms-api-*로 확대한다.
 6. Controller 확정 후 URL 검색을 중단한다.
 7. Service 확정 후 Service 검색을 중단한다.
 8. ServiceImpl 확정 후 구현체 검색을 중단한다.
 9. ServiceImpl 전체 Read를 하지 않는다.
 10. Mapper Java Interface를 검색하지 않는다.
-11. Mapper Java Method 선언을 검색하지 않는다.
+11. Mapper Java Method를 검색하지 않는다.
 12. XML 전체 Read를 하지 않는다.
-13. 실제 statement 위치만 부분 Read한다.
-14. Evidence를 위한 재검색을 하지 않는다.
+13. 실제 Statement만 부분 Read한다.
+14. SQL 분석은 이미 읽은 Statement 범위에서 수행한다.
+15. SQL 분석을 위해 추가 검색하지 않는다.
+16. Evidence를 위해 재검색하지 않는다.
 
-내부적으로 다음 정보를 재사용한다.
+내부적으로 재사용:
 
 KNOWN_FILES
 
@@ -140,7 +137,7 @@ VISITED_STATEMENTS
 
 # STEP 1. URL 분리
 
-입력 Backend URL을 path 단위로 확인한다.
+입력 URL을 path 단위로 확인한다.
 
 예:
 
@@ -154,7 +151,7 @@ VISITED_STATEMENTS
 
 /create
 
-Controller 검색에서는 가능한 경우
+Controller 검색에서는
 식별력이 높은 상위 path를 먼저 사용한다.
 
 ---
@@ -165,25 +162,17 @@ Controller 검색에서는 가능한 경우
 
 gipms-api-*/**/*Controller.java
 
-URL 상위 path를 우선 Grep한다.
-
-예:
-
-/material
+URL 상위 path를 먼저 Grep한다.
 
 후보 Controller가 발견되면
 Backend 전체 URL 검색을 중단한다.
 
-후보 Controller만 확인한다.
-
 상위 path로 확정할 수 없을 경우에만
-마지막 segment를 보조 검색어로 사용한다.
+마지막 segment를 사용한다.
 
 ---
 
 # STEP 3. Controller Mapping 검증
-
-Controller에서:
 
 class-level mapping
 
@@ -205,8 +194,7 @@ method-level mapping
 
 POST /material/create
 
-전체 URL과 HTTP Method가 일치하는
-Controller Method를 확정한다.
+입력 URL과 일치하는 Method를 확정한다.
 
 ---
 
@@ -220,18 +208,19 @@ PUT
 DELETE
 PATCH
 
-이면 Controller annotation과 일치해야 한다.
+이면 annotation과 일치해야 한다.
 
-UNKNOWN이면 Controller annotation에서 실제 Method를 확정한다.
+UNKNOWN이면 annotation에서 실제 Method를 확정한다.
 
-동일 URL에 여러 HTTP Method가 존재하고
-입력 Method가 UNKNOWN이면 임의 선택하지 않는다.
+동일 URL에 여러 Method가 존재하면:
 
-AMBIGUOUS로 종료한다.
+AMBIGUOUS
+
+로 종료한다.
 
 ---
 
-# STEP 5. Controller Method 확인
+# STEP 5. Controller Method
 
 확인:
 
@@ -240,21 +229,20 @@ AMBIGUOUS로 종료한다.
 - HTTP Method
 - Evidence
 
-Controller Method가 확정되면
-다른 Controller를 탐색하지 않는다.
+확정 후 다른 Controller를 탐색하지 않는다.
 
 ---
 
-# STEP 6. Service 호출 확인
+# STEP 6. Service 호출
 
-Controller Method 내부에서
-실제로 호출되는 Service를 확인한다.
+Controller Method 내부의
+실제 Service 호출만 확인한다.
 
 예:
 
 materialService.create(request);
 
-기록:
+확인:
 
 Service Variable:
 materialService
@@ -264,10 +252,9 @@ create
 
 ---
 
-# STEP 7. Service Type 확인
+# STEP 7. Service Type
 
-이미 확인한 Controller 내용에서
-Service Variable Type을 확인한다.
+이미 확보한 Controller 내용에서 Type을 확인한다.
 
 예:
 
@@ -278,110 +265,92 @@ private final MaterialService materialService;
 Service Type:
 MaterialService
 
-Service Variable:
-materialService
-
-Controller를 다시 검색하지 않는다.
+Controller를 재검색하지 않는다.
 
 ---
 
 # STEP 8. Service 찾기
 
-Service 파일 경로를 모르면
-현재 Backend 프로젝트에서 정확한 Type만 Grep한다.
+현재 Backend 프로젝트에서
+정확한 Service Type을 검색한다.
 
 예:
 
 interface MaterialService
 
-현재 프로젝트에서 발견되면
-다른 프로젝트를 검색하지 않는다.
+발견되면 다른 프로젝트를 검색하지 않는다.
 
-현재 프로젝트에 없을 때만
-다른 gipms-api-*로 범위를 확대한다.
+없을 때만 다른 gipms-api-*로 확대한다.
 
 ---
 
-# STEP 9. Service Method 확인
+# STEP 9. Service Method
 
-Controller가 실제 호출한 Method 선언만 확인한다.
+Controller가 호출한 Service Method만 확인한다.
 
 확인:
 
-- Service
-- Service Method
+- Method
 - Parameter
 - Return Type
 - Evidence
 
-다른 Service Method는 분석하지 않는다.
+다른 Method는 분석하지 않는다.
 
 ---
 
 # STEP 10. ServiceImpl 찾기
 
-Service가 interface이면 구현체를 찾는다.
-
-검색:
+Service가 interface이면:
 
 implements MaterialService
 
-먼저 현재 Backend 프로젝트에서만 검색한다.
+를 현재 Backend 프로젝트에서 먼저 검색한다.
 
-구현체가 발견되면 즉시 검색을 중단한다.
+발견 즉시 구현체 검색을 중단한다.
 
-ServiceImpl 전체 파일은 Read하지 않는다.
-
-파일 경로만 확보한다.
+ServiceImpl 전체 파일은 읽지 않는다.
 
 ---
 
 # STEP 11. ServiceImpl Method 위치
 
-확정된 ServiceImpl 파일 하나에서만
-Controller가 호출한 정확한 Method 이름을 Grep한다.
+확정된 ServiceImpl 파일 하나에서
+실제 호출된 Method 이름만 Grep한다.
 
 예:
 
 create(
 
-Service Interface signature와 비교하여
-실제 구현 Method를 확정한다.
+Service Interface signature와 비교해
+정확한 구현 Method를 확정한다.
 
 ---
 
 # STEP 12. ServiceImpl 부분 Read
 
-ServiceImpl Method 시작 위치부터
-약 80줄을 우선 Read한다.
+Method 시작부터 약 80줄을 Read한다.
 
 예:
 
-Method 시작:
-420
-
-초기 Read:
 420 ~ 500
 
-Method 종료가 확인되면 추가 Read하지 않는다.
+Method 종료가 확인되면 중단한다.
 
-Method가 계속되는 경우에만
-다음 약 80줄을 추가한다.
-
-예:
+종료되지 않은 경우에만:
 
 501 ~ 580
 
-Method 종료 즉시 Read를 중단한다.
+처럼 필요한 만큼 추가한다.
 
-ServiceImpl 전체 파일을 읽지 않는다.
+전체 ServiceImpl 파일을 읽지 않는다.
 
 ---
 
 # STEP 13. Mapper 호출 확인
 
-ServiceImpl Method에서 직접 실행되는
-Mapper 호출을 확인한다.
+ServiceImpl 대상 Method에서
+직접 실행되는 Mapper 호출을 확인한다.
 
 예:
 
@@ -391,16 +360,12 @@ materialMapper.insertMaterial(param);
 
 기록:
 
-Mapper Variable:
-materialMapper
+- Mapper Variable
+- Mapper Method
+- 호출 순서
+- 직접 보이는 조건 분기
 
-Mapper Methods:
-- selectMaterial
-- insertMaterial
-
-조건문 안의 직접 Mapper 호출도 기록한다.
-
-Local/private Method 내부는 현재 테스트에서 추적하지 않는다.
+Local/private Method 내부는 추적하지 않는다.
 
 다른 Service 내부도 추적하지 않는다.
 
@@ -408,17 +373,15 @@ Local/private Method 내부는 현재 테스트에서 추적하지 않는다.
 
 # STEP 14. Mapper Type 확인
 
-Mapper Java Interface를 찾지 않는다.
+Mapper Java Interface는 찾지 않는다.
 
 Mapper Variable Type만 확인한다.
-
-우선 이미 확보한 ServiceImpl 범위에서 확인한다.
 
 예:
 
 private final MaterialMapper materialMapper;
 
-이면:
+결과:
 
 Mapper Variable:
 materialMapper
@@ -426,41 +389,25 @@ materialMapper
 Mapper Type:
 MaterialMapper
 
----
-
-# STEP 15. Mapper Type이 보이지 않는 경우
-
-현재 부분 Read 범위에 Mapper 선언이 없을 경우에만
+현재 범위에 선언이 없을 때만
 확정된 ServiceImpl 파일 하나에서
 Mapper Variable 이름을 Grep한다.
 
-예:
-
-materialMapper
-
-field 또는 constructor declaration을 확인한다.
-
-예:
-
-private final MaterialMapper materialMapper;
-
-Mapper Type을 확보하면 즉시 검색을 종료한다.
-
-ServiceImpl 전체 파일을 읽지 않는다.
+Type 확보 후 즉시 중단한다.
 
 ---
 
-# STEP 16. Mapper Java 강제 SKIP
+# STEP 15. Mapper Java SKIP
 
-이번 테스트에서는 다음을 절대 수행하지 않는다.
+절대 수행하지 않는다:
 
-- interface MaterialMapper 검색
 - MaterialMapper.java 검색
+- interface MaterialMapper 검색
 - Mapper Java Method 검색
-- Mapper annotation 검색
-- Mapper Java Evidence 수집
+- @Mapper 검색
+- Mapper Java Evidence 검색
 
-ServiceImpl에서 확보한:
+다음 정보만 사용한다.
 
 Mapper Type
 
@@ -468,275 +415,402 @@ Mapper Type
 
 Mapper Method
 
-정보를 사용해서 바로 MyBatis XML을 찾는다.
-
-예:
-
-Mapper Type:
-MaterialMapper
-
-Mapper Method:
-insertMaterial
-
 ↓
 
-MyBatis XML 탐색
+MyBatis XML
 
 ---
 
-# STEP 17. MyBatis XML 검색 전략
+# STEP 16. MyBatis XML 찾기
 
-먼저 현재 Backend 프로젝트 내부에서만 검색한다.
-
-처음부터 모든 gipms-api-*를 검색하지 않는다.
-
-검색 대상:
-
-*.xml
-
-우선순위:
-
-1. namespace와 Mapper Type 연결
-2. statement id
-
-가능하면 Mapper Type 이름을 먼저 사용한다.
+현재 Backend 프로젝트의 XML에서
+Mapper Type을 우선 검색한다.
 
 예:
 
 MaterialMapper
-
-MyBatis XML에서 다음과 같은 namespace 후보를 찾는다.
-
-예:
-
-<mapper namespace="...MaterialMapper">
-
-후보 XML이 발견되면
-다른 XML 검색을 중단한다.
-
----
-
-# STEP 18. XML namespace 확인
-
-후보 XML에서 namespace가
-Mapper Type과 대응되는지 확인한다.
-
-예:
-
-Mapper Type:
-
-MaterialMapper
-
-XML:
-
-<mapper namespace="com.xxx.material.MaterialMapper">
-
-이면 일치 후보로 판단한다.
-
-namespace가 다른 Mapper를 가리키면 제외한다.
-
----
-
-# STEP 19. namespace 검색 실패 시 fallback
-
-Mapper Type으로 XML을 찾지 못한 경우에만
-실제 Mapper Method 이름을 사용한다.
-
-예:
-
-insertMaterial
-
-현재 Backend 프로젝트의 XML에서만 Grep한다.
 
 목표:
 
-id="insertMaterial"
+<mapper namespace="...MaterialMapper">
 
-후보 XML 찾기.
-
-후보가 발견되면 namespace를 확인한다.
-
-처음부터 Mapper Type과 Method를 동시에 여러 번 검색하지 않는다.
+후보 XML이 확정되면
+다른 XML을 찾지 않는다.
 
 ---
 
-# STEP 20. Statement 위치 찾기
+# STEP 17. XML fallback
 
-XML 파일이 확정되면
-해당 파일 하나에서만 실제 Mapper Method에 대응하는
-statement id를 Grep한다.
+Mapper Type으로 XML을 찾지 못한 경우에만
+Mapper Method 이름으로 검색한다.
 
 예:
 
 id="insertMaterial"
 
-가능한 statement:
+현재 Backend 프로젝트에서 먼저 검색한다.
+
+발견한 XML의 namespace를 확인한다.
+
+현재 프로젝트에서 찾지 못할 때만
+다른 gipms-api-*로 확대한다.
+
+---
+
+# STEP 18. Statement 위치
+
+확정된 XML 하나에서
+실제 Mapper Method의 statement id를 찾는다.
+
+예:
+
+id="insertMaterial"
+
+가능한 타입:
 
 <select>
 <insert>
 <update>
 <delete>
 
-예:
-
-<insert id="insertMaterial">
-
-statement 시작 line을 확보한다.
+Statement 시작 line을 확보한다.
 
 ---
 
-# STEP 21. XML 전체 Read 금지
+# STEP 19. Statement 부분 Read
 
-MyBatis XML 전체 파일을 Read하지 않는다.
-
-statement 시작 line부터 필요한 범위만 Read한다.
-
-초기 범위:
-
-statement 시작부터 약 40줄
-
-예:
-
-statement 시작:
-210
-
-초기 Read:
-210 ~ 250
-
-statement 종료 tag가 확인되면
-추가 Read하지 않는다.
-
----
-
-# STEP 22. Statement가 긴 경우
-
-40줄 안에서 statement 종료가 확인되지 않은 경우에만
-다음 범위를 추가 Read한다.
+Statement 시작부터 약 40줄만 먼저 Read한다.
 
 예:
 
 210 ~ 250
-↓
-251 ~ 290
 
-다음 중 해당되는 종료 tag가 확인되면 즉시 중단한다.
+다음 종료 tag가 확인되면 중단한다.
 
 </select>
 </insert>
 </update>
 </delete>
 
-XML 전체를 읽지 않는다.
+40줄 안에서 종료되지 않으면
+다음 약 40줄만 추가한다.
+
+XML 전체 파일을 읽지 않는다.
 
 ---
 
-# STEP 23. 여러 Mapper Method
+# STEP 20. SQL 분석
 
-ServiceImpl에서 같은 Mapper의 여러 Method를 호출하면:
+이 단계부터 이번 테스트에서 새로 추가되는 범위다.
 
-예:
+이미 읽은 Statement 내용만 사용한다.
 
-materialMapper.selectMaterial()
+추가 Grep이나 Read를 하지 않는다.
 
-materialMapper.insertMaterial()
+확인:
 
-XML 파일은 한 번만 찾는다.
-
-그 다음 동일 XML에서:
-
-id="selectMaterial"
-
-id="insertMaterial"
-
-위치만 각각 찾는다.
-
-XML 파일 경로를 다시 검색하지 않는다.
+- SQL Type
+- Main Table
+- 직접 보이는 Sub Table
+- SQL Parameter
+- Dynamic SQL Element
+- SQL 실행 구조
 
 ---
 
-# STEP 24. 여러 Mapper Type
+# STEP 21. SQL Type
+
+Statement tag 기준으로 SQL Type을 기록한다.
 
 예:
 
-materialMapper.selectMaterial()
+<select>
 
-historyMapper.insertHistory()
+→ SELECT
 
-이면 각각의 Mapper Type에 대해
-필요한 XML을 한 번씩만 찾는다.
+<insert>
 
-동일 Mapper Type에 대한 XML 검색을 반복하지 않는다.
+→ INSERT
+
+<update>
+
+→ UPDATE
+
+<delete>
+
+→ DELETE
+
+---
+
+# STEP 22. Main Table
+
+Statement에 직접 작성된 SQL에서
+주요 대상 Table을 확인한다.
+
+예:
+
+SELECT
+FROM TB_MATERIAL
+
+결과:
+
+Main Table:
+TB_MATERIAL
+
+예:
+
+INSERT INTO TB_MATERIAL
+
+결과:
+
+Main Table:
+TB_MATERIAL
+
+예:
+
+UPDATE TB_MATERIAL
+
+결과:
+
+Main Table:
+TB_MATERIAL
+
+예:
+
+DELETE FROM TB_MATERIAL
+
+결과:
+
+Main Table:
+TB_MATERIAL
+
+---
+
+# STEP 23. 직접 보이는 추가 Table
+
+JOIN 또는 Subquery에 다른 Table이 직접 보이면 기록한다.
+
+예:
+
+FROM TB_MATERIAL A
+LEFT JOIN TB_PLANT B
+    ON ...
+
+결과:
+
+Tables:
+
+- TB_MATERIAL
+- TB_PLANT
+
+추가 Table을 찾기 위해
+다른 파일이나 Statement를 검색하지 않는다.
+
+---
+
+# STEP 24. SQL Parameter
+
+Statement에서 직접 사용하는 MyBatis Parameter를 기록한다.
+
+예:
+
+#{materialId}
+
+#{plantCode}
+
+#{userId}
+
+결과:
+
+Parameters:
+
+- materialId
+- plantCode
+- userId
+
+동일 Parameter는 중복 출력하지 않는다.
+
+Parameter 값의 원본까지 역추적하지 않는다.
 
 ---
 
 # STEP 25. Dynamic SQL
 
-현재 테스트에서는 Dynamic SQL의 상세 흐름을 분석하지 않는다.
+Statement 내부에 다음이 직접 존재하면 기록한다.
 
-statement 부분에서 다음이 보일 수 있다.
-
-<if>
-<choose>
-<when>
-<otherwise>
-<foreach>
-<include>
-
-이번 단계에서는 존재 여부만 기록한다.
+- <if>
+- <choose>
+- <when>
+- <otherwise>
+- <foreach>
 
 예:
+
+<if test="plantCode != null">
+    AND PLANT_CODE = #{plantCode}
+</if>
+
+결과:
 
 Dynamic SQL:
 YES
 
-Elements:
-- if
-- foreach
+Condition:
 
-하지만:
+plantCode != null
 
-- 조건 의미 분석
-- include fragment 추적
-- SQL 분기 분석
+SQL:
 
-은 하지 않는다.
+AND PLANT_CODE = #{plantCode}
+
+직접 보이는 조건까지만 기록한다.
 
 ---
 
-# STEP 26. SQL 분석 금지
-
-이번 테스트에서는 SQL 의미를 분석하지 않는다.
+# STEP 26. choose
 
 예:
 
-SELECT ...
-FROM ...
-WHERE ...
+<choose>
 
-가 보여도:
+    <when test="type == 'A'">
+        ...
+    </when>
 
-- 테이블 의미 분석
-- JOIN 분석
-- WHERE 조건 분석
-- 컬럼 Mapping 분석
-- DB Metadata 확인
+    <otherwise>
+        ...
+    </otherwise>
 
-을 하지 않는다.
+</choose>
 
-목표는 정확한 MyBatis statement를 찾는 것까지다.
+이면 직접 보이는 분기만 기록한다.
+
+예:
+
+CHOOSE
+
+├─ type == 'A'
+└─ otherwise
+
+분기의 상세 비즈니스 의미는 분석하지 않는다.
 
 ---
 
-# STEP 27. Evidence
+# STEP 27. foreach
 
-Evidence는 다음에 대해 확보한다.
+예:
+
+<foreach
+    collection="items"
+    item="item"
+>
+
+이면 다음만 기록한다.
+
+Collection:
+items
+
+Item:
+item
+
+반복 생성되는 SQL 구조가 직접 보이면 간단히 기록한다.
+
+Java Collection 생성 위치는 추적하지 않는다.
+
+---
+
+# STEP 28. include 처리
+
+이번 테스트에서 매우 중요하다.
+
+다음이 발견되어도:
+
+<include refid="Base_Column_List"/>
+
+include 대상 fragment를 찾지 않는다.
+
+기록만 한다.
+
+Include:
+Base_Column_List
+
+Status:
+NOT_TRACED
+
+추가 Grep을 수행하지 않는다.
+
+---
+
+# STEP 29. resultMap
+
+다음이 보여도:
+
+resultMap="MaterialResultMap"
+
+resultMap 정의를 찾지 않는다.
+
+기록:
+
+ResultMap:
+MaterialResultMap
+
+Status:
+NOT_TRACED
+
+---
+
+# STEP 30. SQL 실행 구조
+
+이미 읽은 Statement 기준으로
+간단한 실행 구조만 만든다.
+
+예:
+
+INSERT
+→ TB_MATERIAL
+→ Parameters
+   - materialId
+   - plantCode
+   - userId
+
+또는:
+
+SELECT
+→ TB_MATERIAL
+→ LEFT JOIN TB_PLANT
+→ IF plantCode != null
+   → PLANT_CODE = #{plantCode}
+
+새로운 검색 없이 작성한다.
+
+---
+
+# STEP 31. SQL 분석 금지 범위
+
+현재 테스트에서는 하지 않는다.
+
+- include fragment 추적
+- resultMap 추적
+- 다른 Statement 추적
+- DB Metadata
+- Oracle Metadata
+- 컬럼 Metadata
+- FK/PK 분석
+- Index 분석
+- 실행계획 분석
+- SQL 성능 분석
+- 실제 DB 조회
+
+---
+
+# STEP 32. Evidence
+
+Evidence:
 
 - Controller Method
 - Service Method
 - ServiceImpl Method
-- MyBatis XML Statement
-
-Mapper Java Evidence는 현재 테스트에서 제외한다.
+- MyBatis Statement
 
 형식:
 
@@ -752,40 +826,40 @@ gipms-api-material/src/main/java/.../MaterialServiceImpl.java:420-468
 
 gipms-api-material/src/main/resources/.../MaterialMapper.xml:210-235
 
-절대경로를 출력하지 않는다.
+Mapper Java Evidence는 만들지 않는다.
 
-Evidence 확보를 위해 재검색하지 않는다.
+SQL Evidence는 MyBatis Statement Evidence와 동일하게 사용한다.
+
+Evidence를 위해 재검색하지 않는다.
 
 ---
 
-# STEP 28. 강제 STOP
+# STEP 33. 강제 STOP
 
-실제로 호출된 Mapper Method에 대응하는
-MyBatis XML statement가 모두 확인되면 즉시 종료한다.
+실제 MyBatis Statement 내부의 직접 SQL 분석이 완료되면
+즉시 종료한다.
 
 이후 Grep/Read를 수행하지 않는다.
 
 절대 수행하지 않는다:
 
-- Mapper Java Interface 검색
-- Mapper Java Method 검색
-- SQL 상세 분석
-- SQL 의미 해석
+- Mapper Java 검색
 - include fragment 추적
 - resultMap 추적
+- Local/private Method 추적
+- 다른 Service 추적
+- 다른 Mapper Statement 추적
 - DB Metadata
 - Oracle Metadata
-- Local/private Method 추적
-- 다른 Service 내부 추적
-- SAP 검색
-- RFC 검색
-- 외부 API 검색
-- BE-REFERENCE 읽기
+- SAP
+- RFC
+- 외부 API
+- BE-REFERENCE
 - Markdown 문서 생성
 
 ---
 
-# STEP 29. 출력
+# STEP 34. 출력
 
 아래 형식으로만 출력한다.
 
@@ -816,8 +890,6 @@ MyBatis XML statement가 모두 확인되면 즉시 종료한다.
 
 ### Mapper Call
 
-각 호출에 대해:
-
 - Mapper Variable:
 - Mapper Type:
 - Mapper Method:
@@ -828,14 +900,42 @@ SKIPPED
 
 ### MyBatis
 
-각 실제 Mapper Method에 대해:
-
 - XML:
 - Namespace:
 - Statement Type:
 - Statement ID:
-- Dynamic SQL:
 - Evidence:
+
+### SQL
+
+- SQL Type:
+- Main Table:
+- Tables:
+- Parameters:
+- Dynamic SQL:
+- Include:
+- ResultMap:
+
+### SQL Flow
+
+실제 Statement에서 확인된 구조만 출력한다.
+
+예:
+
+INSERT
+→ TB_MATERIAL
+→ Parameters
+   ├─ materialId
+   ├─ plantCode
+   └─ userId
+
+또는:
+
+SELECT
+→ TB_MATERIAL
+→ LEFT JOIN TB_PLANT
+→ IF plantCode != null
+   └─ AND PLANT_CODE = #{plantCode}
 
 ### Execution Flow
 
@@ -848,9 +948,8 @@ Controller.create()
 → Mapper Java SKIP
 → MaterialMapper.xml
 → <insert id="insertMaterial">
+→ INSERT TB_MATERIAL
 → STOP
-
-여러 호출이면 실제 순서를 유지한다.
 
 ### Search Status
 
